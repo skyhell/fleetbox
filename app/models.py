@@ -95,6 +95,9 @@ class Vehicle(Base):
     fuel_logs: Mapped[list[FuelLog]] = relationship(
         back_populates="vehicle", cascade="all, delete-orphan"
     )
+    attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="vehicle", cascade="all, delete-orphan"
+    )
 
     @property
     def display_name(self) -> str:
@@ -124,6 +127,9 @@ class ServiceRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="service_records")
+    attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="service_record"
+    )
 
 
 class ServiceInterval(Base):
@@ -216,3 +222,41 @@ class FuelLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="fuel_logs")
+
+
+class Attachment(Base):
+    """An uploaded document or photo (invoice, receipt, vehicle picture, …).
+
+    Files live on disk under the configured upload directory; only metadata is
+    stored here. An attachment always belongs to a vehicle and may optionally be
+    linked to a single service record. Deleting that record keeps the file but
+    clears the link (``ondelete="SET NULL"``).
+    """
+
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(
+        ForeignKey("vehicles.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    service_record_id: Mapped[int | None] = mapped_column(
+        ForeignKey("service_records.id", ondelete="SET NULL"), index=True
+    )
+
+    title: Mapped[str | None] = mapped_column(String(200))
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    stored_name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
+
+    vehicle: Mapped[Vehicle] = relationship(back_populates="attachments")
+    service_record: Mapped[ServiceRecord | None] = relationship(
+        back_populates="attachments"
+    )
+
+    @property
+    def is_image(self) -> bool:
+        return self.content_type.startswith("image/")

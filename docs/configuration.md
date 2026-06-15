@@ -18,6 +18,30 @@ FleetBox is configured through environment variables (optionally loaded from a
 | `FLEETBOX_MIN_PASSWORD_LENGTH`| `8`                             | Minimum password length on registration / user creation.                                        |
 | `FLEETBOX_RATE_LIMIT_MAX_ATTEMPTS`| `10`                        | Failed login/2FA attempts allowed per client IP within the window.                              |
 | `FLEETBOX_RATE_LIMIT_WINDOW_SECONDS`| `300`                     | Rate-limit window in seconds.                                                                   |
+| `FLEETBOX_UPLOAD_DIR`        | `./data/uploads`                 | Where uploaded documents/photos are stored. Relative paths resolve against the project root.    |
+| `FLEETBOX_MAX_UPLOAD_BYTES`  | `10485760` (10 MiB)              | Maximum size per uploaded file, in bytes.                                                       |
+
+## File uploads
+
+Each vehicle can hold documents and photos (invoices, receipts, pictures), which
+may optionally be linked to a service record. Files are written to
+`FLEETBOX_UPLOAD_DIR` under an opaque random name; only metadata is stored in the
+database. Allowed types are JPEG, PNG, GIF, WebP and PDF; anything else is
+rejected. Include the upload directory in your backups alongside the database.
+
+## Backup & migration (CSV)
+
+The **Backup** page (in the top navigation) exports each entity type as a CSV
+file — vehicles, service records, service intervals and fuel logs — scoped to the
+logged-in user. Child records reference their vehicle by **name** rather than a
+database id, so an export can be imported into a fresh account on another
+FleetBox instance.
+
+On import, upload any of those CSVs together: vehicles are processed first, then
+child rows are linked to their vehicle by name. Vehicles that already exist (by
+name) are left untouched, and rows referencing an unknown vehicle are skipped.
+For a complete backup, also copy the database and the upload directory
+(`FLEETBOX_UPLOAD_DIR`); uploaded files themselves are not part of the CSV export.
 
 ## Running behind a reverse proxy (HTTPS)
 

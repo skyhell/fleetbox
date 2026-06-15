@@ -15,7 +15,17 @@ from app.config import settings
 from app.csrf import csrf_protect
 from app.database import SessionLocal, init_db
 from app.models import User
-from app.routers import account, admin, auth, dashboard, fuel, service, vehicles
+from app.routers import (
+    account,
+    admin,
+    attachments,
+    auth,
+    backup,
+    dashboard,
+    fuel,
+    service,
+    vehicles,
+)
 from app.templating import TEMPLATES_DIR
 
 logger = logging.getLogger("fleetbox")
@@ -108,7 +118,9 @@ app.include_router(account.router, dependencies=_csrf)
 app.include_router(dashboard.router, dependencies=_csrf)
 app.include_router(vehicles.router, dependencies=_csrf)
 app.include_router(service.router, dependencies=_csrf)
+app.include_router(attachments.router, dependencies=_csrf)
 app.include_router(fuel.router, dependencies=_csrf)
+app.include_router(backup.router, dependencies=_csrf)
 app.include_router(admin.router, dependencies=_csrf)
 
 

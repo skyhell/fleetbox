@@ -89,6 +89,9 @@ def vehicle_detail(
     ]
     records = sorted(vehicle.service_records, key=lambda r: r.performed_on, reverse=True)
     fuel_logs = sorted(vehicle.fuel_logs, key=lambda f: f.filled_on, reverse=True)
+    attachments = sorted(
+        vehicle.attachments, key=lambda a: a.uploaded_at, reverse=True
+    )
     return render(
         request,
         "vehicles/detail.html",
@@ -96,6 +99,7 @@ def vehicle_detail(
         intervals=intervals,
         records=records,
         fuel_logs=fuel_logs,
+        attachments=attachments,
     )
 
 

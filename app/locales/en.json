@@ -5,6 +5,7 @@
   "nav.dashboard": "Dashboard",
   "nav.vehicles": "Vehicles",
   "nav.admin": "Users",
+  "nav.backup": "Backup",
   "nav.login": "Log in",
   "nav.logout": "Log out",
   "nav.register": "Register",
@@ -90,6 +91,15 @@
   "fuel.field.notes": "Notes",
   "fuel.consumption": "Avg. consumption",
 
+  "attachment.title": "Documents & photos",
+  "attachment.add": "Upload document",
+  "attachment.field.file": "File",
+  "attachment.field.title": "Title",
+  "attachment.field.record": "Link to service record",
+  "attachment.hint": "Images (JPG, PNG, GIF, WebP) and PDF, up to 10 MB.",
+  "attachment.too_large": "The file is too large.",
+  "attachment.unsupported": "Unsupported file type.",
+
   "fuel.type.petrol": "Petrol",
   "fuel.type.diesel": "Diesel",
   "fuel.type.electric": "Electric",
@@ -106,6 +116,15 @@
   "admin.field.is_admin": "Administrator",
   "admin.field.is_active": "Active",
   "admin.delete.confirm": "Really delete this user and all their vehicles?",
+
+  "backup.title": "Backup & migration",
+  "backup.intro": "Export all your data as CSV files for safekeeping, or import them into another FleetBox instance.",
+  "backup.export.title": "Export (CSV)",
+  "backup.export.hint": "Each file contains all of your records. Child records reference their vehicle by name.",
+  "backup.import.title": "Import (CSV)",
+  "backup.import.hint": "Upload any of the CSV files you exported earlier. Import vehicles together with their records — rows referencing an unknown vehicle are skipped. Existing vehicles (matched by name) are left untouched.",
+  "backup.import.submit": "Import",
+  "backup.import.done": "Import finished: {vehicles} vehicles, {records} service records, {intervals} intervals, {fuel} fuel logs added. {skipped} rows skipped.",
 
   "account.security.title": "Account security",
 

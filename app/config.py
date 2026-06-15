@@ -9,6 +9,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Content types accepted for document/photo uploads. Deliberately narrow:
+# raster images render inline safely under our CSP, and PDFs are served as a
+# download. SVG/HTML are excluded because they can carry active content.
+ALLOWED_UPLOAD_TYPES: dict[str, str] = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "application/pdf": ".pdf",
+}
+
 # Sentinel value used as the default secret key. The app refuses to start in a
 # production posture (secure cookies on) while this is still in place.
 INSECURE_DEFAULT_SECRET_KEY = "insecure-development-key-change-me"  # nosec B105
@@ -54,6 +65,18 @@ class Settings(BaseSettings):
     # Brute-force protection for login and 2FA (per client IP).
     rate_limit_max_attempts: int = 10
     rate_limit_window_seconds: int = 300
+
+    # Document/photo uploads: where files are stored and the per-file size cap.
+    upload_dir: str = "./data/uploads"
+    max_upload_bytes: int = 10 * 1024 * 1024  # 10 MiB
+
+    @property
+    def upload_path(self) -> Path:
+        """Absolute path to the upload directory (created on first use)."""
+        path = Path(self.upload_dir)
+        if not path.is_absolute():
+            path = BASE_DIR / path
+        return path
 
     @property
     def uses_default_secret_key(self) -> bool:

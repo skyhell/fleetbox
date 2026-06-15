@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ t('backup.title') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ t('backup.title') }}</h1>
+  <p class="muted">{{ t('backup.intro') }}</p></div></div>
+
+{% if summary %}
+<div class="alert alert-success">
+  {{ t('backup.import.done', vehicles=summary.vehicles, records=summary.records,
+       intervals=summary.intervals, fuel=summary.fuel, skipped=summary.skipped) }}
+</div>
+{% endif %}
+
+{# ---- Export ---- #}
+<section class="card">
+  <h2>{{ t('backup.export.title') }}</h2>
+  <p class="muted">{{ t('backup.export.hint') }}</p>
+  <ul class="export-list">
+    <li><a class="btn btn-sm" href="/backup/export/vehicles.csv">{{ t('nav.vehicles') }} (CSV)</a></li>
+    <li><a class="btn btn-sm" href="/backup/export/service_records.csv">{{ t('service.records') }} (CSV)</a></li>
+    <li><a class="btn btn-sm" href="/backup/export/service_intervals.csv">{{ t('service.intervals') }} (CSV)</a></li>
+    <li><a class="btn btn-sm" href="/backup/export/fuel_logs.csv">{{ t('fuel.log') }} (CSV)</a></li>
+  </ul>
+</section>
+
+{# ---- Import ---- #}
+<section class="card">
+  <h2>{{ t('backup.import.title') }}</h2>
+  <p class="muted">{{ t('backup.import.hint') }}</p>
+  <form method="post" action="/backup/import" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('nav.vehicles') }}<input type="file" name="vehicles" accept=".csv,text/csv"></label>
+    <label>{{ t('service.records') }}<input type="file" name="service_records" accept=".csv,text/csv"></label>
+    <label>{{ t('service.intervals') }}<input type="file" name="service_intervals" accept=".csv,text/csv"></label>
+    <label>{{ t('fuel.log') }}<input type="file" name="fuel_logs" accept=".csv,text/csv"></label>
+    <button class="btn btn-primary" type="submit">{{ t('backup.import.submit') }}</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,9 +1,10 @@
 # Data model
 
 ```
-User 1───* Vehicle 1───* ServiceRecord
+User 1───* Vehicle 1───* ServiceRecord 0───* Attachment
                    1───* ServiceInterval
                    1───* FuelLog
+                   1───* Attachment
 ```
 
 ## User
@@ -73,6 +74,23 @@ A refueling / charging event.
 | `price_per_unit` | float | optional                               |
 | `total_cost`     | float | derived from price × quantity if blank |
 | `full_tank`      | bool  | for consumption calculations           |
+
+## Attachment
+An uploaded document or photo (invoice, receipt, vehicle picture). Files are
+stored on disk under `FLEETBOX_UPLOAD_DIR` with an opaque random name; only the
+metadata below is kept in the database. Allowed types: JPEG, PNG, GIF, WebP and
+PDF, capped at `FLEETBOX_MAX_UPLOAD_BYTES` (10 MiB by default).
+
+| Field               | Type     | Notes                                            |
+|---------------------|----------|--------------------------------------------------|
+| `vehicle_id`        | int FK   | owning vehicle (cascade delete)                  |
+| `service_record_id` | int/null | optional link to a record (`SET NULL` on delete) |
+| `title`             | str/null | optional label                                   |
+| `filename`          | str      | original upload name                             |
+| `stored_name`       | str      | opaque name on disk                              |
+| `content_type`      | str      | validated MIME type                              |
+| `size`              | int      | bytes                                            |
+| `uploaded_at`       | datetime |                                                  |
 
 ## ServiceType values
 `oil_change`, `brake_replacement`, `wear_part`, `inspection`, `tyre_change`,

@@ -3,6 +3,18 @@
 All notable changes to FleetBox are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Document & photo uploads per vehicle (invoices, receipts, pictures), optionally
+  linked to a service record. Images preview inline; PDFs download. Restricted to
+  JPEG/PNG/GIF/WebP/PDF with a configurable size cap (`FLEETBOX_UPLOAD_DIR`,
+  `FLEETBOX_MAX_UPLOAD_BYTES`).
+- CSV export & import for backup and migration: per-entity CSV files (vehicles,
+  service records, intervals, fuel logs) under a new **Backup** page. Child rows
+  reference their vehicle by name; importing into a fresh account recreates the
+  data, deduping vehicles by name and skipping rows for unknown vehicles.
+
 ## [0.1.0] - 2026-06-15
 
 ### Added

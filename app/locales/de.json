@@ -5,6 +5,7 @@
   "nav.dashboard": "Übersicht",
   "nav.vehicles": "Fahrzeuge",
   "nav.admin": "Benutzer",
+  "nav.backup": "Sicherung",
   "nav.login": "Anmelden",
   "nav.logout": "Abmelden",
   "nav.register": "Registrieren",
@@ -90,6 +91,15 @@
   "fuel.field.notes": "Notizen",
   "fuel.consumption": "Ø Verbrauch",
 
+  "attachment.title": "Dokumente & Fotos",
+  "attachment.add": "Dokument hochladen",
+  "attachment.field.file": "Datei",
+  "attachment.field.title": "Titel",
+  "attachment.field.record": "Mit Service-Eintrag verknüpfen",
+  "attachment.hint": "Bilder (JPG, PNG, GIF, WebP) und PDF, bis zu 10 MB.",
+  "attachment.too_large": "Die Datei ist zu groß.",
+  "attachment.unsupported": "Nicht unterstützter Dateityp.",
+
   "fuel.type.petrol": "Benzin",
   "fuel.type.diesel": "Diesel",
   "fuel.type.electric": "Elektro",
@@ -106,6 +116,15 @@
   "admin.field.is_admin": "Administrator",
   "admin.field.is_active": "Aktiv",
   "admin.delete.confirm": "Diesen Benutzer und alle seine Fahrzeuge wirklich löschen?",
+
+  "backup.title": "Sicherung & Migration",
+  "backup.intro": "Exportiere alle deine Daten als CSV-Dateien zur Sicherung oder importiere sie in eine andere FleetBox-Instanz.",
+  "backup.export.title": "Export (CSV)",
+  "backup.export.hint": "Jede Datei enthält alle deine Einträge. Untergeordnete Einträge verweisen über den Namen auf ihr Fahrzeug.",
+  "backup.import.title": "Import (CSV)",
+  "backup.import.hint": "Lade beliebige zuvor exportierte CSV-Dateien hoch. Importiere Fahrzeuge zusammen mit ihren Einträgen – Zeilen, die auf ein unbekanntes Fahrzeug verweisen, werden übersprungen. Bestehende Fahrzeuge (Abgleich über den Namen) bleiben unverändert.",
+  "backup.import.submit": "Importieren",
+  "backup.import.done": "Import abgeschlossen: {vehicles} Fahrzeuge, {records} Service-Einträge, {intervals} Intervalle, {fuel} Tankvorgänge hinzugefügt. {skipped} Zeilen übersprungen.",
 
   "account.security.title": "Kontosicherheit",
 

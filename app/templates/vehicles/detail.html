@@ -155,6 +155,61 @@
   </details>
 </section>
 
+{# ---- Documents / photos ---- #}
+<section class="card">
+  <h2>{{ t('attachment.title') }}</h2>
+  {% if attachments %}
+  <ul class="attachments">
+    {% for a in attachments %}
+    <li class="attachment">
+      <a class="attachment-preview" href="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}"
+         target="_blank" rel="noopener">
+        {% if a.is_image %}
+        <img src="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}" alt="{{ a.title or a.filename }}">
+        {% else %}
+        <span class="attachment-icon">PDF</span>
+        {% endif %}
+      </a>
+      <div class="attachment-meta">
+        <a href="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}" target="_blank" rel="noopener">
+          {{ a.title or a.filename }}
+        </a>
+        <span class="muted small">{{ (a.size / 1024) | round | int }} KB</span>
+        {% if a.service_record %}<span class="muted small">· {{ a.service_record.title }}</span>{% endif %}
+      </div>
+      <form method="post" action="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}/delete"
+            data-confirm="{{ t('common.delete') }}?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-sm btn-danger" type="submit">×</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+
+  <details class="adder">
+    <summary class="btn btn-sm">+ {{ t('attachment.add') }}</summary>
+    <form method="post" action="/vehicles/{{ vehicle.id }}/attachments"
+          class="inline-form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>{{ t('attachment.field.file') }} <span class="req">*</span>
+        <input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" required>
+      </label>
+      <div class="form-row">
+        <label>{{ t('attachment.field.title') }}<input type="text" name="title"></label>
+        <label>{{ t('attachment.field.record') }}
+          <select name="service_record_id">
+            <option value="">{{ t('common.none') }}</option>
+            {% for r in records %}<option value="{{ r.id }}">{{ r.performed_on }} · {{ r.title }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      <p class="muted small">{{ t('attachment.hint') }}</p>
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+    </form>
+  </details>
+</section>
+
 {# ---- Fuel log ---- #}
 <section class="card">
   <h2>{{ t('fuel.log') }}</h2>
