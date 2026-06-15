@@ -24,6 +24,7 @@ from app.routers import (
     dashboard,
     fuel,
     service,
+    stats,
     vehicles,
 )
 from app.templating import TEMPLATES_DIR
@@ -118,6 +119,7 @@ app.include_router(account.router, dependencies=_csrf)
 app.include_router(dashboard.router, dependencies=_csrf)
 app.include_router(vehicles.router, dependencies=_csrf)
 app.include_router(service.router, dependencies=_csrf)
+app.include_router(stats.router, dependencies=_csrf)
 app.include_router(attachments.router, dependencies=_csrf)
 app.include_router(fuel.router, dependencies=_csrf)
 app.include_router(backup.router, dependencies=_csrf)

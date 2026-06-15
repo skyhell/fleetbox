@@ -14,6 +14,10 @@ All notable changes to FleetBox are documented here. The format is based on
   service records, intervals, fuel logs) under a new **Backup** page. Child rows
   reference their vehicle by name; importing into a fresh account recreates the
   data, deduping vehicles by name and skipping rows for unknown vehicles.
+- Per-vehicle **statistics** page: average fuel consumption (full-to-full
+  method), total/fuel/service costs, cost per km, and server-rendered SVG charts
+  for monthly cost, consumption over time and mileage development. Charts are
+  dependency-free and CSP-safe (no JavaScript).
 
 ## [0.1.0] - 2026-06-15
 

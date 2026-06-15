@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ t('stats.title') }} · {{ vehicle.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ t('stats.title') }}</h1>
+    <p class="muted">{{ vehicle.display_name }}</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="/vehicles/{{ vehicle.id }}">← {{ t('common.back') }}</a>
+  </div>
+</div>
+
+{% if not stats.has_any_data %}
+<section class="card"><p class="muted">{{ t('stats.no_data') }}</p></section>
+{% else %}
+
+<section class="grid">
+  <div class="card stat">
+    <span class="stat-value">
+      {% if stats.avg_consumption is not none %}{{ '%.1f'|format(stats.avg_consumption) }}{% else %}—{% endif %}
+    </span>
+    <span class="stat-label">{{ t('stats.avg_consumption') }} ({{ stats.consumption_unit }})</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">{{ '%.2f'|format(stats.total_cost) }}</span>
+    <span class="stat-label">{{ t('stats.total_cost') }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">
+      {% if stats.cost_per_km is not none %}{{ '%.3f'|format(stats.cost_per_km) }}{% else %}—{% endif %}
+    </span>
+    <span class="stat-label">{{ t('stats.cost_per_km') }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">{% if stats.distance_tracked %}{{ stats.distance_tracked }}{% else %}—{% endif %}</span>
+    <span class="stat-label">{{ t('stats.distance') }} (km)</span>
+  </div>
+</section>
+
+<section class="card">
+  <h2>{{ t('stats.cost_breakdown') }}</h2>
+  <table class="table">
+    <tbody>
+      <tr><td>{{ t('stats.fuel_cost') }}</td><td>{{ '%.2f'|format(stats.total_fuel_cost) }}</td></tr>
+      <tr><td>{{ t('stats.service_cost') }}</td><td>{{ '%.2f'|format(stats.total_service_cost) }}</td></tr>
+      <tr><td>{{ t('fuel.log') }}</td><td>{{ stats.fillup_count }} · {{ '%.1f'|format(stats.total_quantity) }}</td></tr>
+      <tr><td>{{ t('service.records') }}</td><td>{{ stats.service_count }}</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>{{ t('stats.cost_per_month') }}</h2>
+  {% if cost_chart %}{{ cost_chart|safe }}{% else %}<p class="muted">{{ t('stats.no_data') }}</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('stats.consumption_over_time') }} ({{ stats.consumption_unit }})</h2>
+  {% if consumption_chart %}{{ consumption_chart|safe }}
+  {% else %}<p class="muted">{{ t('stats.consumption_hint') }}</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('stats.mileage_over_time') }}</h2>
+  {% if mileage_chart %}{{ mileage_chart|safe }}{% else %}<p class="muted">{{ t('stats.no_data') }}</p>{% endif %}
+</section>
+
+{% endif %}
+{% endblock %}
