@@ -28,13 +28,13 @@
   </div>
   <div class="card stat">
     <span class="stat-value">
-      {% if stats.cost_per_km is not none %}{{ '%.3f'|format(stats.cost_per_km) }}{% else %}—{% endif %}
+      {% if stats.cost_per_unit is not none %}{{ '%.3f'|format(stats.cost_per_unit) }}{% else %}—{% endif %}
     </span>
-    <span class="stat-label">{{ t('stats.cost_per_km') }}</span>
+    <span class="stat-label">{{ t('stats.cost_per') }} {{ vehicle.usage_unit_label }}</span>
   </div>
   <div class="card stat">
     <span class="stat-value">{% if stats.distance_tracked %}{{ stats.distance_tracked }}{% else %}—{% endif %}</span>
-    <span class="stat-label">{{ t('stats.distance') }} (km)</span>
+    <span class="stat-label">{{ t('stats.distance') }} ({{ vehicle.usage_unit_label }})</span>
   </div>
 </section>
 

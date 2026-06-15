@@ -37,6 +37,13 @@ class ServiceType(str, enum.Enum):
     other = "other"
 
 
+class UsageUnit(str, enum.Enum):
+    """How a vehicle's usage is measured: distance or operating hours."""
+
+    km = "km"
+    hours = "h"
+
+
 class FuelType(str, enum.Enum):
     petrol = "petrol"
     diesel = "diesel"
@@ -81,6 +88,10 @@ class Vehicle(Base):
     vin: Mapped[str | None] = mapped_column(String(40))
     license_plate: Mapped[str | None] = mapped_column(String(20))
     fuel_type: Mapped[FuelType] = mapped_column(Enum(FuelType), default=FuelType.petrol)
+    usage_unit: Mapped[UsageUnit] = mapped_column(
+        Enum(UsageUnit), default=UsageUnit.km, nullable=False
+    )
+    # Current odometer / hour-meter reading, expressed in ``usage_unit``.
     mileage: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
@@ -104,6 +115,16 @@ class Vehicle(Base):
         parts = [p for p in (self.make, self.model) if p]
         suffix = f" ({' '.join(parts)})" if parts else ""
         return f"{self.name}{suffix}"
+
+    @property
+    def usage_unit_label(self) -> str:
+        """The unit symbol for readings: ``km`` or ``h``."""
+        return self.usage_unit.value
+
+    @property
+    def reading_label_key(self) -> str:
+        """i18n key for the reading field label, e.g. ``vehicle.field.reading_km``."""
+        return f"vehicle.field.reading_{self.usage_unit.value}"
 
 
 class ServiceRecord(Base):
@@ -175,12 +196,16 @@ class ServiceInterval(Base):
         """Return one of: 'ok', 'due_soon', 'overdue', 'unknown'."""
         statuses: list[str] = []
 
+        # "Due soon" margin differs by unit: ~1000 km vs ~50 operating hours.
+        unit_in_hours = self.vehicle is not None and self.vehicle.usage_unit == UsageUnit.hours
+        due_soon_margin = 50 if unit_in_hours else 1000
+
         due_km = self.due_mileage()
         if due_km is not None:
             remaining = due_km - current_mileage
             if remaining <= 0:
                 statuses.append("overdue")
-            elif remaining <= 1000:
+            elif remaining <= due_soon_margin:
                 statuses.append("due_soon")
             else:
                 statuses.append("ok")

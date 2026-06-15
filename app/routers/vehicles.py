@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import FuelType, User, Vehicle
+from app.models import FuelType, UsageUnit, User, Vehicle
 from app.security import require_user
 from app.templating import render
 
@@ -53,6 +53,7 @@ def create_vehicle(
     vin: str = Form(""),
     license_plate: str = Form(""),
     fuel_type: str = Form("petrol"),
+    usage_unit: str = Form("km"),
     mileage: str = Form("0"),
     notes: str = Form(""),
     db: Session = Depends(get_db),
@@ -67,6 +68,7 @@ def create_vehicle(
         vin=vin or None,
         license_plate=license_plate or None,
         fuel_type=FuelType(fuel_type),
+        usage_unit=UsageUnit(usage_unit),
         mileage=_parse_int(mileage) or 0,
         notes=notes or None,
     )
@@ -125,6 +127,7 @@ def update_vehicle(
     vin: str = Form(""),
     license_plate: str = Form(""),
     fuel_type: str = Form("petrol"),
+    usage_unit: str = Form("km"),
     mileage: str = Form("0"),
     notes: str = Form(""),
     db: Session = Depends(get_db),
@@ -138,6 +141,7 @@ def update_vehicle(
     vehicle.vin = vin or None
     vehicle.license_plate = license_plate or None
     vehicle.fuel_type = FuelType(fuel_type)
+    vehicle.usage_unit = UsageUnit(usage_unit)
     vehicle.mileage = _parse_int(mileage) or 0
     vehicle.notes = notes or None
     db.commit()

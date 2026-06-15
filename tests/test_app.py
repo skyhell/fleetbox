@@ -117,6 +117,32 @@ def test_vehicle_crud_and_ownership(client):
     assert "Ölwechsel 5W30" in client.get(detail_url).text
 
 
+def test_vehicle_with_operating_hours(client):
+    _register(client, "tractor", "tractor@example.com")
+
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(
+        "/vehicles/new",
+        data={
+            "name": "Fendt",
+            "usage_unit": "h",
+            "mileage": "3500",
+            "fuel_type": "diesel",
+            "csrf_token": token,
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    detail = resp.headers["location"]
+
+    # The reading is labelled in hours, not km.
+    page = client.get(detail).text
+    assert "3500 h" in page
+    assert "3500 km" not in page
+    # The list view reflects the unit too.
+    assert "3500 h" in client.get("/vehicles").text
+
+
 def test_two_factor_enrollment_and_login(client):
     import pyotp
 

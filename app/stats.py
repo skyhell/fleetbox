@@ -10,12 +10,13 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from app.models import FuelType, Vehicle
+from app.models import FuelType, UsageUnit, Vehicle
 
 
 @dataclass
 class VehicleStats:
     consumption_unit: str = "L/100km"
+    usage_unit: str = "km"
     total_fuel_cost: float = 0.0
     total_service_cost: float = 0.0
     total_quantity: float = 0.0
@@ -23,7 +24,7 @@ class VehicleStats:
     service_count: int = 0
     avg_consumption: float | None = None
     distance_tracked: int | None = None
-    cost_per_km: float | None = None
+    cost_per_unit: float | None = None
 
     # (label, value) series for charting, oldest first.
     consumption_series: list[tuple[str, float]] = field(default_factory=list)
@@ -39,8 +40,12 @@ class VehicleStats:
         return bool(self.fillup_count or self.service_count)
 
 
-def _consumption(logs) -> tuple[list[tuple[str, float]], float | None]:
-    """Full-to-full consumption series and the distance-weighted average."""
+def _consumption(logs, factor: float) -> tuple[list[tuple[str, float]], float | None]:
+    """Full-to-full consumption series and the usage-weighted average.
+
+    ``factor`` is 100 for distance-based vehicles (litres per 100 km) and 1 for
+    hour-based vehicles (litres per operating hour).
+    """
     entries = sorted((f for f in logs if f.mileage is not None), key=lambda f: f.mileage)
     series: list[tuple[str, float]] = []
     total_qty = 0.0
@@ -54,13 +59,13 @@ def _consumption(logs) -> tuple[list[tuple[str, float]], float | None]:
             continue
         if last_full_mileage is not None and f.mileage > last_full_mileage:
             distance = f.mileage - last_full_mileage
-            series.append((f.filled_on.isoformat(), round(accumulated / distance * 100, 2)))
+            series.append((f.filled_on.isoformat(), round(accumulated / distance * factor, 2)))
             total_qty += accumulated
             total_dist += distance
         last_full_mileage = f.mileage
         accumulated = 0.0
 
-    avg = round(total_qty / total_dist * 100, 2) if total_dist else None
+    avg = round(total_qty / total_dist * factor, 2) if total_dist else None
     return series, avg
 
 
@@ -68,10 +73,14 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
     fuel_logs = list(vehicle.fuel_logs)
     records = list(vehicle.service_records)
 
+    in_hours = vehicle.usage_unit == UsageUnit.hours
+    energy = "kWh" if vehicle.fuel_type == FuelType.electric else "L"
+    consumption_unit = f"{energy}/h" if in_hours else f"{energy}/100km"
+    factor = 1.0 if in_hours else 100.0
+
     stats = VehicleStats(
-        consumption_unit="kWh/100km"
-        if vehicle.fuel_type == FuelType.electric
-        else "L/100km",
+        consumption_unit=consumption_unit,
+        usage_unit=vehicle.usage_unit.value,
         total_fuel_cost=sum(f.total_cost or 0.0 for f in fuel_logs),
         total_service_cost=sum(r.cost or 0.0 for r in records),
         total_quantity=sum(f.quantity or 0.0 for f in fuel_logs),
@@ -79,7 +88,7 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
         service_count=len(records),
     )
 
-    stats.consumption_series, stats.avg_consumption = _consumption(fuel_logs)
+    stats.consumption_series, stats.avg_consumption = _consumption(fuel_logs, factor)
 
     # Mileage development from every dated odometer reading we have.
     readings: dict[str, float] = {}
@@ -100,7 +109,7 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
     if len(all_mileages) >= 2:
         stats.distance_tracked = max(all_mileages) - min(all_mileages)
         if stats.distance_tracked > 0:
-            stats.cost_per_km = round(stats.total_cost / stats.distance_tracked, 3)
+            stats.cost_per_unit = round(stats.total_cost / stats.distance_tracked, 3)
 
     # Monthly cost (fuel + service), oldest first.
     monthly: dict[str, float] = defaultdict(float)

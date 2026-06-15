@@ -8,7 +8,7 @@
       {{ vehicle.make or '' }} {{ vehicle.model or '' }}
       {% if vehicle.year %}· {{ vehicle.year }}{% endif %}
       {% if vehicle.license_plate %}· <span class="plate">{{ vehicle.license_plate }}</span>{% endif %}
-      · {{ vehicle.mileage }} km · {{ t('fuel.type.' + vehicle.fuel_type.value) }}
+      · {{ vehicle.mileage }} {{ vehicle.usage_unit_label }} · {{ t('fuel.type.' + vehicle.fuel_type.value) }}
     </p>
     {% if vehicle.vin %}<p class="muted small">VIN: {{ vehicle.vin }}</p>{% endif %}
     {% if vehicle.notes %}<p>{{ vehicle.notes }}</p>{% endif %}
@@ -45,7 +45,7 @@
         <td>{{ iv.name }}</td>
         <td>{{ t('service.type.' + iv.service_type.value) }}</td>
         <td>
-          {% if iv.due_mileage() %}{{ iv.due_mileage() }} km{% endif %}
+          {% if iv.due_mileage() %}{{ iv.due_mileage() }} {{ vehicle.usage_unit_label }}{% endif %}
           {% if iv.due_date() %}{% if iv.due_mileage() %}<br>{% endif %}{{ iv.due_date() }}{% endif %}
           {% if not iv.due_mileage() and not iv.due_date() %}{{ t('common.none') }}{% endif %}
         </td>
@@ -78,12 +78,12 @@
         </label>
       </div>
       <div class="form-row">
-        <label>{{ t('service.field.interval_km') }}<input type="number" name="interval_km" min="0"></label>
+        <label>{{ t('service.field.interval_' + vehicle.usage_unit.value) }}<input type="number" name="interval_km" min="0"></label>
         <label>{{ t('service.field.interval_months') }}<input type="number" name="interval_months" min="0"></label>
       </div>
       <div class="form-row">
         <label>{{ t('service.field.last_date') }}<input type="date" name="last_service_date"></label>
-        <label>{{ t('service.field.last_mileage') }}<input type="number" name="last_service_mileage" min="0"></label>
+        <label>{{ t('service.field.last_' + vehicle.usage_unit.value) }}<input type="number" name="last_service_mileage" min="0"></label>
       </div>
       <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
     </form>
@@ -100,7 +100,7 @@
         <th>{{ t('service.field.date') }}</th>
         <th>{{ t('service.field.type') }}</th>
         <th>{{ t('service.field.title') }}</th>
-        <th>{{ t('service.field.mileage') }}</th>
+        <th>{{ t(vehicle.reading_label_key) }}</th>
         <th>{{ t('service.field.cost') }}</th>
         <th></th>
       </tr>
@@ -111,7 +111,7 @@
         <td>{{ r.performed_on }}</td>
         <td>{{ t('service.type.' + r.service_type.value) }}</td>
         <td>{{ r.title }}{% if r.workshop %}<br><span class="muted small">{{ r.workshop }}</span>{% endif %}</td>
-        <td>{% if r.mileage %}{{ r.mileage }} km{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if r.mileage %}{{ r.mileage }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{% if r.cost is not none %}{{ '%.2f'|format(r.cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>
           <form method="post" action="/vehicles/{{ vehicle.id }}/records/{{ r.id }}/delete"
@@ -144,7 +144,7 @@
         <label>{{ t('service.field.date') }} <span class="req">*</span>
           <input type="date" name="performed_on" required>
         </label>
-        <label>{{ t('service.field.mileage') }}<input type="number" name="mileage" min="0"></label>
+        <label>{{ t(vehicle.reading_label_key) }}<input type="number" name="mileage" min="0"></label>
       </div>
       <div class="form-row">
         <label>{{ t('service.field.cost') }}<input type="text" name="cost" inputmode="decimal"></label>
@@ -219,7 +219,7 @@
     <thead>
       <tr>
         <th>{{ t('fuel.field.date') }}</th>
-        <th>{{ t('fuel.field.mileage') }}</th>
+        <th>{{ t(vehicle.reading_label_key) }}</th>
         <th>{{ t('fuel.field.quantity') }}</th>
         <th>{{ t('fuel.field.price_per_unit') }}</th>
         <th>{{ t('fuel.field.total_cost') }}</th>
@@ -230,7 +230,7 @@
       {% for f in fuel_logs %}
       <tr>
         <td>{{ f.filled_on }}</td>
-        <td>{% if f.mileage %}{{ f.mileage }} km{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if f.mileage %}{{ f.mileage }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{{ '%.2f'|format(f.quantity) }}</td>
         <td>{% if f.price_per_unit is not none %}{{ '%.3f'|format(f.price_per_unit) }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{% if f.total_cost is not none %}{{ '%.2f'|format(f.total_cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
@@ -255,7 +255,7 @@
         <label>{{ t('fuel.field.date') }} <span class="req">*</span>
           <input type="date" name="filled_on" required>
         </label>
-        <label>{{ t('fuel.field.mileage') }}<input type="number" name="mileage" min="0"></label>
+        <label>{{ t(vehicle.reading_label_key) }}<input type="number" name="mileage" min="0"></label>
       </div>
       <div class="form-row">
         <label>{{ t('fuel.field.quantity') }} <span class="req">*</span>

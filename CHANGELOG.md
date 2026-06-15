@@ -6,6 +6,10 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Vehicles can be tracked by **distance (km)** or **operating hours (h)** via a
+  per-vehicle usage unit (for tractors, boats, generators, …). All readings,
+  service intervals and statistics adapt: hour-based vehicles report consumption
+  per hour and cost per hour instead of per 100 km / per km.
 - Document & photo uploads per vehicle (invoices, receipts, pictures), optionally
   linked to a service record. Images preview inline; PDFs download. Restricted to
   JPEG/PNG/GIF/WebP/PDF with a configurable size cap (`FLEETBOX_UPLOAD_DIR`,

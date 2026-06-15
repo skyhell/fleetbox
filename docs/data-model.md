@@ -33,8 +33,13 @@ A vehicle owned by exactly one user.
 | `vin`           | str       | chassis number, optional       |
 | `license_plate` | str       | optional                       |
 | `fuel_type`     | enum      | petrol/diesel/electric/…       |
-| `mileage`       | int       | current odometer (km)          |
+| `usage_unit`    | enum      | `km` (distance) or `h` (operating hours) |
+| `mileage`       | int       | current odometer / hour-meter reading, in `usage_unit` |
 | `notes`         | text      | optional                       |
+
+All reading fields below (`ServiceRecord.mileage`, `FuelLog.mileage`,
+`ServiceInterval.interval_km` / `last_service_mileage`) are expressed in the
+vehicle's `usage_unit`.
 
 ## ServiceRecord
 A completed maintenance event (oil change, brake replacement, inspection, …).
@@ -50,9 +55,9 @@ A completed maintenance event (oil change, brake replacement, inspection, …).
 
 ## ServiceInterval
 A recurring maintenance rule. Due status is computed from the last service plus
-the interval, by **distance** (`interval_km`) and/or **time**
-(`interval_months`). Status is `ok` / `due_soon` (≤1000 km or ≤30 days) /
-`overdue` / `unknown`.
+the interval, by **usage** (`interval_km`, in the vehicle's `usage_unit`) and/or
+**time** (`interval_months`). Status is `ok` / `due_soon` (within ≤1000 km /
+≤50 h, or ≤30 days) / `overdue` / `unknown`.
 
 | Field                  | Type | Notes                       |
 |------------------------|------|-----------------------------|
@@ -98,3 +103,8 @@ PDF, capped at `FLEETBOX_MAX_UPLOAD_BYTES` (10 MiB by default).
 
 ## FuelType values
 `petrol`, `diesel`, `electric`, `lpg`, `cng`, `hybrid`, `other`
+
+## UsageUnit values
+`km` (distance), `h` (operating hours). Drives every reading's label and the
+statistics: distance vehicles report consumption per 100 km and cost per km,
+hour-based vehicles report consumption per hour and cost per hour.

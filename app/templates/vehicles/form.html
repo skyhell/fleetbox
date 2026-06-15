@@ -35,10 +35,17 @@
           {% endfor %}
         </select>
       </label>
-      <label>{{ t('vehicle.field.mileage') }}
-        <input type="number" name="mileage" min="0" value="{{ vehicle.mileage if vehicle else 0 }}">
+      <label>{{ t('vehicle.field.usage_unit') }}
+        <select name="usage_unit">
+          {% for uu in UsageUnit %}
+          <option value="{{ uu.value }}" {{ 'selected' if vehicle and vehicle.usage_unit == uu else '' }}>{{ t('vehicle.usage.' + uu.value) }}</option>
+          {% endfor %}
+        </select>
       </label>
     </div>
+    <label>{{ t('vehicle.field.reading_' + (vehicle.usage_unit.value if vehicle else 'km')) }}
+      <input type="number" name="mileage" min="0" value="{{ vehicle.mileage if vehicle else 0 }}">
+    </label>
     <label>{{ t('vehicle.field.notes') }}
       <textarea name="notes" rows="3">{{ vehicle.notes or '' if vehicle else '' }}</textarea>
     </label>

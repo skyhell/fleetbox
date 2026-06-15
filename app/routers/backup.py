@@ -25,6 +25,7 @@ from app.models import (
     ServiceInterval,
     ServiceRecord,
     ServiceType,
+    UsageUnit,
     User,
     Vehicle,
 )
@@ -38,7 +39,7 @@ router = APIRouter(prefix="/backup", tags=["backup"])
 
 VEHICLE_COLUMNS = [
     "name", "make", "model", "year", "vin",
-    "license_plate", "fuel_type", "mileage", "notes",
+    "license_plate", "fuel_type", "usage_unit", "mileage", "notes",
 ]
 RECORD_COLUMNS = [
     "vehicle", "service_type", "title", "performed_on",
@@ -94,7 +95,7 @@ def _cell(value) -> str:
         return ""
     if isinstance(value, bool):
         return "true" if value else "false"
-    if isinstance(value, FuelType | ServiceType):
+    if isinstance(value, FuelType | ServiceType | UsageUnit):
         return value.value
     if isinstance(value, date):
         return value.isoformat()
@@ -213,6 +214,7 @@ async def import_csv(
             vin=_s(row.get("vin")),
             license_plate=_s(row.get("license_plate")),
             fuel_type=_enum(FuelType, row.get("fuel_type"), FuelType.petrol),
+            usage_unit=_enum(UsageUnit, row.get("usage_unit"), UsageUnit.km),
             mileage=_int(row.get("mileage")) or 0,
             notes=_s(row.get("notes")),
         )

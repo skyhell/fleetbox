@@ -37,8 +37,8 @@ def vehicle_stats(
     mileage_chart = line_chart(
         [label for label, _ in stats.mileage_series],
         [value for _, value in stats.mileage_series],
-        unit="km",
-        title=f"{vehicle.name} – km",
+        unit=vehicle.usage_unit_label,
+        title=f"{vehicle.name} – {vehicle.usage_unit_label}",
     )
     cost_chart = bar_chart(
         [label for label, _ in stats.monthly_cost],

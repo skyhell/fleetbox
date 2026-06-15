@@ -13,9 +13,9 @@ a **Proxmox** host with a single script.
 
 ## Features
 
-- 🚗 **Multi-vehicle management** — make, model, year, VIN, license plate, mileage
+- 🚗 **Multi-vehicle management** — make, model, year, VIN, license plate, mileage or operating hours
 - 🔧 **Service records** — oil changes, brake replacements, inspections, generic repairs
-- ⏱️ **Service intervals** — by distance (km) and/or time (months) with due/overdue warnings
+- ⏱️ **Service intervals** — by usage (km or operating hours) and/or time (months) with due/overdue warnings
 - 🧩 **Wear parts** — tyres, brake pads, filters, belts, batteries, …
 - ⛽ **Fuel log** — liters, price per liter, total cost, consumption tracking
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts

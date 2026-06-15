@@ -5,7 +5,15 @@ from __future__ import annotations
 import re
 from datetime import date
 
-from app.models import FuelLog, FuelType, ServiceRecord, ServiceType, User, Vehicle
+from app.models import (
+    FuelLog,
+    FuelType,
+    ServiceRecord,
+    ServiceType,
+    UsageUnit,
+    User,
+    Vehicle,
+)
 from app.stats import compute_stats
 
 PASSWORD = "Secret123"
@@ -71,7 +79,24 @@ def test_electric_unit_and_costs(db_session):
     assert stats.total_service_cost == 120.0
     assert stats.total_cost == 125.0
     assert stats.distance_tracked == 100  # 200 - 100
-    assert stats.cost_per_km == round(125.0 / 100, 3)
+    assert stats.cost_per_unit == round(125.0 / 100, 3)
+
+
+def test_hour_based_consumption_is_per_hour(db_session):
+    # A machine measured in operating hours: 30 L over 10 h -> 3.0 L/h.
+    vehicle = _make_vehicle(db_session, fuel_type=FuelType.diesel, usage_unit=UsageUnit.hours)
+    db_session.add_all([
+        FuelLog(vehicle_id=vehicle.id, filled_on=date(2026, 1, 1), mileage=100,
+                quantity=10, full_tank=True),
+        FuelLog(vehicle_id=vehicle.id, filled_on=date(2026, 2, 1), mileage=110,
+                quantity=30, full_tank=True),
+    ])
+    db_session.flush()
+
+    stats = compute_stats(vehicle)
+    assert stats.consumption_unit == "L/h"
+    assert stats.avg_consumption == 3.0  # 30 L / 10 h, not multiplied by 100
+    assert stats.usage_unit == "h"
 
 
 def test_no_data_is_safe(db_session):
