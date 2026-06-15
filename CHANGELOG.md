@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-15
+
 ### Added
 - **Dark mode**: a theme switch (Auto / Light / Dark) in the top bar. "Auto"
   follows the operating system's `prefers-color-scheme`; the choice persists in
