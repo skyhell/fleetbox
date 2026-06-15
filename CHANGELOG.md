@@ -5,6 +5,13 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- `scripts/update.sh` no longer falsely reports the systemd service as "not
+  found" (and skips the restart). The existence check used `systemctl
+  list-unit-files | grep -q`, which under `set -o pipefail` propagated a SIGPIPE
+  failure from `systemctl` when `grep -q` closed the pipe early; it now uses
+  `systemctl cat`.
+
 ## [0.5.0] - 2026-06-15
 
 ### Added

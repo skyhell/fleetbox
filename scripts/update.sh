@@ -73,7 +73,12 @@ if id "$SERVICE_USER" >/dev/null 2>&1; then
 fi
 
 # ---- 5. Restart (schema auto-migration runs on startup) -------------------
-if command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files | grep -q "^${SERVICE_NAME}.service"; then
+# Note: `systemctl cat` is a reliable existence check that returns non-zero when
+# the unit is unknown. We deliberately avoid `systemctl list-unit-files | grep -q`
+# here: under `set -o pipefail`, `grep -q` exits on the first match and closes
+# the pipe, so `systemctl` dies with SIGPIPE (141) and pipefail propagates that
+# failure even though the unit *does* exist — falsely reporting "not found".
+if command -v systemctl >/dev/null 2>&1 && systemctl cat "${SERVICE_NAME}.service" >/dev/null 2>&1; then
   msg "Restarting ${SERVICE_NAME}.service..."
   systemctl restart "$SERVICE_NAME"
   sleep 2
