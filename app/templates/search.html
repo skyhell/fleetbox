@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t('search.title') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ t('search.title') }}</h1></div></div>
+
+<form class="card search-form" method="get" action="/search">
+  <input type="search" name="q" value="{{ q }}" autofocus
+         placeholder="{{ t('search.placeholder') }}">
+  <button class="btn btn-primary" type="submit">{{ t('search.title') }}</button>
+</form>
+
+{% if not q %}
+  <p class="muted">{{ t('search.prompt') }}</p>
+{% elif not vehicles and not records %}
+  <p class="muted">{{ t('search.no_results', q=q) }}</p>
+{% else %}
+
+{% if vehicles %}
+<section class="card">
+  <h2>{{ t('search.vehicles') }} ({{ vehicles|length }})</h2>
+  <table class="table">
+    <tbody>
+      {% for v in vehicles %}
+      <tr>
+        <td><a href="/vehicles/{{ v.id }}">{{ v.display_name }}</a></td>
+        <td>{% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}</td>
+        <td class="muted">{{ v.mileage }} {{ v.usage_unit_label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% if records %}
+<section class="card">
+  <h2>{{ t('search.records') }} ({{ records|length }})</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('service.field.date') }}</th>
+        <th>{{ t('nav.vehicles') }}</th>
+        <th>{{ t('service.field.type') }}</th>
+        <th>{{ t('service.field.title') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.performed_on }}</td>
+        <td><a href="/vehicles/{{ r.vehicle_id }}">{{ r.vehicle.display_name }}</a></td>
+        <td>{{ t('service.type.' + r.service_type.value) }}</td>
+        <td>{{ r.title }}{% if r.workshop %}<br><span class="muted small">{{ r.workshop }}</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endif %}
+{% endblock %}

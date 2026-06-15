@@ -6,6 +6,9 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Search** across the user's own vehicles (name, make, model, license plate,
+  VIN, notes) and performed work / service records (title, workshop, notes),
+  with a search box in the top bar. Ownership-scoped and LIKE-wildcard-safe.
 - `scripts/update.sh` — one-command in-place update for Git-based installs:
   backs up the database, pulls the latest code, refreshes dependencies and
   restarts the service (schema auto-migration runs on restart).

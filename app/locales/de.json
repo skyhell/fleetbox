@@ -27,6 +27,13 @@
   "auth.register.taken": "Diese E-Mail oder dieser Benutzername wird bereits verwendet.",
   "auth.logout.done": "Du wurdest abgemeldet.",
 
+  "search.title": "Suche",
+  "search.placeholder": "Fahrzeuge & Arbeiten suchen…",
+  "search.prompt": "Gib einen Suchbegriff ein, um Fahrzeuge und Service-Einträge zu finden.",
+  "search.no_results": "Nichts gefunden für „{q}“.",
+  "search.vehicles": "Fahrzeuge",
+  "search.records": "Service-Einträge",
+
   "dashboard.title": "Übersicht",
   "dashboard.vehicles": "Fahrzeuge",
   "dashboard.due_services": "Anstehende & überfällige Services",

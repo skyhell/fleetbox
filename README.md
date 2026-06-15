@@ -18,6 +18,7 @@ a **Proxmox** host with a single script.
 - ⏱️ **Service intervals** — by usage (km or operating hours) and/or time (months) with due/overdue warnings
 - 🧩 **Wear parts** — tyres, brake pads, filters, belts, batteries, …
 - ⛽ **Fuel log** — liters, price per liter, total cost, consumption tracking
+- 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
 - 📎 **Documents & photos** — attach invoices, receipts and pictures to vehicles and services
 - 💾 **CSV backup & migration** — export and re-import all your data

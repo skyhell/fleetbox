@@ -27,6 +27,13 @@
   "auth.register.taken": "That email or username is already in use.",
   "auth.logout.done": "You have been logged out.",
 
+  "search.title": "Search",
+  "search.placeholder": "Search vehicles & work…",
+  "search.prompt": "Enter a search term to find vehicles and service records.",
+  "search.no_results": "Nothing found for “{q}”.",
+  "search.vehicles": "Vehicles",
+  "search.records": "Service records",
+
   "dashboard.title": "Dashboard",
   "dashboard.vehicles": "Vehicles",
   "dashboard.due_services": "Upcoming & overdue services",

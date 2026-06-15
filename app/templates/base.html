@@ -19,6 +19,11 @@
     {% endif %}
   </nav>
   <div class="rightnav">
+    {% if user %}
+    <form class="topsearch" method="get" action="/search">
+      <input type="search" name="q" placeholder="{{ t('search.placeholder') }}" aria-label="{{ t('search.title') }}">
+    </form>
+    {% endif %}
     <span class="langswitch">
       {% for loc in supported_locales %}
         <a href="?lang={{ loc }}" class="{{ 'active' if loc == locale else '' }}">{{ loc|upper }}</a>
