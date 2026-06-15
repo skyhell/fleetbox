@@ -41,7 +41,13 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Create all tables. Import models so they register on the metadata."""
+    """Create all tables, then apply additive auto-migrations.
+
+    Importing models ensures they are registered on the metadata before either
+    step runs.
+    """
     from app import models  # noqa: F401  (ensures models are imported)
+    from app.migrations import run_migrations
 
     Base.metadata.create_all(bind=engine)
+    run_migrations(engine)

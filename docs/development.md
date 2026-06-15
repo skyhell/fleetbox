@@ -28,6 +28,7 @@ fleetbox/
 │   ├── main.py            # FastAPI app, middleware, router wiring
 │   ├── config.py          # Settings (pydantic-settings)
 │   ├── database.py        # Engine, session, Base, init_db()
+│   ├── migrations.py      # Additive auto-migration (ALTER TABLE ADD COLUMN)
 │   ├── models.py          # SQLAlchemy ORM models
 │   ├── security.py        # Password hashing, auth dependencies
 │   ├── totp.py            # TOTP 2FA helpers (pyotp + QR code)
@@ -77,7 +78,19 @@ ruff format app tests
 
 ## Adding a database column
 
-This skeleton uses `Base.metadata.create_all()` (via `init-db`) rather than
-migrations. For production schema changes, introduce
-[Alembic](https://alembic.sqlalchemy.org/) — add it to `requirements.txt`,
-run `alembic init alembic`, and replace the `init_db()` call accordingly.
+The schema is created with `Base.metadata.create_all()` (via `init-db`). On top
+of that, `app/migrations.py` runs a **lightweight additive auto-migration** on
+every startup: it compares the ORM metadata to the live database and issues
+`ALTER TABLE … ADD COLUMN` for any missing column, deriving a `DEFAULT` from the
+column's scalar default so existing rows stay valid.
+
+So for most changes you just:
+
+1. Add the column to the model in `app/models.py` (give `NOT NULL` columns a
+   scalar `default=` so existing rows can be back-filled).
+2. Restart the app — the new column is added automatically.
+
+This only ever *adds* columns and tables. **Renames, drops and type changes are
+out of scope** — for those, introduce a real migration tool such as
+[Alembic](https://alembic.sqlalchemy.org/) (`alembic init alembic`, then replace
+the `init_db()` call).

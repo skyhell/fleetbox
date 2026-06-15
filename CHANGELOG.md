@@ -6,6 +6,10 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Lightweight **automatic schema migration** on startup: missing columns are
+  added to existing tables via `ALTER TABLE … ADD COLUMN` (with a default derived
+  from the model), so upgrades no longer require a manual `ALTER` or a database
+  reset for additive changes.
 - Vehicles can be tracked by **distance (km)** or **operating hours (h)** via a
   per-vehicle usage unit (for tractors, boats, generators, …). All readings,
   service intervals and statistics adapt: hour-based vehicles report consumption
