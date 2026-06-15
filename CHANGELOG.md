@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-15
+
 ### Added
 - **Documentation** link in the UI footer, configurable via `FLEETBOX_DOCS_URL`
   (set empty to hide it).
