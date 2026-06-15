@@ -36,8 +36,11 @@ fleetbox/
 │   ├── ratelimit.py       # In-memory per-IP rate limiter
 │   ├── i18n.py            # JSON translation lookup + locale resolution
 │   ├── templating.py      # Jinja2 setup + render() helper
+│   ├── stats.py           # Per-vehicle statistics computation
+│   ├── charts.py          # Dependency-free SVG chart rendering
 │   ├── cli.py             # init-db / create-admin / disable-2fa / serve
-│   ├── routers/           # auth, account, dashboard, vehicles, service, fuel, admin
+│   ├── routers/           # auth, account, dashboard, vehicles, service, fuel,
+│   │                      #   stats, attachments, backup, admin
 │   ├── templates/         # Jinja2 HTML templates
 │   ├── locales/           # de.json, en.json translation catalogs
 │   └── static/            # CSS / assets
@@ -51,9 +54,11 @@ fleetbox/
 - **FastAPI** serves server-rendered HTML (Jinja2) — no separate frontend build.
 - **Sessions** are signed cookies (`starlette.SessionMiddleware`); the user id
   is stored in the session and resolved to a `User` on each request.
-- **Ownership** is enforced in every vehicle/service/fuel route: a user may only
-  touch vehicles where `owner_id == user.id`. Admins manage *users*, not other
-  users' vehicles.
+- **Ownership** is enforced in every vehicle-scoped route (service, fuel, stats,
+  attachments, backup): a user may only touch vehicles where
+  `owner_id == user.id`. Admins manage *users*, not other users' vehicles.
+- **Charts** are rendered server-side as SVG (`charts.py`) with no JavaScript or
+  external library, so they work under the strict Content-Security-Policy.
 - **i18n** is intentionally dependency-free: flat JSON catalogs and a `t()`
   helper injected into every template. See [i18n.md](i18n.md).
 
