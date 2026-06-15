@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('admin.title') }}</h1>
+{% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
+
+<section class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('admin.field.username') }}</th>
+        <th>{{ t('admin.field.email') }}</th>
+        <th>{{ t('admin.field.is_admin') }}</th>
+        <th>{{ t('admin.field.is_active') }}</th>
+        <th>{{ t('common.actions') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.username }}{% if u.id == user.id %} <span class="muted">(you)</span>{% endif %}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ t('common.yes') if u.is_admin else t('common.no') }}</td>
+        <td>{{ t('common.yes') if u.is_active else t('common.no') }}</td>
+        <td class="row-actions">
+          {% if u.id != user.id %}
+          <form method="post" action="/admin/users/{{ u.id }}/toggle-active">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm" type="submit">{{ t('common.no') if u.is_active else t('common.yes') }}</button>
+          </form>
+          <form method="post" action="/admin/users/{{ u.id }}/delete"
+                data-confirm="{{ t('admin.delete.confirm') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm btn-danger" type="submit">{{ t('common.delete') }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card narrow">
+  <h2>{{ t('admin.add_user') }}</h2>
+  <form method="post" action="/admin/users">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('admin.field.username') }} <span class="req">*</span><input type="text" name="username" required></label>
+    <label>{{ t('admin.field.email') }} <span class="req">*</span><input type="email" name="email" required></label>
+    <label>{{ t('admin.field.password') }} <span class="req">*</span><input type="password" name="password" required></label>
+    <label class="checkbox"><input type="checkbox" name="is_admin" value="1"> {{ t('admin.field.is_admin') }}</label>
+    <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+  </form>
+</section>
+{% endblock %}

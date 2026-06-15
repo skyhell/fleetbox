@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ t('vehicle.edit') if vehicle else t('vehicle.add') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('vehicle.edit') if vehicle else t('vehicle.add') }}</h1>
+  <form method="post" action="{{ '/vehicles/%d/edit'|format(vehicle.id) if vehicle else '/vehicles/new' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('vehicle.field.name') }} <span class="req">*</span>
+      <input type="text" name="name" required value="{{ vehicle.name if vehicle else '' }}">
+    </label>
+    <div class="form-row">
+      <label>{{ t('vehicle.field.make') }}
+        <input type="text" name="make" value="{{ vehicle.make or '' if vehicle else '' }}">
+      </label>
+      <label>{{ t('vehicle.field.model') }}
+        <input type="text" name="model" value="{{ vehicle.model or '' if vehicle else '' }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('vehicle.field.year') }}
+        <input type="number" name="year" min="1900" max="2100" value="{{ vehicle.year or '' if vehicle else '' }}">
+      </label>
+      <label>{{ t('vehicle.field.license_plate') }}
+        <input type="text" name="license_plate" value="{{ vehicle.license_plate or '' if vehicle else '' }}">
+      </label>
+    </div>
+    <label>{{ t('vehicle.field.vin') }}
+      <input type="text" name="vin" value="{{ vehicle.vin or '' if vehicle else '' }}">
+    </label>
+    <div class="form-row">
+      <label>{{ t('vehicle.field.fuel_type') }}
+        <select name="fuel_type">
+          {% for ft in FuelType %}
+          <option value="{{ ft.value }}" {{ 'selected' if vehicle and vehicle.fuel_type == ft else '' }}>{{ t('fuel.type.' + ft.value) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t('vehicle.field.mileage') }}
+        <input type="number" name="mileage" min="0" value="{{ vehicle.mileage if vehicle else 0 }}">
+      </label>
+    </div>
+    <label>{{ t('vehicle.field.notes') }}
+      <textarea name="notes" rows="3">{{ vehicle.notes or '' if vehicle else '' }}</textarea>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="{{ '/vehicles/%d'|format(vehicle.id) if vehicle else '/vehicles' }}">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t('account.security.title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('account.security.title') }}</h1>
+{% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
+{% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
+
+<section class="card narrow">
+  <h2>{{ t('twofa.title') }}</h2>
+  {% if user.totp_enabled %}
+    <p><span class="badge badge-ok">{{ t('twofa.status.enabled') }}</span></p>
+    <p class="muted">{{ t('twofa.disable.hint') }}</p>
+    <form method="post" action="/account/2fa/disable">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>{{ t('twofa.code') }}
+        <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
+               pattern="[0-9 ]*" maxlength="9" required>
+      </label>
+      <button class="btn btn-danger" type="submit">{{ t('twofa.disable') }}</button>
+    </form>
+  {% else %}
+    <p><span class="badge badge-unknown">{{ t('twofa.status.disabled') }}</span></p>
+    <p class="muted">{{ t('twofa.enable.hint') }}</p>
+    <form method="post" action="/account/2fa/begin">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-primary" type="submit">{{ t('twofa.enable') }}</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

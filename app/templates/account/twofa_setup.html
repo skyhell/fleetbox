@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('twofa.setup.title') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('twofa.setup.title') }}</h1>
+  {% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
+
+  <ol class="setup-steps">
+    <li>{{ t('twofa.setup.step_scan') }}</li>
+  </ol>
+
+  <div class="qr">{{ qr_svg|safe }}</div>
+
+  <p class="muted small">{{ t('twofa.setup.manual') }}</p>
+  <p class="secret"><code>{{ secret }}</code></p>
+
+  <form method="post" action="/account/2fa/enable">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('twofa.setup.step_confirm') }}
+      <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
+             pattern="[0-9 ]*" maxlength="9" required autofocus>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('twofa.enable') }}</button>
+      <a class="btn" href="/account/security">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

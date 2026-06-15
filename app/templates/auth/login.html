@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('auth.login.title') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('auth.login.title') }}</h1>
+  {% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
+  <form method="post" action="/login">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('auth.login.identifier') }}
+      <input type="text" name="identifier" autocomplete="username" required autofocus>
+    </label>
+    <label>{{ t('auth.login.password') }}
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary" type="submit">{{ t('auth.login.submit') }}</button>
+  </form>
+  {% if allow_registration %}
+    <p class="muted">
+      <a href="/register">{{ t('nav.register') }}</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+# Normalize line endings. Store text as LF in the repo.
+* text=auto
+
+# Shell scripts MUST stay LF — they run inside Linux containers/hosts.
+*.sh text eol=lf
+
+# Keep these LF too (consumed by Linux tooling / systemd).
+Dockerfile text eol=lf
+*.service text eol=lf

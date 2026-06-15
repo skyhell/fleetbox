@@ -1,0 +1,59 @@
+[project]
+name = "fleetbox"
+version = "0.1.0"
+description = "Self-hosted, multi-user vehicle and fleet management (inspired by Homebox)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "FleetBox contributors" }]
+keywords = ["vehicle", "fleet", "maintenance", "self-hosted", "fastapi"]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.20",
+    "itsdangerous>=2.2",
+    "bcrypt>=4.2",
+    "cryptography>=44.0",
+    "pyotp>=2.9",
+    "qrcode>=8.0",
+    "python-dotenv>=1.0",
+    "email-validator>=2.2",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.25", "httpx>=0.28", "ruff>=0.9", "mypy>=1.14"]
+
+[project.scripts]
+fleetbox = "app.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B008: FastAPI's `Depends()` in defaults is the intended pattern.
+# UP042: keep the explicit `(str, Enum)` form for clarity/compatibility.
+ignore = ["B008", "UP042"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+# B104: binding to 0.0.0.0 is intentional (FleetBox runs behind a reverse proxy).
+skips = ["B104"]

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FleetBox · Proxmox installation — step by step</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --surface: #fff; --border: #e2e7ee; --text: #1f2933;
+    --muted: #6b7785; --primary: #2563eb; --primary-dark: #1d4ed8;
+    --ok: #16a34a; --warn: #d97706; --danger: #dc2626;
+    --code-bg: #0f172a; --code-fg: #e2e8f0; --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6;
+  }
+  a { color: var(--primary); }
+  header.hero {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #fff; padding: 2.5rem 1.5rem;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.25rem; }
+  header.hero .wrap { padding: 0 1.25rem; }
+  header.hero h1 { margin: 0 0 .35rem; font-size: 1.9rem; }
+  header.hero p { margin: 0; opacity: .9; }
+  .badge-row { margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+  .pill { background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
+    padding: .2rem .65rem; border-radius: 999px; font-size: .8rem; }
+
+  main { padding: 2rem 0 4rem; }
+
+  .toc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 1rem 1.5rem; margin-bottom: 2rem;
+  }
+  .toc h2 { margin: 0 0 .5rem; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .toc ol { margin: 0; padding-left: 1.2rem; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  section.step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 1.25rem 1.5rem 1.5rem; margin-bottom: 1.5rem;
+  }
+  .step-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+  .step-num {
+    flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  h2.step-title { margin: 0; font-size: 1.25rem; }
+  h3 { margin: 1.25rem 0 .4rem; font-size: 1.02rem; }
+
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    border-radius: 8px; padding: .9rem 1rem; overflow-x: auto;
+    font-size: .86rem; line-height: 1.5;
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+  }
+  pre .c { color: #94a3b8; }      /* comment */
+  pre .v { color: #fbbf24; }      /* var name */
+  code.inline {
+    background: #eef1f6; border: 1px solid var(--border); border-radius: 5px;
+    padding: .08rem .35rem; font-size: .85em;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: .5rem 0; }
+  th, td { text-align: left; padding: .45rem .55rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+
+  .note { border-left: 4px solid var(--warn); background: #fffbeb;
+    padding: .7rem 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; font-size: .92rem; }
+  .note.info { border-left-color: var(--primary); background: #eff6ff; }
+  .note.ok { border-left-color: var(--ok); background: #f0fdf4; }
+
+  ol.flow { margin: .5rem 0 0; padding-left: 1.2rem; }
+  ol.flow li { margin-bottom: .3rem; }
+
+  footer { color: var(--muted); font-size: .82rem; text-align: center; padding: 2rem 1rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>🚗 FleetBox — Proxmox installation</h1>
+    <p>Step-by-step guide: from your repository to a running LXC container.</p>
+    <div class="badge-row">
+      <span class="pill">Debian 12 LXC</span>
+      <span class="pill">systemd service</span>
+      <span class="pill">SQLite</span>
+      <span class="pill">unprivileged</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="note info">
+    <strong>Before you start:</strong> the installer fetches the code with
+    <code class="inline">git clone</code>, so FleetBox must live in a reachable Git
+    repository first. Push it to GitHub (Step&nbsp;1) or point
+    <code class="inline">REPO_URL</code> at your own repo.
+  </div>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#prereq">Prerequisites</a></li>
+      <li><a href="#s1">Push the code to GitHub</a></li>
+      <li><a href="#s2">Open a shell on the Proxmox host</a></li>
+      <li><a href="#s3">Run the installer</a></li>
+      <li><a href="#what">What the installer does</a></li>
+      <li><a href="#s4">First-run setup in the browser</a></li>
+      <li><a href="#ops">Operation &amp; maintenance</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#nogit">Installing without GitHub</a></li>
+    </ol>
+  </nav>
+
+  <section class="step" id="prereq">
+    <div class="step-head"><h2 class="step-title">Prerequisites</h2></div>
+    <ul>
+      <li>Proxmox VE 7 or 8 with shell/root access to the <strong>host</strong> (not a guest)</li>
+      <li>A template storage (default <code class="inline">local</code>) and disk storage (default <code class="inline">local-lvm</code>)</li>
+      <li>Internet access from the host (template + package download)</li>
+      <li>FleetBox available in a reachable Git repository</li>
+    </ul>
+  </section>
+
+  <section class="step" id="s1">
+    <div class="step-head"><span class="step-num">1</span><h2 class="step-title">Push the code to GitHub</h2></div>
+    <p>On your workstation, in the project folder:</p>
+<pre><span class="c"># in C:\Users\johan\claude\fleetbox</span>
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/<span class="v">skyhell</span>/fleetbox.git
+git push -u origin main</pre>
+    <p>The repository URLs already point to <code class="inline">skyhell</code>. If you forked
+       this project, replace <code class="inline">skyhell</code> with your own GitHub user in
+       <code class="inline">README.md</code> and <code class="inline">proxmox/fleetbox.sh</code>
+       (the <code class="inline">REPO_URL</code> variable).</p>
+    <div class="note">No GitHub? Skip this step and pass your own
+      <code class="inline">REPO_URL=...</code> in Step&nbsp;3, or use the manual copy approach.</div>
+  </section>
+
+  <section class="step" id="s2">
+    <div class="step-head"><span class="step-num">2</span><h2 class="step-title">Open a shell on the Proxmox host</h2></div>
+    <p>Use SSH, or the web UI: <strong>Datacenter → your node → Shell</strong>. You are now
+       <code class="inline">root</code> on the host. Verify:</p>
+<pre>pct list        <span class="c"># only exists on the Proxmox host</span></pre>
+  </section>
+
+  <section class="step" id="s3">
+    <div class="step-head"><span class="step-num">3</span><h2 class="step-title">Run the installer</h2></div>
+    <h3>Defaults</h3>
+<pre>bash -c "$(curl -fsSL https://raw.githubusercontent.com/<span class="v">skyhell</span>/fleetbox/main/proxmox/fleetbox.sh)"</pre>
+    <h3>With custom values</h3>
+<pre><span class="v">CTID</span>=151 <span class="v">HOSTNAME</span>=garage <span class="v">DISK_GB</span>=6 <span class="v">RAM_MB</span>=1024 <span class="v">CORES</span>=2 \
+<span class="v">REPO_URL</span>=https://github.com/<span class="v">skyhell</span>/fleetbox.git \
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/<span class="v">skyhell</span>/fleetbox/main/proxmox/fleetbox.sh)"</pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Default</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">CTID</code></td><td>next free id</td><td>Container ID</td></tr>
+        <tr><td><code class="inline">HOSTNAME</code></td><td>fleetbox</td><td>Hostname</td></tr>
+        <tr><td><code class="inline">DISK_GB</code></td><td>4</td><td>Disk size in GB</td></tr>
+        <tr><td><code class="inline">CORES</code></td><td>1</td><td>CPU cores</td></tr>
+        <tr><td><code class="inline">RAM_MB</code></td><td>512</td><td>Memory in MB</td></tr>
+        <tr><td><code class="inline">BRIDGE</code></td><td>vmbr0</td><td>Network bridge</td></tr>
+        <tr><td><code class="inline">STORAGE</code></td><td>local-lvm</td><td>Root disk storage</td></tr>
+        <tr><td><code class="inline">REPO_URL</code></td><td>your repo</td><td>Git source</td></tr>
+        <tr><td><code class="inline">FLEETBOX_PORT</code></td><td>8000</td><td>Service port</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="step" id="what">
+    <div class="step-head"><h2 class="step-title">What the installer does</h2></div>
+    <ol class="flow">
+      <li>Picks a free container ID (<code class="inline">pvesh get /cluster/nextid</code>).</li>
+      <li>Downloads the Debian 12 LXC template if needed.</li>
+      <li>Creates an <strong>unprivileged</strong> LXC (DHCP, <code class="inline">nesting=1</code>, <code class="inline">onboot=1</code>).</li>
+      <li>Installs <code class="inline">git</code>, <code class="inline">python3</code>, <code class="inline">venv</code>.</li>
+      <li>Clones FleetBox into <code class="inline">/opt/fleetbox</code> and builds a virtualenv.</li>
+      <li>Writes <code class="inline">.env</code> with a <strong>random</strong> <code class="inline">FLEETBOX_SECRET_KEY</code> and a SQLite DB under <code class="inline">/opt/fleetbox/data/</code>.</li>
+      <li>Initializes the database (<code class="inline">app.cli init-db</code>).</li>
+      <li>Installs and starts the <code class="inline">fleetbox</code> systemd service.</li>
+      <li>Prints the container IP and URL.</li>
+    </ol>
+  </section>
+
+  <section class="step" id="s4">
+    <div class="step-head"><span class="step-num">4</span><h2 class="step-title">First-run setup in the browser</h2></div>
+    <ol class="flow">
+      <li>Open the printed address, e.g. <code class="inline">http://192.168.x.y:8000</code>.</li>
+      <li><strong>Register</strong> — the first account automatically becomes the administrator.</li>
+      <li>Top-right → your username → <strong>Account security</strong> → <strong>Enable 2FA</strong> (scan the QR code).</li>
+      <li>Create more users from the admin <strong>Users</strong> page.</li>
+    </ol>
+    <div class="note ok">Disable self-registration once your users exist:</div>
+<pre>pct exec &lt;CTID&gt; -- sed -i 's/FLEETBOX_ALLOW_REGISTRATION=true/FLEETBOX_ALLOW_REGISTRATION=false/' /opt/fleetbox/.env
+pct exec &lt;CTID&gt; -- systemctl restart fleetbox</pre>
+  </section>
+
+  <section class="step" id="ops">
+    <div class="step-head"><h2 class="step-title">Operation &amp; maintenance</h2></div>
+<pre><span class="c"># Status / logs</span>
+pct exec &lt;CTID&gt; -- systemctl status fleetbox
+pct exec &lt;CTID&gt; -- journalctl -u fleetbox -f
+
+<span class="c"># Restart</span>
+pct exec &lt;CTID&gt; -- systemctl restart fleetbox
+
+<span class="c"># Update to a new version</span>
+pct exec &lt;CTID&gt; -- bash -c "cd /opt/fleetbox &amp;&amp; git pull &amp;&amp; .venv/bin/pip install -r requirements.txt &amp;&amp; systemctl restart fleetbox"
+
+<span class="c"># 2FA recovery if a user lost their authenticator</span>
+pct exec &lt;CTID&gt; -- /opt/fleetbox/.venv/bin/python -m app.cli disable-2fa --username alice</pre>
+    <div class="note info"><strong>Backup:</strong> it is enough to back up the SQLite file
+      <code class="inline">/opt/fleetbox/data/fleetbox.db</code> inside the container.</div>
+  </section>
+
+  <section class="step" id="trouble">
+    <div class="step-head"><h2 class="step-title">Troubleshooting</h2></div>
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause / fix</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">pct: command not found</code></td><td>You are not on the host. Switch to the Proxmox host.</td></tr>
+        <tr><td><code class="inline">Template … not found</code></td><td>Run <code class="inline">pveam update</code>; optionally set <code class="inline">TEMPLATE_STORAGE=local</code>.</td></tr>
+        <tr><td><code class="inline">git clone</code> fails / 404</td><td>Wrong <code class="inline">REPO_URL</code> or private repo. Fix the URL or make it public.</td></tr>
+        <tr><td>Page not reachable</td><td>Check IP with <code class="inline">pct exec &lt;CTID&gt; -- hostname -I</code> and read the logs.</td></tr>
+        <tr><td>Want HTTPS</td><td>Put Caddy/nginx/Traefik in front — see <code class="inline">docs/security.md</code>.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="step" id="nogit">
+    <div class="step-head"><h2 class="step-title">Installing without GitHub</h2></div>
+    <p>Don't want to publish to a Git repository? Use the local installer — it
+       packages the source on the host and pushes it into the container. No Git,
+       no internet repository required.</p>
+
+    <h3>Option A — automated (<code class="inline">proxmox/fleetbox-local.sh</code>)</h3>
+    <ol class="flow">
+      <li>Copy the project folder onto the Proxmox host:</li>
+    </ol>
+<pre><span class="c"># from your workstation</span>
+scp -r ./fleetbox root@<span class="v">PROXMOX-HOST</span>:/root/fleetbox</pre>
+    <ol class="flow" start="2">
+      <li>On the host, run the local installer from inside that folder:</li>
+    </ol>
+<pre>cd /root/fleetbox
+bash proxmox/fleetbox-local.sh</pre>
+    <p>The same <code class="inline">CTID</code>, <code class="inline">HOSTNAME</code>,
+       <code class="inline">DISK_GB</code>, … variables apply. The script creates the
+       LXC, copies the code to <code class="inline">/opt/fleetbox</code>, and runs
+       <code class="inline">scripts/install.sh</code> inside the container.</p>
+
+    <h3>Option B — fully manual</h3>
+    <p>Create a container yourself, copy the source into
+       <code class="inline">/opt/fleetbox</code> (<code class="inline">scp</code> /
+       <code class="inline">pct push</code>), then run the shared provisioning script:</p>
+<pre>pct exec &lt;CTID&gt; -- bash /opt/fleetbox/scripts/install.sh</pre>
+    <div class="note info"><code class="inline">scripts/install.sh</code> also works on any
+      plain Debian/Ubuntu host (no Proxmox): copy the project to
+      <code class="inline">/opt/fleetbox</code> and run
+      <code class="inline">sudo bash scripts/install.sh</code>.</div>
+  </section>
+
+</main>
+
+<footer>
+  FleetBox · self-hosted vehicle &amp; fleet management ·
+  see <code class="inline">docs/proxmox-step-by-step.md</code> for the Markdown version.
+</footer>
+
+</body>
+</html>

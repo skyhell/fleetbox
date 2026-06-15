@@ -1,0 +1,19 @@
+services:
+  fleetbox:
+    build: .
+    image: fleetbox:latest
+    container_name: fleetbox
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # CHANGE THIS in production:
+      FLEETBOX_SECRET_KEY: "change-me-please-generate-a-random-value"
+      FLEETBOX_DATABASE_URL: "sqlite:////data/fleetbox.db"
+      FLEETBOX_DEFAULT_LOCALE: "de"
+      FLEETBOX_ALLOW_REGISTRATION: "true"
+    volumes:
+      - fleetbox-data:/data
+
+volumes:
+  fleetbox-data:

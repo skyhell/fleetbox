@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('app.name') }}{% endblock %} · {{ t('app.name') }}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/dashboard">🚗 {{ t('app.name') }}</a>
+  <nav class="mainnav">
+    {% if user %}
+      <a href="/dashboard">{{ t('nav.dashboard') }}</a>
+      <a href="/vehicles">{{ t('nav.vehicles') }}</a>
+      {% if user.is_admin %}<a href="/admin/users">{{ t('nav.admin') }}</a>{% endif %}
+    {% endif %}
+  </nav>
+  <div class="rightnav">
+    <span class="langswitch">
+      {% for loc in supported_locales %}
+        <a href="?lang={{ loc }}" class="{{ 'active' if loc == locale else '' }}">{{ loc|upper }}</a>
+      {% endfor %}
+    </span>
+    {% if user %}
+      <a class="userchip" href="/account/security" title="{{ t('account.security.title') }}">{{ user.username }}</a>
+      <a class="btn btn-sm" href="/logout">{{ t('nav.logout') }}</a>
+    {% else %}
+      <a class="btn btn-sm" href="/login">{{ t('nav.login') }}</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>{{ t('app.name') }} v{{ app_version }} · {{ t('app.tagline') }}</span>
+</footer>
+</body>
+</html>

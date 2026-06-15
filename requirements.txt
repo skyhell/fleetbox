@@ -1,0 +1,18 @@
+# Lower-bound pins so wheels resolve across Python 3.11–3.14.
+# For a fully reproducible deployment, freeze these with `pip freeze`.
+fastapi>=0.115
+uvicorn[standard]>=0.34
+sqlalchemy>=2.0
+pydantic>=2.10
+pydantic-settings>=2.7
+jinja2>=3.1
+python-multipart>=0.0.20
+itsdangerous>=2.2
+bcrypt>=4.2
+cryptography>=44.0
+pyotp>=2.9
+qrcode>=8.0
+python-dotenv>=1.0
+email-validator>=2.2
+
+# For the optional PostgreSQL backend, also install requirements-postgres.txt

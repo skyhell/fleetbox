@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ t('dashboard.title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('dashboard.title') }}</h1>
+
+<section class="grid">
+  <div class="card stat">
+    <span class="stat-value">{{ vehicles|length }}</span>
+    <span class="stat-label">{{ t('dashboard.vehicles') }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">{{ '%.2f'|format(total_spent) }}</span>
+    <span class="stat-label">{{ t('dashboard.total_spent') }}</span>
+  </div>
+</section>
+
+<section class="card">
+  <h2>{{ t('dashboard.due_services') }}</h2>
+  {% if due_items %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ t('nav.vehicles') }}</th>
+          <th>{{ t('service.field.name') }}</th>
+          <th>{{ t('service.due.next') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in due_items %}
+        <tr>
+          <td><a href="/vehicles/{{ item.vehicle.id }}">{{ item.vehicle.display_name }}</a></td>
+          <td>{{ item.interval.name }}</td>
+          <td>
+            {% if item.due_mileage %}{{ item.due_mileage }} km{% endif %}
+            {% if item.due_date %}{% if item.due_mileage %} · {% endif %}{{ item.due_date }}{% endif %}
+          </td>
+          <td><span class="badge badge-{{ item.status }}">{{ t('service.status.' + item.status) }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">{{ t('dashboard.no_due') }}</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('dashboard.recent_fuel') }}</h2>
+  {% if recent_fuel %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ t('fuel.field.date') }}</th>
+          <th>{{ t('nav.vehicles') }}</th>
+          <th>{{ t('fuel.field.quantity') }}</th>
+          <th>{{ t('fuel.field.total_cost') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in recent_fuel %}
+        <tr>
+          <td>{{ f.filled_on }}</td>
+          <td><a href="/vehicles/{{ f.vehicle_id }}">{{ f.vehicle.display_name }}</a></td>
+          <td>{{ '%.2f'|format(f.quantity) }}</td>
+          <td>{% if f.total_cost is not none %}{{ '%.2f'|format(f.total_cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">{{ t('common.none') }}</p>
+  {% endif %}
+</section>
+{% endblock %}

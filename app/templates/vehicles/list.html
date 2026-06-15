@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('vehicle.list.title') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('vehicle.list.title') }}</h1>
+  <a class="btn btn-primary" href="/vehicles/new">+ {{ t('vehicle.add') }}</a>
+</div>
+
+{% if vehicles %}
+<div class="grid">
+  {% for v in vehicles %}
+  <a class="card vehicle-card" href="/vehicles/{{ v.id }}">
+    <h3>{{ v.name }}</h3>
+    <p class="muted">{{ v.make or '' }} {{ v.model or '' }} {% if v.year %}· {{ v.year }}{% endif %}</p>
+    <p>
+      {% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}
+      <span class="muted">{{ v.mileage }} km · {{ t('fuel.type.' + v.fuel_type.value) }}</span>
+    </p>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card"><p class="muted">{{ t('vehicle.list.empty') }}</p></div>
+{% endif %}
+{% endblock %}
