@@ -20,7 +20,7 @@ a **Proxmox** host with a single script.
 - ⛽ **Fuel log** — liters, price per liter, total cost, consumption tracking
 - 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
-- 📎 **Documents & photos** — attach invoices, receipts and pictures to vehicles and services
+- 📎 **Documents & photos** — attach invoices, receipts and pictures; set one photo as the vehicle's title image
 - 💾 **CSV backup & migration** — export and re-import all your data
 - 👥 **Multi-user** — each user manages their own vehicles; an admin manages users
 - 🔐 **Two-factor authentication** — optional TOTP 2FA per user (Aegis, Google Authenticator, 1Password, …)

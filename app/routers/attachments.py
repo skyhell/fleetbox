@@ -88,6 +88,9 @@ async def upload_attachment(
         content_type=file.content_type,
         size=size,
     )
+    # The first uploaded image becomes the vehicle's title image automatically.
+    if attachment.is_image and vehicle.primary_image is None:
+        attachment.is_primary = True
     db.add(attachment)
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
@@ -117,6 +120,28 @@ def download_attachment(
         filename=attachment.filename,
         content_disposition_type=disposition,
     )
+
+
+@router.post("/attachments/{attachment_id}/primary")
+def set_primary_attachment(
+    vehicle_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    attachment = db.get(Attachment, attachment_id)
+    if attachment is None or attachment.vehicle_id != vehicle.id or not attachment.is_image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Toggle: clicking the current title image clears it; otherwise this image
+    # becomes the title image and any previous one is unset.
+    make_primary = not attachment.is_primary
+    for other in vehicle.attachments:
+        other.is_primary = False
+    attachment.is_primary = make_primary
+    db.commit()
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/attachments/{attachment_id}/delete")

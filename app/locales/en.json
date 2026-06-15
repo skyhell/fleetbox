@@ -124,6 +124,8 @@
   "attachment.field.file": "File",
   "attachment.field.title": "Title",
   "attachment.field.record": "Link to service record",
+  "attachment.set_primary": "Set as title image",
+  "attachment.is_primary": "Title image",
   "attachment.hint": "Images (JPG, PNG, GIF, WebP) and PDF, up to 10 MB.",
   "attachment.too_large": "The file is too large.",
   "attachment.unsupported": "Unsupported file type.",

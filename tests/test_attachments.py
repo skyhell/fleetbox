@@ -90,6 +90,73 @@ def test_upload_download_and_delete_image(client):
     assert client.get(f"{vehicle_url}/attachments/{attachment_id}").status_code == 404
 
 
+def _attachment_ids(client, vehicle_url):
+    page = client.get(vehicle_url).text
+    # Each attachment appears in several URLs (preview, links, forms, hero) —
+    # de-duplicate to unique ids, sorted ascending.
+    return sorted({int(i) for i in re.findall(rf"{vehicle_url}/attachments/(\d+)", page)})
+
+
+def test_first_image_becomes_title_image_and_toggles(client):
+    from app import database
+    from app.models import Attachment
+
+    _register(client, "pic", "pic@example.com")
+    vehicle_url = _create_vehicle(client)
+
+    # First image -> automatically the title image.
+    _upload(client, vehicle_url, name="a.png")
+    aid1 = _attachment_ids(client, vehicle_url)[0]
+
+    db = database.SessionLocal()
+    try:
+        assert db.get(Attachment, int(aid1)).is_primary is True
+    finally:
+        db.close()
+
+    # The detail header shows the title image.
+    assert 'class="vehicle-hero"' in client.get(vehicle_url).text
+
+    # Toggling it off clears the title image.
+    token = _csrf(client, vehicle_url)
+    resp = client.post(
+        f"{vehicle_url}/attachments/{aid1}/primary",
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    db = database.SessionLocal()
+    try:
+        assert db.get(Attachment, int(aid1)).is_primary is False
+    finally:
+        db.close()
+
+
+def test_setting_primary_clears_previous(client):
+    from app import database
+    from app.models import Attachment
+
+    _register(client, "two", "two@example.com")
+    vehicle_url = _create_vehicle(client)
+    _upload(client, vehicle_url, name="a.png")
+    _upload(client, vehicle_url, name="b.png")
+    first, second = _attachment_ids(client, vehicle_url)[:2]
+
+    # Promote the second image; the first must lose primary status.
+    token = _csrf(client, vehicle_url)
+    client.post(
+        f"{vehicle_url}/attachments/{second}/primary",
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    db = database.SessionLocal()
+    try:
+        assert db.get(Attachment, first).is_primary is False
+        assert db.get(Attachment, second).is_primary is True
+    finally:
+        db.close()
+
+
 def test_unsupported_type_rejected(client):
     _register(client, "bob", "bob@example.com")
     vehicle_url = _create_vehicle(client)

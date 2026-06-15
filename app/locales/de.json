@@ -124,6 +124,8 @@
   "attachment.field.file": "Datei",
   "attachment.field.title": "Titel",
   "attachment.field.record": "Mit Service-Eintrag verknüpfen",
+  "attachment.set_primary": "Als Titelbild festlegen",
+  "attachment.is_primary": "Titelbild",
   "attachment.hint": "Bilder (JPG, PNG, GIF, WebP) und PDF, bis zu 10 MB.",
   "attachment.too_large": "Die Datei ist zu groß.",
   "attachment.unsupported": "Nicht unterstützter Dateityp.",

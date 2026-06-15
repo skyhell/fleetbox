@@ -126,6 +126,13 @@ class Vehicle(Base):
         """i18n key for the reading field label, e.g. ``vehicle.field.reading_km``."""
         return f"vehicle.field.reading_{self.usage_unit.value}"
 
+    @property
+    def primary_image(self) -> Attachment | None:
+        """The image attachment marked as the vehicle's title image, if any."""
+        return next(
+            (a for a in self.attachments if a.is_primary and a.is_image), None
+        )
+
 
 class ServiceRecord(Base):
     """A single maintenance event: oil change, brake replacement, etc."""
@@ -273,6 +280,8 @@ class Attachment(Base):
     stored_name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     content_type: Mapped[str] = mapped_column(String(120), nullable=False)
     size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Whether this image is the vehicle's title image (at most one per vehicle).
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime, default=_utcnow, nullable=False
     )

@@ -5,6 +5,11 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Vehicle title image**: mark any uploaded photo as the vehicle's title image
+  (the first uploaded image is chosen automatically). It is shown in the vehicle
+  list cards and the detail header, and can be switched or cleared with one click.
+
 ## [0.2.0] - 2026-06-15
 
 ### Added

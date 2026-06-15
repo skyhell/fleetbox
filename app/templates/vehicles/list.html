@@ -10,6 +10,9 @@
 <div class="grid">
   {% for v in vehicles %}
   <a class="card vehicle-card" href="/vehicles/{{ v.id }}">
+    {% if v.primary_image %}
+    <img class="vehicle-thumb" src="/vehicles/{{ v.id }}/attachments/{{ v.primary_image.id }}" alt="{{ v.name }}">
+    {% endif %}
     <h3>{{ v.name }}</h3>
     <p class="muted">{{ v.make or '' }} {{ v.model or '' }} {% if v.year %}· {{ v.year }}{% endif %}</p>
     <p>

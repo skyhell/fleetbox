@@ -3,6 +3,10 @@
 {% block content %}
 <div class="page-head">
   <div>
+    {% if vehicle.primary_image %}
+    <img class="vehicle-hero" src="/vehicles/{{ vehicle.id }}/attachments/{{ vehicle.primary_image.id }}"
+         alt="{{ vehicle.name }}">
+    {% endif %}
     <h1>{{ vehicle.name }}</h1>
     <p class="muted">
       {{ vehicle.make or '' }} {{ vehicle.model or '' }}
@@ -177,8 +181,18 @@
         </a>
         <span class="muted small">{{ (a.size / 1024) | round | int }} KB</span>
         {% if a.service_record %}<span class="muted small">· {{ a.service_record.title }}</span>{% endif %}
+        {% if a.is_image %}
+        <form method="post" action="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}/primary">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="star {{ 'is-primary' if a.is_primary else '' }}" type="submit"
+                  title="{{ t('attachment.set_primary') }}">{{ '★' if a.is_primary else '☆' }}
+            <span class="small">{{ t('attachment.is_primary') if a.is_primary else t('attachment.set_primary') }}</span>
+          </button>
+        </form>
+        {% endif %}
       </div>
-      <form method="post" action="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}/delete"
+      <form class="attachment-delete" method="post"
+            action="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}/delete"
             data-confirm="{{ t('common.delete') }}?">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button class="btn btn-sm btn-danger" type="submit">×</button>
