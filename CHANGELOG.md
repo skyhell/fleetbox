@@ -6,6 +6,9 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- `scripts/update.sh` — one-command in-place update for Git-based installs:
+  backs up the database, pulls the latest code, refreshes dependencies and
+  restarts the service (schema auto-migration runs on restart).
 - Lightweight **automatic schema migration** on startup: missing columns are
   added to existing tables via `ALTER TABLE … ADD COLUMN` (with a default derived
   from the model), so upgrades no longer require a manual `ALTER` or a database

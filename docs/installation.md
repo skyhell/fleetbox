@@ -84,3 +84,21 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 See [configuration.md](configuration.md) for all settings.
+
+## Updating
+
+For a Git-based install (Proxmox or bare metal), run the update script **inside
+the machine as root**. It backs up the SQLite database, pulls the latest code,
+refreshes dependencies and restarts the service; the additive schema migration
+runs automatically on restart. Your `.env` and `data/` are left untouched.
+
+```bash
+cd /opt/fleetbox && sudo bash scripts/update.sh
+# or directly:
+curl -fsSL https://raw.githubusercontent.com/skyhell/fleetbox/main/scripts/update.sh | sudo bash
+```
+
+On Proxmox, enter the container first with `pct enter <CTID>`. The script honours
+`INSTALL_DIR`, `SERVICE_USER`, `SERVICE_NAME` and `REPO_BRANCH` environment
+variables. Local-source (non-Git) installs are updated by re-copying the source
+and re-running `scripts/install.sh`.
