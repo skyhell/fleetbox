@@ -5,6 +5,21 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-15
+
+### Added
+- **Tyre / seasonal tracker**: manage summer, winter and all-season tyre sets
+  per vehicle (label, size, storage location, tread depth). Mount/unmount a set
+  with one click — mounting records the date and the current reading and
+  automatically unmounts the previous set.
+- **Reminders & email notifications**: a new `fleetbox send-reminders` command
+  emails each opted-in user a digest of due/overdue service intervals and
+  seasonal tyre-change suggestions. Seasonal suggestions also appear on the
+  dashboard. SMTP is configured via `FLEETBOX_SMTP_*`; the switch months are
+  configurable (`FLEETBOX_WINTER_TIRE_MONTH` / `FLEETBOX_SUMMER_TIRE_MONTH`).
+  Users can opt out under Account → Notifications. Run the command from cron or
+  a systemd timer (see [configuration.md](docs/configuration.md)).
+
 ## [0.4.0] - 2026-06-15
 
 ### Added

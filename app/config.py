@@ -73,6 +73,30 @@ class Settings(BaseSettings):
     # Link target for the "Documentation" entry in the UI footer.
     docs_url: str = "https://github.com/skyhell/fleetbox/tree/main/docs"
 
+    # Public base URL (e.g. https://fleetbox.example.com), used to build links in
+    # reminder emails. Leave empty to omit the link.
+    base_url: str = ""
+
+    # Email (SMTP) for reminder notifications. Reminders are only sent when a host
+    # is configured, by the `fleetbox send-reminders` command (run from cron or a
+    # systemd timer).
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""  # falls back to smtp_user
+    smtp_starttls: bool = True
+    smtp_ssl: bool = False  # implicit TLS (usually port 465); overrides STARTTLS
+
+    # Seasonal tyre-change reminder months (1-12). Defaults follow the German
+    # "O bis O" rule of thumb: switch to winter tyres in October, summer in April.
+    winter_tire_month: int = 10
+    summer_tire_month: int = 4
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host)
+
     @property
     def upload_path(self) -> Path:
         """Absolute path to the upload directory (created on first use)."""

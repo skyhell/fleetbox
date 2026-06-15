@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import FuelLog, User, Vehicle
+from app.reminders import due_tire_switch
 from app.security import require_user
 from app.templating import render
 
@@ -40,6 +44,16 @@ def dashboard(
     # Overdue first, then due soon.
     due_items.sort(key=lambda i: 0 if i["status"] == "overdue" else 1)
 
+    # Seasonal tyre-change suggestions (only in the configured switch months).
+    today = date.today()
+    season_reminders = []
+    for vehicle in vehicles:
+        season = due_tire_switch(
+            vehicle, today, settings.winter_tire_month, settings.summer_tire_month
+        )
+        if season is not None:
+            season_reminders.append({"vehicle": vehicle, "season": season})
+
     vehicle_ids = [v.id for v in vehicles]
     recent_fuel = []
     total_spent = 0.0
@@ -61,6 +75,7 @@ def dashboard(
         "dashboard.html",
         vehicles=vehicles,
         due_items=due_items,
+        season_reminders=season_reminders,
         recent_fuel=recent_fuel,
         total_spent=total_spent,
     )

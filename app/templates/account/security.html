@@ -27,4 +27,18 @@
     </form>
   {% endif %}
 </section>
+
+<section class="card narrow">
+  <h2>{{ t('notify.title') }}</h2>
+  <p class="muted">{{ t('notify.hint') }}</p>
+  <form method="post" action="/account/notifications">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="checkbox">
+      <input type="checkbox" name="notify_email" value="1"
+             {{ 'checked' if user.notify_email else '' }}>
+      {{ t('notify.email_label') }}
+    </label>
+    <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+  </form>
+</section>
 {% endblock %}

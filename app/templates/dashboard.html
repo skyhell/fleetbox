@@ -45,6 +45,20 @@
   {% endif %}
 </section>
 
+{% if season_reminders %}
+<section class="card">
+  <h2>{{ t('reminder.season.title') }}</h2>
+  <ul class="reminder-list">
+    {% for item in season_reminders %}
+    <li>
+      🛞 <a href="/vehicles/{{ item.vehicle.id }}">{{ item.vehicle.display_name }}</a> —
+      {{ t('reminder.tire_switch_' + item.season) }}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>{{ t('dashboard.recent_fuel') }}</h2>
   {% if recent_fuel %}

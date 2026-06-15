@@ -46,6 +46,15 @@
   "dashboard.recent_fuel": "Letzte Tankvorgänge",
   "dashboard.total_spent": "Gesamtausgaben",
 
+  "reminder.season.title": "Saison-Erinnerungen",
+  "reminder.tire_switch": "Reifenwechsel",
+  "reminder.tire_switch_winter": "Zeit für Winterreifen.",
+  "reminder.tire_switch_summer": "Zeit für Sommerreifen.",
+  "reminder.subject": "FleetBox: {count} Erinnerung(en)",
+  "reminder.intro": "Folgende Punkte sind fällig oder stehen an:",
+  "reminder.open": "In FleetBox öffnen: {url}",
+  "reminder.footer": "— FleetBox",
+
   "vehicle.list.title": "Meine Fahrzeuge",
   "vehicle.list.empty": "Noch keine Fahrzeuge. Lege dein erstes an!",
   "vehicle.add": "Fahrzeug hinzufügen",
@@ -134,6 +143,23 @@
   "attachment.too_large": "Die Datei ist zu groß.",
   "attachment.unsupported": "Nicht unterstützter Dateityp.",
 
+  "tire.title": "Reifen",
+  "tire.add": "Reifensatz hinzufügen",
+  "tire.field.season": "Saison",
+  "tire.field.label": "Bezeichnung",
+  "tire.field.label_hint": "z. B. Continental WinterContact",
+  "tire.field.dimension": "Dimension",
+  "tire.field.storage": "Lagerort",
+  "tire.field.tread": "Profiltiefe",
+  "tire.field.mounted_now": "Jetzt montiert",
+  "tire.season.summer": "Sommer",
+  "tire.season.winter": "Winter",
+  "tire.season.all_season": "Ganzjahr",
+  "tire.mount": "Montieren",
+  "tire.unmount": "Demontieren",
+  "tire.mounted": "Montiert",
+  "tire.stored": "Eingelagert",
+
   "fuel.type.petrol": "Benzin",
   "fuel.type.diesel": "Diesel",
   "fuel.type.electric": "Elektro",
@@ -161,6 +187,11 @@
   "backup.import.done": "Import abgeschlossen: {vehicles} Fahrzeuge, {records} Service-Einträge, {intervals} Intervalle, {fuel} Tankvorgänge hinzugefügt. {skipped} Zeilen übersprungen.",
 
   "account.security.title": "Kontosicherheit",
+
+  "notify.title": "Benachrichtigungen",
+  "notify.hint": "Erhalte E-Mail-Erinnerungen für fällige Services und den saisonalen Reifenwechsel.",
+  "notify.email_label": "E-Mail-Erinnerungen erhalten",
+  "notify.saved": "Benachrichtigungseinstellungen gespeichert.",
 
   "twofa.title": "Zwei-Faktor-Authentifizierung (2FA)",
   "twofa.status.enabled": "Aktiviert",

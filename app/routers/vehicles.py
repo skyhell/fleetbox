@@ -94,6 +94,9 @@ def vehicle_detail(
     attachments = sorted(
         vehicle.attachments, key=lambda a: a.uploaded_at, reverse=True
     )
+    tire_sets = sorted(
+        vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
+    )
     return render(
         request,
         "vehicles/detail.html",
@@ -102,6 +105,7 @@ def vehicle_detail(
         records=records,
         fuel_logs=fuel_logs,
         attachments=attachments,
+        tire_sets=tire_sets,
     )
 
 

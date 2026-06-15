@@ -46,6 +46,15 @@
   "dashboard.recent_fuel": "Recent refuelings",
   "dashboard.total_spent": "Total spent",
 
+  "reminder.season.title": "Seasonal reminders",
+  "reminder.tire_switch": "Tyre change",
+  "reminder.tire_switch_winter": "Time to fit winter tyres.",
+  "reminder.tire_switch_summer": "Time to fit summer tyres.",
+  "reminder.subject": "FleetBox: {count} reminder(s)",
+  "reminder.intro": "The following items are due or coming up:",
+  "reminder.open": "Open in FleetBox: {url}",
+  "reminder.footer": "— FleetBox",
+
   "vehicle.list.title": "My vehicles",
   "vehicle.list.empty": "No vehicles yet. Add your first one!",
   "vehicle.add": "Add vehicle",
@@ -134,6 +143,23 @@
   "attachment.too_large": "The file is too large.",
   "attachment.unsupported": "Unsupported file type.",
 
+  "tire.title": "Tyres",
+  "tire.add": "Add tyre set",
+  "tire.field.season": "Season",
+  "tire.field.label": "Label",
+  "tire.field.label_hint": "e.g. Continental WinterContact",
+  "tire.field.dimension": "Size",
+  "tire.field.storage": "Storage location",
+  "tire.field.tread": "Tread depth",
+  "tire.field.mounted_now": "Mounted now",
+  "tire.season.summer": "Summer",
+  "tire.season.winter": "Winter",
+  "tire.season.all_season": "All-season",
+  "tire.mount": "Mount",
+  "tire.unmount": "Unmount",
+  "tire.mounted": "Mounted",
+  "tire.stored": "In storage",
+
   "fuel.type.petrol": "Petrol",
   "fuel.type.diesel": "Diesel",
   "fuel.type.electric": "Electric",
@@ -161,6 +187,11 @@
   "backup.import.done": "Import finished: {vehicles} vehicles, {records} service records, {intervals} intervals, {fuel} fuel logs added. {skipped} rows skipped.",
 
   "account.security.title": "Account security",
+
+  "notify.title": "Notifications",
+  "notify.hint": "Receive email reminders for due services and seasonal tyre changes.",
+  "notify.email_label": "Receive email reminders",
+  "notify.saved": "Notification settings saved.",
 
   "twofa.title": "Two-factor authentication (2FA)",
   "twofa.status.enabled": "Enabled",

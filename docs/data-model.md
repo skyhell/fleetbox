@@ -5,6 +5,7 @@ User 1───* Vehicle 1───* ServiceRecord 0───* Attachment
                    1───* ServiceInterval
                    1───* FuelLog
                    1───* Attachment
+                   1───* TireSet
 ```
 
 ## User
@@ -21,6 +22,7 @@ Account with login credentials. `is_admin` users can manage other users.
 | `locale`         | str      | `de` / `en`                             |
 | `totp_secret`    | str/null | base32 TOTP secret (set when 2FA on)    |
 | `totp_enabled`   | bool     | whether 2FA is required at login        |
+| `notify_email`   | bool     | receive email reminders (default on)    |
 
 ## Vehicle
 A vehicle owned by exactly one user.
@@ -98,9 +100,31 @@ PDF, capped at `FLEETBOX_MAX_UPLOAD_BYTES` (10 MiB by default).
 | `is_primary`        | bool     | this image is the vehicle's title image (≤1 per vehicle) |
 | `uploaded_at`       | datetime |                                                  |
 
+## TireSet
+A set of tyres for a vehicle. The seasonal reminder (dashboard + email) fires
+in the configured month when the vehicle owns a set for the upcoming season that
+is not the one currently mounted.
+
+| Field              | Type     | Notes                                          |
+|--------------------|----------|------------------------------------------------|
+| `vehicle_id`       | int FK   | owning vehicle (cascade delete)                |
+| `season`           | enum     | `summer` / `winter` / `all_season`             |
+| `label`            | str/null | e.g. brand / model                             |
+| `dimension`        | str/null | e.g. `205/55 R16`                              |
+| `storage_location` | str/null | where the set is stored when off the vehicle   |
+| `tread_depth_mm`   | float    | optional                                       |
+| `is_mounted`       | bool     | currently on the vehicle (≤1 mounted per vehicle) |
+| `mounted_on`       | date     | recorded when mounted                          |
+| `mounted_mileage`  | int      | vehicle reading when mounted                   |
+
+Mounting a set automatically unmounts any other set on the vehicle.
+
 ## ServiceType values
 `oil_change`, `brake_replacement`, `wear_part`, `inspection`, `tyre_change`,
 `repair`, `other`
+
+## TireSeason values
+`summer`, `winter`, `all_season`
 
 ## FuelType values
 `petrol`, `diesel`, `electric`, `lpg`, `cng`, `hybrid`, `other`

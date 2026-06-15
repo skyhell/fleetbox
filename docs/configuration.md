@@ -21,6 +21,16 @@ FleetBox is configured through environment variables (optionally loaded from a
 | `FLEETBOX_UPLOAD_DIR`        | `./data/uploads`                 | Where uploaded documents/photos are stored. Relative paths resolve against the project root.    |
 | `FLEETBOX_MAX_UPLOAD_BYTES`  | `10485760` (10 MiB)              | Maximum size per uploaded file, in bytes.                                                       |
 | `FLEETBOX_DOCS_URL`          | project docs on GitHub           | Target of the "Documentation" link in the UI footer. Set empty to hide it.                      |
+| `FLEETBOX_BASE_URL`          | *(empty)*                        | Public URL used for links in reminder emails. Empty omits the link.                             |
+| `FLEETBOX_SMTP_HOST`         | *(empty)*                        | SMTP server for reminder emails. Reminders are only sent when this is set.                       |
+| `FLEETBOX_SMTP_PORT`         | `587`                            | SMTP port.                                                                                       |
+| `FLEETBOX_SMTP_USER`         | *(empty)*                        | SMTP username (login). Leave empty for an unauthenticated relay.                                 |
+| `FLEETBOX_SMTP_PASSWORD`     | *(empty)*                        | SMTP password.                                                                                   |
+| `FLEETBOX_SMTP_FROM`         | *(falls back to user)*           | From address for reminder emails.                                                                |
+| `FLEETBOX_SMTP_STARTTLS`     | `true`                           | Upgrade the connection with STARTTLS (typical for port 587).                                     |
+| `FLEETBOX_SMTP_SSL`          | `false`                          | Use implicit TLS (typical for port 465); overrides STARTTLS.                                     |
+| `FLEETBOX_WINTER_TIRE_MONTH` | `10`                             | Month (1-12) in which to remind users to fit winter tyres.                                       |
+| `FLEETBOX_SUMMER_TIRE_MONTH` | `4`                              | Month (1-12) in which to remind users to fit summer tyres.                                       |
 
 ## File uploads
 
@@ -43,6 +53,56 @@ child rows are linked to their vehicle by name. Vehicles that already exist (by
 name) are left untouched, and rows referencing an unknown vehicle are skipped.
 For a complete backup, also copy the database and the upload directory
 (`FLEETBOX_UPLOAD_DIR`); uploaded files themselves are not part of the CSV export.
+
+## Reminders & notifications
+
+FleetBox can email each user a digest of what is due:
+
+- **Service intervals** that are due soon or overdue.
+- **Seasonal tyre changes** — when, in `FLEETBOX_WINTER_TIRE_MONTH` /
+  `FLEETBOX_SUMMER_TIRE_MONTH`, a vehicle owns a tyre set for the upcoming
+  season that is not the one currently mounted (see the tyre tracker on each
+  vehicle page). Seasonal suggestions also appear on the dashboard.
+
+Each user can opt out under **Account → Notifications** (`notify_email`).
+
+Configure SMTP (see the table above), then run the command periodically — it
+sends one email per user who has something due:
+
+```bash
+python -m app.cli send-reminders            # send now
+python -m app.cli send-reminders --dry-run  # preview without sending or needing SMTP
+```
+
+Schedule it once a day, e.g. with **cron**:
+
+```cron
+0 8 * * *  cd /opt/fleetbox && /opt/fleetbox/.venv/bin/python -m app.cli send-reminders
+```
+
+…or a **systemd timer** (`/etc/systemd/system/fleetbox-reminders.{service,timer}`):
+
+```ini
+# fleetbox-reminders.service
+[Service]
+Type=oneshot
+User=fleetbox
+WorkingDirectory=/opt/fleetbox
+EnvironmentFile=/opt/fleetbox/.env
+ExecStart=/opt/fleetbox/.venv/bin/python -m app.cli send-reminders
+
+# fleetbox-reminders.timer
+[Timer]
+OnCalendar=*-*-* 08:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+```bash
+systemctl enable --now fleetbox-reminders.timer
+```
 
 ## Running behind a reverse proxy (HTTPS)
 

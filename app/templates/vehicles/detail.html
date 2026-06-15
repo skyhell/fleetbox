@@ -225,6 +225,92 @@
   </details>
 </section>
 
+{# ---- Tyres ---- #}
+<section class="card">
+  <h2>{{ t('tire.title') }}</h2>
+  {% if tire_sets %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('tire.field.season') }}</th>
+        <th>{{ t('tire.field.label') }}</th>
+        <th>{{ t('tire.field.dimension') }}</th>
+        <th>{{ t('tire.field.storage') }}</th>
+        <th>{{ t('tire.field.tread') }}</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ts in tire_sets %}
+      <tr>
+        <td>{{ t(ts.season_label_key) }}</td>
+        <td>{{ ts.label or t('common.none') }}</td>
+        <td>{{ ts.dimension or t('common.none') }}</td>
+        <td>{{ ts.storage_location or t('common.none') }}</td>
+        <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>
+          {% if ts.is_mounted %}
+            <span class="badge badge-ok">{{ t('tire.mounted') }}</span>
+            {% if ts.mounted_on %}<br><span class="muted small">{{ ts.mounted_on }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage }} {{ vehicle.usage_unit_label }}{% endif %}</span>{% endif %}
+          {% else %}
+            <span class="muted small">{{ t('tire.stored') }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="row-actions">
+            {% if ts.is_mounted %}
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unmount">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm" type="submit">{{ t('tire.unmount') }}</button>
+            </form>
+            {% else %}
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/mount">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm" type="submit">{{ t('tire.mount') }}</button>
+            </form>
+            {% endif %}
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/delete"
+                  data-confirm="{{ t('common.delete') }}?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm btn-danger" type="submit">×</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+
+  <details class="adder">
+    <summary class="btn btn-sm">+ {{ t('tire.add') }}</summary>
+    <form method="post" action="/vehicles/{{ vehicle.id }}/tires" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-row">
+        <label>{{ t('tire.field.season') }} <span class="req">*</span>
+          <select name="season">
+            {% for s in TireSeason %}<option value="{{ s.value }}">{{ t('tire.season.' + s.value) }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>{{ t('tire.field.label') }}<input type="text" name="label" placeholder="{{ t('tire.field.label_hint') }}"></label>
+      </div>
+      <div class="form-row">
+        <label>{{ t('tire.field.dimension') }}<input type="text" name="dimension" placeholder="205/55 R16"></label>
+        <label>{{ t('tire.field.storage') }}<input type="text" name="storage_location"></label>
+      </div>
+      <div class="form-row">
+        <label>{{ t('tire.field.tread') }}<input type="text" name="tread_depth_mm" inputmode="decimal"></label>
+        <label class="checkbox">
+          <input type="checkbox" name="is_mounted" value="1"> {{ t('tire.field.mounted_now') }}
+        </label>
+      </div>
+      <label>{{ t('service.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+    </form>
+  </details>
+</section>
+
 {# ---- Fuel log ---- #}
 <section class="card">
   <h2>{{ t('fuel.log') }}</h2>

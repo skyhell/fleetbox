@@ -4,6 +4,7 @@ Usage::
 
     python -m app.cli init-db
     python -m app.cli create-admin --username admin --email a@b.c --password secret
+    python -m app.cli send-reminders [--dry-run]
     python -m app.cli serve
 """
 
@@ -85,6 +86,58 @@ def _cmd_disable_2fa(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_send_reminders(args: argparse.Namespace) -> int:
+    """Email each opted-in user a digest of due services and seasonal tyre swaps.
+
+    Meant to be run periodically (cron / systemd timer). With ``--dry-run`` it
+    prints what would be sent without contacting an SMTP server.
+    """
+    from app.mailer import send_email
+    from app.reminders import collect_for_user, render_email
+
+    init_db()
+    if not settings.smtp_configured and not args.dry_run:
+        print(
+            "SMTP is not configured (set FLEETBOX_SMTP_HOST). "
+            "Use --dry-run to preview without sending.",
+            file=sys.stderr,
+        )
+        return 1
+
+    db = SessionLocal()
+    sent = failed = 0
+    try:
+        users = (
+            db.query(User)
+            .filter(User.is_active.is_(True), User.notify_email.is_(True))
+            .all()
+        )
+        for user in users:
+            if not user.email:
+                continue
+            reminders = collect_for_user(db, user)
+            if not reminders:
+                continue
+            subject, body = render_email(reminders, user.locale, settings.base_url)
+            if args.dry_run:
+                print(f"[dry-run] {user.email}: {len(reminders)} reminder(s)")
+                for r in reminders:
+                    print(f"    - [{r.vehicle}] {r.title}: {r.detail}")
+                continue
+            try:
+                send_email(user.email, subject, body)
+                sent += 1
+            except Exception as exc:  # noqa: BLE001 - report and continue
+                failed += 1
+                print(f"Failed to email {user.email}: {exc}", file=sys.stderr)
+    finally:
+        db.close()
+
+    if not args.dry_run:
+        print(f"Sent {sent} reminder email(s); {failed} failed.")
+    return 1 if failed else 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -121,6 +174,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_2fa.add_argument("--username")
     p_2fa.add_argument("--email")
     p_2fa.set_defaults(func=_cmd_disable_2fa)
+
+    p_rem = sub.add_parser(
+        "send-reminders", help="Email due-service and seasonal tyre reminders"
+    )
+    p_rem.add_argument(
+        "--dry-run", action="store_true", help="Print what would be sent, send nothing"
+    )
+    p_rem.set_defaults(func=_cmd_send_reminders)
 
     p_serve = sub.add_parser("serve", help="Run the web server")
     p_serve.add_argument("--host")

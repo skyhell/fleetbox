@@ -54,6 +54,14 @@ class FuelType(str, enum.Enum):
     other = "other"
 
 
+class TireSeason(str, enum.Enum):
+    """Seasonal classification of a set of tyres."""
+
+    summer = "summer"
+    winter = "winter"
+    all_season = "all_season"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -66,6 +74,8 @@ class User(Base):
     locale: Mapped[str] = mapped_column(String(5), default="de", nullable=False)
     totp_secret: Mapped[str | None] = mapped_column(String(64))
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Whether to send this user email reminders (due services, seasonal tyres).
+    notify_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicles: Mapped[list[Vehicle]] = relationship(
@@ -109,6 +119,9 @@ class Vehicle(Base):
     attachments: Mapped[list[Attachment]] = relationship(
         back_populates="vehicle", cascade="all, delete-orphan"
     )
+    tire_sets: Mapped[list[TireSet]] = relationship(
+        back_populates="vehicle", cascade="all, delete-orphan"
+    )
 
     @property
     def display_name(self) -> str:
@@ -132,6 +145,11 @@ class Vehicle(Base):
         return next(
             (a for a in self.attachments if a.is_primary and a.is_image), None
         )
+
+    @property
+    def mounted_tire_set(self) -> TireSet | None:
+        """The tyre set currently mounted on the vehicle, if any."""
+        return next((t for t in self.tire_sets if t.is_mounted), None)
 
 
 class ServiceRecord(Base):
@@ -294,3 +312,37 @@ class Attachment(Base):
     @property
     def is_image(self) -> bool:
         return self.content_type.startswith("image/")
+
+
+class TireSet(Base):
+    """A set of tyres for a vehicle (summer / winter / all-season).
+
+    Tracks where the set is stored, when it was last mounted and at what
+    reading, so FleetBox can remind the owner to switch tyres each season.
+    """
+
+    __tablename__ = "tire_sets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(
+        ForeignKey("vehicles.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    season: Mapped[TireSeason] = mapped_column(
+        Enum(TireSeason), default=TireSeason.summer, nullable=False
+    )
+    label: Mapped[str | None] = mapped_column(String(160))  # e.g. brand / model
+    dimension: Mapped[str | None] = mapped_column(String(40))  # e.g. 205/55 R16
+    storage_location: Mapped[str | None] = mapped_column(String(120))
+    tread_depth_mm: Mapped[float | None] = mapped_column(Float)
+    is_mounted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    mounted_on: Mapped[date | None] = mapped_column(Date)
+    mounted_mileage: Mapped[int | None] = mapped_column(Integer)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+
+    vehicle: Mapped[Vehicle] = relationship(back_populates="tire_sets")
+
+    @property
+    def season_label_key(self) -> str:
+        """i18n key for the season, e.g. ``tire.season.winter``."""
+        return f"tire.season.{self.season.value}"

@@ -21,6 +21,20 @@ def security_page(request: Request, user: User = Depends(require_user)):
     return render(request, "account/security.html")
 
 
+@router.post("/notifications")
+def update_notifications(
+    request: Request,
+    notify_email: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Toggle whether the user receives email reminders."""
+    user.notify_email = bool(notify_email)
+    db.add(user)
+    db.commit()
+    return render(request, "account/security.html", message="notify.saved")
+
+
 @router.post("/2fa/begin")
 def begin_2fa(request: Request, user: User = Depends(require_user)):
     """Generate a candidate secret and show the QR code for enrollment."""
