@@ -121,6 +121,18 @@ curl -I https://fleetbox.example.com/healthz
 You should get `HTTP/2 200`. Then log in over `https://` — the browser should
 keep the session (the `Secure` cookie now works because the connection is HTTPS).
 
+## Installing as an app (PWA)
+
+FleetBox is a Progressive Web App: it can be installed to a phone's home screen
+or a desktop as a standalone app. This **requires HTTPS** — browsers only
+register a service worker on a secure origin (the sole exception is
+`http://localhost` during development). Once served over HTTPS as above:
+
+- **Android / Chrome / Edge**: an install prompt appears, or use the browser
+  menu → *Install app*.
+- **iOS / Safari**: there is no automatic prompt — open the Share sheet and tap
+  *Add to Home Screen*. The app then runs full-screen with its own icon.
+
 ## Troubleshooting
 
 | Symptom | Cause / fix |
@@ -129,3 +141,4 @@ keep the session (the `Secure` cookie now works because the connection is HTTPS)
 | `502 Bad Gateway` | Wrong upstream IP/port, or FleetBox not running. Check `systemctl status fleetbox` and the container IP. |
 | Redirects go to `http://` | Missing `proxy_set_header X-Forwarded-Proto $scheme;` (FleetBox uses relative redirects, but this keeps everything consistent). |
 | Cert errors on a LAN host | No public domain → Let's Encrypt won't issue. Use an internal CA. |
+| No "Install app" option / offline page never shows | The service worker only registers over HTTPS (or `http://localhost`). Serve FleetBox over HTTPS. |

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+     role="img" aria-label="FleetBox">
+  <rect width="100" height="100" fill="#2563eb"/>
+  <polygon points="34,48 42,33 62,33 70,48" fill="#fff"/>
+  <polygon points="40.5,47 45,37 50.5,37 50.5,47" fill="#2563eb"/>
+  <polygon points="53.5,47 53.5,37 60,37 64.5,47" fill="#2563eb"/>
+  <rect x="17" y="46" width="66" height="18" rx="6" fill="#fff"/>
+  <circle cx="80.2" cy="52.2" r="2.2" fill="#facc15"/>
+  <circle cx="33" cy="68.5" r="8.5" fill="#1f2933"/>
+  <circle cx="67" cy="68.5" r="8.5" fill="#1f2933"/>
+  <circle cx="33" cy="68.5" r="3.5" fill="#fff"/>
+  <circle cx="67" cy="68.5" r="3.5" fill="#fff"/>
+</svg>

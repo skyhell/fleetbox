@@ -41,10 +41,10 @@ fleetbox/
 │   ├── charts.py          # Dependency-free SVG chart rendering
 │   ├── cli.py             # init-db / create-admin / disable-2fa / serve
 │   ├── routers/           # auth, account, dashboard, vehicles, service, fuel,
-│   │                      #   stats, attachments, backup, admin
+│   │                      #   stats, attachments, backup, admin, pwa
 │   ├── templates/         # Jinja2 HTML templates
 │   ├── locales/           # de.json, en.json translation catalogs
-│   └── static/            # CSS / assets
+│   └── static/            # CSS / JS / app icons / offline.html
 ├── proxmox/fleetbox.sh    # Proxmox LXC installer
 ├── docs/                  # English documentation
 └── tests/                 # pytest test suite
@@ -62,6 +62,24 @@ fleetbox/
   external library, so they work under the strict Content-Security-Policy.
 - **i18n** is intentionally dependency-free: flat JSON catalogs and a `t()`
   helper injected into every template. See [i18n.md](i18n.md).
+- **PWA**: `app/routers/pwa.py` serves the web app manifest
+  (`/manifest.webmanifest`) and the service worker (`/sw.js`, served from the
+  root so its scope covers the whole app). The service worker's cache name is
+  tied to the app version, so each release invalidates the old precache. It
+  caches only `/static/` assets (cache-first) and falls back to
+  `static/offline.html` for navigations while offline — app pages themselves are
+  always fetched network-first, so authenticated content is never served stale.
+
+## Regenerating the app icons
+
+The PWA icons in `app/static/icons/` are checked into the repository, so the
+running app never needs an image library. To regenerate them (e.g. after a
+design change), install Pillow and run the generator:
+
+```bash
+pip install pillow
+python scripts/make_icons.py
+```
 
 ## Running tests
 

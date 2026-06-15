@@ -85,6 +85,14 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
+/* Respect the iOS notch / status bar in installed (standalone) mode. The
+   env() values are 0 on every other platform, so max() keeps the normal
+   padding there. */
+.topbar {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+}
 .brand { font-weight: 700; font-size: 1.15rem; color: var(--text); }
 .brand:hover { text-decoration: none; }
 .mainnav { display: flex; gap: 1rem; }
@@ -98,13 +106,18 @@ a:hover { text-decoration: underline; }
 .themeswitch a.active { color: var(--primary); }
 .userchip { font-size: 0.9rem; color: var(--muted); }
 
-.container { max-width: 980px; margin: 1.5rem auto; padding: 0 1rem; }
+.container {
+  max-width: 980px;
+  margin: 1.5rem auto;
+  padding: 0 max(1rem, env(safe-area-inset-left)) 0 max(1rem, env(safe-area-inset-right));
+}
 
 .footer {
   text-align: center;
   color: var(--muted);
   font-size: 0.8rem;
   padding: 2rem 1rem;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }
 
 /* Cards & layout */
@@ -234,7 +247,6 @@ input[type="file"] { width: 100%; margin-top: 0.25rem; font-size: 0.9rem; }
 .search-form { display: flex; gap: 0.5rem; align-items: center; }
 .search-form input { margin: 0; }
 input[type="search"] { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: var(--input-bg); color: var(--text); }
-@media (max-width: 640px) { .topsearch { display: none; } }
 
 /* Charts */
 .chart { display: block; max-width: 100%; height: auto; }
@@ -262,8 +274,41 @@ input[type="search"] { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid va
 }
 .setup-steps { padding-left: 1.2rem; color: var(--muted); }
 
+/* Offline fallback page (served by the service worker) */
+.offline { text-align: center; margin-top: 3rem; }
+.offline-emoji { font-size: 3rem; margin: 0; }
+
+/* Comfortable tap targets on touch devices */
+.btn, .table th, .table td { -webkit-tap-highlight-color: rgba(37, 99, 235, 0.15); }
+
 @media (max-width: 640px) {
+  body { -webkit-text-size-adjust: 100%; }
+  .container { margin: 1rem auto; }
   .form-row { grid-template-columns: 1fr; }
-  .topbar { flex-wrap: wrap; gap: 0.75rem; }
   .page-head { flex-direction: column; }
+
+  /* Stack the top bar; let search drop onto its own full-width row. */
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0.6rem 0.75rem;
+    padding: 0.6rem 1rem;
+    padding-top: max(0.6rem, env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  .mainnav { gap: 0.85rem; flex: 1 1 auto; }
+  .rightnav { flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+  .topsearch { flex: 1 1 100%; order: 5; }
+  .topsearch input { width: 100%; }
+
+  /* Larger touch targets; avoid iOS zoom-on-focus (needs >=16px). */
+  .btn { padding: 0.6rem 1rem; }
+  .btn-sm { padding: 0.4rem 0.7rem; }
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="date"], input[type="search"],
+  select, textarea { font-size: 16px; }
+  .row-actions { flex-wrap: wrap; }
+
+  /* Keep wide tables readable instead of overflowing the viewport. */
+  .table { display: block; overflow-x: auto; white-space: nowrap; }
 }

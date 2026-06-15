@@ -23,6 +23,7 @@ from app.routers import (
     backup,
     dashboard,
     fuel,
+    pwa,
     search,
     service,
     stats,
@@ -126,6 +127,10 @@ app.include_router(attachments.router, dependencies=_csrf)
 app.include_router(fuel.router, dependencies=_csrf)
 app.include_router(backup.router, dependencies=_csrf)
 app.include_router(admin.router, dependencies=_csrf)
+
+# Public PWA endpoints (manifest + service worker). No auth/CSRF: they serve no
+# user data and must be reachable before login so the app is installable.
+app.include_router(pwa.router)
 
 
 @app.get("/")

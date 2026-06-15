@@ -27,6 +27,7 @@ a **Proxmox** host with a single script.
 - 🛡️ **Hardened by default** — CSRF tokens, login rate limiting, security headers, encrypted 2FA seeds, non-root systemd sandbox ([details](docs/security.md))
 - 🌍 **Internationalization** — full UI in German (`de`) and English (`en`)
 - 🌗 **Dark mode** — auto (follows your OS), light or dark, switchable in the top bar
+- 📱 **Installable PWA** — add FleetBox to your phone's home screen, mobile-optimized UI, offline fallback
 - 📦 **Easy deployment** — Proxmox LXC install script, Docker, or bare `pip`
 
 ## Quick start (development)

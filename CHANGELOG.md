@@ -5,6 +5,22 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-15
+
+### Added
+- **Progressive Web App**: FleetBox is now installable on phones and desktops
+  ("Add to Home Screen"). Ships a web app manifest, app icons and a service
+  worker that provides a small offline fallback page. The service worker caches
+  only static assets (cache-first) and never user data; app pages stay
+  network-first, so authenticated content is always fresh. Installing requires
+  HTTPS (see [reverse-proxy.md](docs/reverse-proxy.md)).
+- **iOS support**: dedicated Apple touch icon, full-screen standalone mode with
+  a translucent status bar, and safe-area insets so the UI clears the notch and
+  home indicator on installed home-screen apps.
+- **Mobile optimization**: stacked top bar with a full-width search row, larger
+  touch targets, horizontally scrollable wide tables, and inputs sized to avoid
+  iOS zoom-on-focus.
+
 ## [0.3.0] - 2026-06-15
 
 ### Added
