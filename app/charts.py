@@ -2,8 +2,9 @@
 
 The functions return SVG markup as a string. They use only SVG presentation
 attributes (``fill``, ``stroke``, …) rather than inline ``style`` attributes or
-scripts, so they render under FleetBox's strict Content-Security-Policy. The
-returned SVG scales to its container via ``viewBox`` + ``width="100%"``.
+scripts, so they render under FleetBox's strict Content-Security-Policy. Hover
+highlighting is done via classes in the stylesheet. The returned SVG scales to
+its container via ``viewBox`` + ``width="100%"``.
 """
 
 from __future__ import annotations
@@ -17,16 +18,17 @@ _TEXT = "#6b7785"
 _GRID = "#e2e7ee"
 
 _W = 720
-_H = 260
-_PAD_L = 52
-_PAD_R = 14
-_PAD_T = 14
-_PAD_B = 34
+_H = 280
+_PAD_L = 56
+_PAD_R = 16
+_PAD_T = 16
+_PAD_B = 56  # room for slanted x-axis labels
 
 
 def _fmt(value: float) -> str:
+    """Format a value for axis/tooltip text, grouping thousands with a space."""
     if value == int(value):
-        return str(int(value))
+        return f"{int(value):,}".replace(",", " ")  # locale-neutral space grouping
     return f"{value:.1f}"
 
 
@@ -37,8 +39,13 @@ def _text(x: float, y: float, content: str, *, anchor: str = "middle", size: flo
     )
 
 
-def _frame(plot_w: float, plot_h: float, top_value: float, unit: str) -> list[str]:
-    """Axes, three gridlines and their y-labels."""
+def _open(title: str) -> str:
+    label = f' aria-label="{escape(title)}"' if title else ""
+    inner = f"<title>{escape(title)}</title>" if title else ""
+    return f'<svg viewBox="0 0 {_W} {_H}" width="100%" role="img"{label} class="chart">{inner}'
+
+
+def _y_gridlines(plot_w: float, plot_h: float, bottom: float, span: float, unit: str) -> list[str]:
     parts: list[str] = []
     for i in range(3):
         frac = i / 2
@@ -47,50 +54,80 @@ def _frame(plot_w: float, plot_h: float, top_value: float, unit: str) -> list[st
             f'<line x1="{_PAD_L}" y1="{y:.1f}" x2="{_PAD_L + plot_w:.1f}" y2="{y:.1f}" '
             f'stroke="{_GRID}" stroke-width="1"/>'
         )
-        parts.append(_text(_PAD_L - 6, y + 3, _fmt(top_value * frac), anchor="end"))
+        parts.append(_text(_PAD_L - 8, y + 3, _fmt(bottom + span * frac), anchor="end"))
     if unit:
-        parts.append(_text(_PAD_L - 6, _PAD_T - 2, unit, anchor="end", size=10))
+        parts.append(_text(_PAD_L - 8, _PAD_T - 4, unit, anchor="end", size=10))
     return parts
 
 
-def _empty() -> str:
-    return ""
+def _x_axis(plot_w: float, axis_y: float) -> str:
+    return (
+        f'<line x1="{_PAD_L}" y1="{axis_y:.1f}" x2="{_PAD_L + plot_w:.1f}" y2="{axis_y:.1f}" '
+        f'stroke="{_AXIS}" stroke-width="1"/>'
+    )
 
 
-def bar_chart(labels: list[str], values: list[float], *, unit: str = "") -> str:
+def _x_labels(positions: list[tuple[float, str]], axis_y: float) -> list[str]:
+    """Render x-axis labels, thinned to avoid crowding and slanted when long."""
+    n = len(positions)
+    if n == 0:
+        return []
+    step = max(1, n // 12)
+    slant = any(len(label) > 5 for _, label in positions)
+    parts: list[str] = []
+    for i, (cx, label) in enumerate(positions):
+        if i % step and i != n - 1:
+            continue
+        y = axis_y + 14
+        if slant:
+            parts.append(
+                f'<text x="{cx:.1f}" y="{y:.1f}" font-size="10" fill="{_TEXT}" '
+                f'text-anchor="end" font-family="system-ui, sans-serif" '
+                f'transform="rotate(-40 {cx:.1f} {y:.1f})">{escape(label)}</text>'
+            )
+        else:
+            parts.append(_text(cx, y, label, size=10))
+    return parts
+
+
+def bar_chart(labels: list[str], values: list[float], *, unit: str = "", title: str = "") -> str:
     if not values:
-        return _empty()
+        return ""
     plot_w = _W - _PAD_L - _PAD_R
     plot_h = _H - _PAD_T - _PAD_B
+    axis_y = _PAD_T + plot_h
     top = max(values) or 1.0
 
-    parts = [f'<svg viewBox="0 0 {_W} {_H}" width="100%" role="img" class="chart">']
-    parts += _frame(plot_w, plot_h, top, unit)
+    parts = [_open(title)]
+    parts += _y_gridlines(plot_w, plot_h, 0.0, top, unit)
 
     n = len(values)
     slot = plot_w / n
     bar_w = slot * 0.62
-    # Label every Nth tick so they don't overlap.
-    step = max(1, n // 12)
+    positions: list[tuple[float, str]] = []
     for i, (label, value) in enumerate(zip(labels, values, strict=False)):
         h = (value / top) * plot_h
         x = _PAD_L + slot * i + (slot - bar_w) / 2
-        y = _PAD_T + plot_h - h
+        y = axis_y - h
+        cx = x + bar_w / 2
+        positions.append((cx, label))
         parts.append(
-            f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{h:.1f}" '
-            f'rx="2" fill="{_PRIMARY}"><title>{escape(label)}: {_fmt(value)}</title></rect>'
+            f'<rect class="bar" x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{h:.1f}" '
+            f'rx="2" fill="{_PRIMARY}"><title>{escape(label)}: {_fmt(value)} {escape(unit)}</title>'
+            f"</rect>"
         )
-        if i % step == 0:
-            parts.append(_text(x + bar_w / 2, _H - _PAD_B + 16, label, size=10))
+    parts.append(_x_axis(plot_w, axis_y))
+    parts += _x_labels(positions, axis_y)
     parts.append("</svg>")
     return "".join(parts)
 
 
-def line_chart(labels: list[str], values: list[float], *, unit: str = "") -> str:
+def line_chart(labels: list[str], values: list[float], *, unit: str = "", title: str = "") -> str:
     if not values:
-        return _empty()
+        return ""
     plot_w = _W - _PAD_L - _PAD_R
     plot_h = _H - _PAD_T - _PAD_B
+    axis_y = _PAD_T + plot_h
     top = max(values) or 1.0
     bottom = min(values + [0.0])
     span = (top - bottom) or 1.0
@@ -98,39 +135,34 @@ def line_chart(labels: list[str], values: list[float], *, unit: str = "") -> str
     n = len(values)
     step_x = plot_w / max(1, n - 1)
 
-    def point(i: int, value: float) -> tuple[float, float]:
-        x = _PAD_L + step_x * i
-        y = _PAD_T + plot_h * (1 - (value - bottom) / span)
-        return x, y
+    coords = [
+        (_PAD_L + step_x * i, _PAD_T + plot_h * (1 - (v - bottom) / span))
+        for i, v in enumerate(values)
+    ]
 
-    parts = [f'<svg viewBox="0 0 {_W} {_H}" width="100%" role="img" class="chart">']
-    # Gridlines/labels scaled from bottom..top.
-    for i in range(3):
-        frac = i / 2
-        y = _PAD_T + plot_h * (1 - frac)
-        parts.append(
-            f'<line x1="{_PAD_L}" y1="{y:.1f}" x2="{_PAD_L + plot_w:.1f}" y2="{y:.1f}" '
-            f'stroke="{_GRID}" stroke-width="1"/>'
-        )
-        parts.append(_text(_PAD_L - 6, y + 3, _fmt(bottom + span * frac), anchor="end"))
-    if unit:
-        parts.append(_text(_PAD_L - 6, _PAD_T - 2, unit, anchor="end", size=10))
+    parts = [_open(title)]
+    parts += _y_gridlines(plot_w, plot_h, bottom, span, unit)
 
-    coords = [point(i, v) for i, v in enumerate(values)]
+    # Soft area under the line for emphasis.
+    area = f"{coords[0][0]:.1f},{axis_y:.1f} "
+    area += " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+    area += f" {coords[-1][0]:.1f},{axis_y:.1f}"
+    parts.append(f'<polygon points="{area}" fill="{_PRIMARY}" fill-opacity="0.08"/>')
+
     polyline = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
     parts.append(
         f'<polyline points="{polyline}" fill="none" stroke="{_PRIMARY}" '
         f'stroke-width="2" stroke-linejoin="round"/>'
     )
-    step = max(1, n // 12)
-    for i, ((x, y), label, value) in enumerate(zip(coords, labels, values, strict=False)):
+
+    positions: list[tuple[float, str]] = []
+    for (x, y), label, value in zip(coords, labels, values, strict=False):
+        positions.append((x, label))
         parts.append(
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.5" fill="{_PRIMARY}">'
-            f'<title>{escape(label)}: {_fmt(value)}</title></circle>'
+            f'<circle class="dot" cx="{x:.1f}" cy="{y:.1f}" r="2.5" fill="{_PRIMARY}">'
+            f'<title>{escape(label)}: {_fmt(value)} {escape(unit)}</title></circle>'
         )
-        if i % step == 0 or i == n - 1:
-            parts.append(_text(x, _H - _PAD_B + 16, label, size=10))
-    parts.append(f'<line x1="{_PAD_L}" y1="{_PAD_T + plot_h:.1f}" x2="{_PAD_L + plot_w:.1f}" '
-                 f'y2="{_PAD_T + plot_h:.1f}" stroke="{_AXIS}" stroke-width="1"/>')
+    parts.append(_x_axis(plot_w, axis_y))
+    parts += _x_labels(positions, axis_y)
     parts.append("</svg>")
     return "".join(parts)

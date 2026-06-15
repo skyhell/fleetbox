@@ -173,6 +173,10 @@ input[type="file"] { width: 100%; margin-top: 0.25rem; font-size: 0.9rem; }
 
 /* Charts */
 .chart { display: block; max-width: 100%; height: auto; }
+.chart .bar { transition: fill 0.1s ease; }
+.chart .bar:hover { fill: var(--primary-dark); }
+.chart .dot { transition: r 0.1s ease; }
+.chart .dot:hover { r: 4.5; }
 
 /* Backup / export */
 .export-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
