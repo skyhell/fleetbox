@@ -35,3 +35,10 @@ htmlcov/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Claude / AI assistant local files
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.aider*
+.cursor/
