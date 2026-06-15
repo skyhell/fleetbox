@@ -38,6 +38,19 @@ def get_locale(request: Request) -> str:
     return locale
 
 
+THEMES = ("auto", "light", "dark")
+
+
+def get_theme(request: Request) -> str:
+    """Resolve and persist the colour theme: auto (follow OS), light or dark."""
+    query_theme = request.query_params.get("theme")
+    if query_theme in THEMES:
+        request.session["theme"] = query_theme
+        return query_theme
+    theme = request.session.get("theme")
+    return theme if theme in THEMES else "auto"
+
+
 def render(request: Request, template: str, **context):
     """Render a template with the standard i18n context injected."""
     locale = get_locale(request)
@@ -50,6 +63,8 @@ def render(request: Request, template: str, **context):
         "t": t,
         "csrf_token": get_csrf_token(request),
         "locale": locale,
+        "theme": get_theme(request),
+        "themes": THEMES,
         "supported_locales": settings.supported_locales,
         "user": getattr(request.state, "user", None),
         "app_version": __version__,

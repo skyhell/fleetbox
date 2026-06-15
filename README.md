@@ -26,6 +26,7 @@ a **Proxmox** host with a single script.
 - 🔐 **Two-factor authentication** — optional TOTP 2FA per user (Aegis, Google Authenticator, 1Password, …)
 - 🛡️ **Hardened by default** — CSRF tokens, login rate limiting, security headers, encrypted 2FA seeds, non-root systemd sandbox ([details](docs/security.md))
 - 🌍 **Internationalization** — full UI in German (`de`) and English (`en`)
+- 🌗 **Dark mode** — auto (follows your OS), light or dark, switchable in the top bar
 - 📦 **Easy deployment** — Proxmox LXC install script, Docker, or bare `pip`
 
 ## Quick start (development)

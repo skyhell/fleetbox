@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from html import escape
 
-# Palette (mirrors the CSS custom properties).
-_PRIMARY = "#2563eb"
-_AXIS = "#9aa5b1"
-_TEXT = "#6b7785"
-_GRID = "#e2e7ee"
+# Palette chosen to read well on both light and dark backgrounds (the charts are
+# server-rendered SVG and cannot see the active CSS theme).
+_PRIMARY = "#3b82f6"
+_AXIS = "#94a3b8"
+_TEXT = "#94a3b8"
+_GRID = "#94a3b8"
 
 _W = 720
 _H = 280
@@ -52,7 +53,7 @@ def _y_gridlines(plot_w: float, plot_h: float, bottom: float, span: float, unit:
         y = _PAD_T + plot_h * (1 - frac)
         parts.append(
             f'<line x1="{_PAD_L}" y1="{y:.1f}" x2="{_PAD_L + plot_w:.1f}" y2="{y:.1f}" '
-            f'stroke="{_GRID}" stroke-width="1"/>'
+            f'stroke="{_GRID}" stroke-width="1" stroke-opacity="0.3"/>'
         )
         parts.append(_text(_PAD_L - 8, y + 3, _fmt(bottom + span * frac), anchor="end"))
     if unit:

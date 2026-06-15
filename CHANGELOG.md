@@ -6,6 +6,9 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Dark mode**: a theme switch (Auto / Light / Dark) in the top bar. "Auto"
+  follows the operating system's `prefers-color-scheme`; the choice persists in
+  the session. Implemented purely via CSS variables — no JavaScript, CSP-safe.
 - **Vehicle title image**: mark any uploaded photo as the vehicle's title image
   (the first uploaded image is chosen automatically). It is shown in the vehicle
   list cards and the detail header, and can be switched or cleared with one click.

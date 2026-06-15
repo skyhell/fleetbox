@@ -11,6 +11,10 @@
   "nav.register": "Registrieren",
   "nav.language": "Sprache",
   "nav.docs": "Dokumentation",
+  "nav.theme": "Design",
+  "theme.auto": "Auto",
+  "theme.light": "Hell",
+  "theme.dark": "Dunkel",
 
   "auth.login.title": "Anmelden",
   "auth.login.identifier": "E-Mail oder Benutzername",
