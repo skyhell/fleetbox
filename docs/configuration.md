@@ -20,6 +20,7 @@ FleetBox is configured through environment variables (optionally loaded from a
 | `FLEETBOX_RATE_LIMIT_WINDOW_SECONDS`| `300`                     | Rate-limit window in seconds.                                                                   |
 | `FLEETBOX_UPLOAD_DIR`        | `./data/uploads`                 | Where uploaded documents/photos are stored. Relative paths resolve against the project root.    |
 | `FLEETBOX_MAX_UPLOAD_BYTES`  | `10485760` (10 MiB)              | Maximum size per uploaded file, in bytes.                                                       |
+| `FLEETBOX_DOCS_URL`          | project docs on GitHub           | Target of the "Documentation" link in the UI footer. Set empty to hide it.                      |
 
 ## File uploads
 

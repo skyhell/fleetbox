@@ -6,6 +6,8 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Documentation** link in the UI footer, configurable via `FLEETBOX_DOCS_URL`
+  (set empty to hide it).
 - **Search** across the user's own vehicles (name, make, model, license plate,
   VIN, notes) and performed work / service records (title, workshop, notes),
   with a search box in the top bar. Ownership-scoped and LIKE-wildcard-safe.

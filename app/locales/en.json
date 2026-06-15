@@ -10,6 +10,7 @@
   "nav.logout": "Log out",
   "nav.register": "Register",
   "nav.language": "Language",
+  "nav.docs": "Documentation",
 
   "auth.login.title": "Log in",
   "auth.login.identifier": "Email or username",

@@ -53,6 +53,7 @@ def render(request: Request, template: str, **context):
         "supported_locales": settings.supported_locales,
         "user": getattr(request.state, "user", None),
         "app_version": __version__,
+        "docs_url": settings.docs_url,
         "ServiceType": ServiceType,
         "FuelType": FuelType,
         "UsageUnit": UsageUnit,

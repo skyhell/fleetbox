@@ -44,6 +44,7 @@
 
 <footer class="footer">
   <span>{{ t('app.name') }} v{{ app_version }} · {{ t('app.tagline') }}</span>
+  {% if docs_url %}· <a href="{{ docs_url }}" target="_blank" rel="noopener">{{ t('nav.docs') }}</a>{% endif %}
 </footer>
 </body>
 </html>

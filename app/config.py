@@ -70,6 +70,9 @@ class Settings(BaseSettings):
     upload_dir: str = "./data/uploads"
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MiB
 
+    # Link target for the "Documentation" entry in the UI footer.
+    docs_url: str = "https://github.com/skyhell/fleetbox/tree/main/docs"
+
     @property
     def upload_path(self) -> Path:
         """Absolute path to the upload directory (created on first use)."""
