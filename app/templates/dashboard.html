@@ -45,6 +45,30 @@
   {% endif %}
 </section>
 
+{% if inspection_items %}
+<section class="card">
+  <h2>{{ t('inspection.title') }}</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('nav.vehicles') }}</th>
+        <th>{{ t('inspection.due') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in inspection_items %}
+      <tr>
+        <td><a href="/vehicles/{{ item.vehicle.id }}">{{ item.vehicle.display_name }}</a></td>
+        <td>{{ item.due }}</td>
+        <td><span class="badge badge-{{ item.status }}">{{ t('service.status.' + item.status) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
 {% if season_reminders %}
 <section class="card">
   <h2>{{ t('reminder.season.title') }}</h2>

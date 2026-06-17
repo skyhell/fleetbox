@@ -59,6 +59,9 @@ For a complete backup, also copy the database and the upload directory
 FleetBox can email each user a digest of what is due:
 
 - **Service intervals** that are due soon or overdue.
+- **Roadworthiness inspection** (§57a "Pickerl" / TÜV/HU) — when a vehicle's
+  `inspection_due` date is within 30 days (due soon) or in the past (overdue).
+  Also shown on the dashboard.
 - **Seasonal tyre changes** — when, in `FLEETBOX_WINTER_TIRE_MONTH` /
   `FLEETBOX_SUMMER_TIRE_MONTH`, a vehicle owns a tyre set for the upcoming
   season that is not the one currently mounted (see the tyre tracker on each

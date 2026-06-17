@@ -73,7 +73,11 @@
   "vehicle.usage.h": "Betriebsstunden (h)",
   "vehicle.field.reading_km": "Kilometerstand (km)",
   "vehicle.field.reading_h": "Betriebsstunden (h)",
+  "vehicle.field.inspection_due": "Pickerl fällig am (§57a)",
   "vehicle.field.notes": "Notizen",
+
+  "inspection.title": "Pickerl-Überprüfung",
+  "inspection.due": "Fällig am",
 
   "service.records": "Service-Einträge",
   "service.intervals": "Serviceintervalle",

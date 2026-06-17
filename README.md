@@ -19,7 +19,8 @@ a **Proxmox** host with a single script.
 - 🧩 **Wear parts** — tyres, brake pads, filters, belts, batteries, …
 - ⛽ **Fuel log** — liters, price per liter, total cost, consumption tracking
 - 🛞 **Tyre tracker** — summer/winter/all-season sets, storage location, tread depth, mount/unmount with reading
-- 🔔 **Reminders** — email digests for due services and seasonal tyre changes (opt-in per user)
+- 🛠️ **Inspection due date** — track the next roadworthiness inspection (§57a "Pickerl" / TÜV/HU) with due/overdue warnings
+- 🔔 **Reminders** — email digests for due services, inspections and seasonal tyre changes (opt-in per user)
 - 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
 - 📎 **Documents & photos** — attach invoices, receipts and pictures; set one photo as the vehicle's title image

@@ -103,6 +103,8 @@ class Vehicle(Base):
     )
     # Current odometer / hour-meter reading, expressed in ``usage_unit``.
     mileage: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Next periodic roadworthiness inspection due date (§57a "Pickerl" / TÜV/HU).
+    inspection_due: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
@@ -150,6 +152,22 @@ class Vehicle(Base):
     def mounted_tire_set(self) -> TireSet | None:
         """The tyre set currently mounted on the vehicle, if any."""
         return next((t for t in self.tire_sets if t.is_mounted), None)
+
+    def inspection_status(self, today: date | None = None) -> str | None:
+        """Status of the periodic inspection (§57a/TÜV): None / ok / due_soon / overdue.
+
+        ``None`` means no inspection date is recorded. "Due soon" covers the
+        30 days before the due date; anything past the date is "overdue".
+        """
+        if self.inspection_due is None:
+            return None
+        today = today or date.today()
+        delta = (self.inspection_due - today).days
+        if delta < 0:
+            return "overdue"
+        if delta <= 30:
+            return "due_soon"
+        return "ok"
 
 
 class ServiceRecord(Base):

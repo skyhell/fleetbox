@@ -15,6 +15,15 @@
       · {{ vehicle.mileage }} {{ vehicle.usage_unit_label }} · {{ t('fuel.type.' + vehicle.fuel_type.value) }}
     </p>
     {% if vehicle.vin %}<p class="muted small">VIN: {{ vehicle.vin }}</p>{% endif %}
+    {% if vehicle.inspection_due %}
+    {% set insp_status = vehicle.inspection_status() %}
+    <p class="muted small">
+      {{ t('inspection.title') }}: {{ vehicle.inspection_due }}
+      {% if insp_status in ('due_soon', 'overdue') %}
+      <span class="badge badge-{{ insp_status }}">{{ t('service.status.' + insp_status) }}</span>
+      {% endif %}
+    </p>
+    {% endif %}
     {% if vehicle.notes %}<p>{{ vehicle.notes }}</p>{% endif %}
   </div>
   <div class="head-actions">

@@ -87,6 +87,21 @@ def _service_reminders(vehicle: Vehicle, t) -> list[Reminder]:
     return out
 
 
+def _inspection_reminders(vehicle: Vehicle, today: date, t) -> list[Reminder]:
+    status = vehicle.inspection_status(today)
+    if status not in ("due_soon", "overdue"):
+        return []
+    return [
+        Reminder(
+            vehicle=vehicle.display_name,
+            kind="inspection",
+            status=status,
+            title=t("inspection.title"),
+            detail=f"{t('service.status.' + status)} · {vehicle.inspection_due.isoformat()}",
+        )
+    ]
+
+
 def _tire_reminders(vehicle: Vehicle, today: date, t) -> list[Reminder]:
     season = due_tire_switch(
         vehicle, today, settings.winter_tire_month, settings.summer_tire_month
@@ -117,6 +132,7 @@ def collect_for_user(
     out: list[Reminder] = []
     for vehicle in vehicles:
         out.extend(_service_reminders(vehicle, t))
+        out.extend(_inspection_reminders(vehicle, today, t))
         out.extend(_tire_reminders(vehicle, today, t))
     # Overdue first, then due-soon, then informational.
     order = {"overdue": 0, "due_soon": 1, "info": 2}

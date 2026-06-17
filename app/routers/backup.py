@@ -39,7 +39,7 @@ router = APIRouter(prefix="/backup", tags=["backup"])
 
 VEHICLE_COLUMNS = [
     "name", "make", "model", "year", "vin",
-    "license_plate", "fuel_type", "usage_unit", "mileage", "notes",
+    "license_plate", "fuel_type", "usage_unit", "mileage", "inspection_due", "notes",
 ]
 RECORD_COLUMNS = [
     "vehicle", "service_type", "title", "performed_on",
@@ -216,6 +216,7 @@ async def import_csv(
             fuel_type=_enum(FuelType, row.get("fuel_type"), FuelType.petrol),
             usage_unit=_enum(UsageUnit, row.get("usage_unit"), UsageUnit.km),
             mileage=_int(row.get("mileage")) or 0,
+            inspection_due=_date(row.get("inspection_due")),
             notes=_s(row.get("notes")),
         )
         db.add(vehicle)

@@ -73,7 +73,11 @@
   "vehicle.usage.h": "Operating hours (h)",
   "vehicle.field.reading_km": "Mileage (km)",
   "vehicle.field.reading_h": "Operating hours (h)",
+  "vehicle.field.inspection_due": "Roadworthiness inspection due",
   "vehicle.field.notes": "Notes",
+
+  "inspection.title": "Roadworthiness inspection",
+  "inspection.due": "Due on",
 
   "service.records": "Service records",
   "service.intervals": "Service intervals",

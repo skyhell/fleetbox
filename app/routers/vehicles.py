@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -24,6 +26,11 @@ def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
 def _parse_int(value: str | None) -> int | None:
     value = (value or "").strip()
     return int(value) if value else None
+
+
+def _parse_date(value: str | None) -> date | None:
+    value = (value or "").strip()
+    return date.fromisoformat(value) if value else None
 
 
 @router.get("")
@@ -55,6 +62,7 @@ def create_vehicle(
     fuel_type: str = Form("petrol"),
     usage_unit: str = Form("km"),
     mileage: str = Form("0"),
+    inspection_due: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
@@ -70,6 +78,7 @@ def create_vehicle(
         fuel_type=FuelType(fuel_type),
         usage_unit=UsageUnit(usage_unit),
         mileage=_parse_int(mileage) or 0,
+        inspection_due=_parse_date(inspection_due),
         notes=notes or None,
     )
     db.add(vehicle)
@@ -133,6 +142,7 @@ def update_vehicle(
     fuel_type: str = Form("petrol"),
     usage_unit: str = Form("km"),
     mileage: str = Form("0"),
+    inspection_due: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
@@ -147,6 +157,7 @@ def update_vehicle(
     vehicle.fuel_type = FuelType(fuel_type)
     vehicle.usage_unit = UsageUnit(usage_unit)
     vehicle.mileage = _parse_int(mileage) or 0
+    vehicle.inspection_due = _parse_date(inspection_due)
     vehicle.notes = notes or None
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

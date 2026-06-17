@@ -43,9 +43,14 @@
         </select>
       </label>
     </div>
-    <label>{{ t('vehicle.field.reading_' + (vehicle.usage_unit.value if vehicle else 'km')) }}
-      <input type="number" name="mileage" min="0" value="{{ vehicle.mileage if vehicle else 0 }}">
-    </label>
+    <div class="form-row">
+      <label>{{ t('vehicle.field.reading_' + (vehicle.usage_unit.value if vehicle else 'km')) }}
+        <input type="number" name="mileage" min="0" value="{{ vehicle.mileage if vehicle else 0 }}">
+      </label>
+      <label>{{ t('vehicle.field.inspection_due') }}
+        <input type="date" name="inspection_due" value="{{ vehicle.inspection_due.isoformat() if vehicle and vehicle.inspection_due else '' }}">
+      </label>
+    </div>
     <label>{{ t('vehicle.field.notes') }}
       <textarea name="notes" rows="3">{{ vehicle.notes or '' if vehicle else '' }}</textarea>
     </label>

@@ -5,6 +5,14 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-17
+
+### Added
+- **Roadworthiness inspection date** per vehicle (§57a "Pickerl" / TÜV/HU): set
+  the next inspection due date on a vehicle and FleetBox flags it as due-soon
+  (within 30 days) or overdue on the dashboard and in the `send-reminders` email
+  digest. The date is included in the CSV vehicle export/import.
+
 ### Fixed
 - `scripts/update.sh` no longer falsely reports the systemd service as "not
   found" (and skips the restart). The existence check used `systemctl

@@ -37,6 +37,7 @@ A vehicle owned by exactly one user.
 | `fuel_type`     | enum      | petrol/diesel/electric/…       |
 | `usage_unit`    | enum      | `km` (distance) or `h` (operating hours) |
 | `mileage`       | int       | current odometer / hour-meter reading, in `usage_unit` |
+| `inspection_due`| date      | next roadworthiness inspection (§57a "Pickerl" / TÜV/HU), optional |
 | `notes`         | text      | optional                       |
 
 All reading fields below (`ServiceRecord.mileage`, `FuelLog.mileage`,

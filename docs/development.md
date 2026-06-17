@@ -39,7 +39,7 @@ fleetbox/
 │   ├── templating.py      # Jinja2 setup + render() helper
 │   ├── stats.py           # Per-vehicle statistics computation
 │   ├── charts.py          # Dependency-free SVG chart rendering
-│   ├── reminders.py       # Due-service & seasonal-tyre reminder collection
+│   ├── reminders.py       # Due-service, inspection & seasonal-tyre reminder collection
 │   ├── mailer.py          # Minimal stdlib SMTP sender
 │   ├── cli.py             # init-db / create-admin / disable-2fa / send-reminders / serve
 │   ├── routers/           # auth, account, dashboard, vehicles, service, fuel,

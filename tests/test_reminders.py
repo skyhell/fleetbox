@@ -89,6 +89,31 @@ def test_collect_includes_seasonal_tire_reminder(db_session):
     assert any(r.kind == "tire" for r in reminders)
 
 
+def test_inspection_status_thresholds(db_session):
+    _user, vehicle = _user_with_vehicle(db_session)
+    today = date(2026, 6, 15)
+    # No date recorded -> no status.
+    assert vehicle.inspection_status(today) is None
+    vehicle.inspection_due = date(2026, 6, 1)  # in the past -> overdue
+    assert vehicle.inspection_status(today) == "overdue"
+    vehicle.inspection_due = date(2026, 7, 1)  # 16 days out -> due_soon
+    assert vehicle.inspection_status(today) == "due_soon"
+    vehicle.inspection_due = date(2026, 12, 1)  # far out -> ok
+    assert vehicle.inspection_status(today) == "ok"
+
+
+def test_collect_includes_due_inspection(db_session):
+    user, vehicle = _user_with_vehicle(db_session)
+    vehicle.inspection_due = date(2026, 6, 1)  # overdue relative to `today` below
+    db_session.commit()
+
+    reminders = collect_for_user(db_session, user, today=date(2026, 6, 15))
+    inspection = [r for r in reminders if r.kind == "inspection"]
+    assert len(inspection) == 1
+    assert inspection[0].status == "overdue"
+    assert "2026-06-01" in inspection[0].detail
+
+
 def test_render_email_contains_items_and_count():
     reminders = [
         Reminder(vehicle="Golf", kind="service", status="overdue",

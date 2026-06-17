@@ -44,8 +44,19 @@ def dashboard(
     # Overdue first, then due soon.
     due_items.sort(key=lambda i: 0 if i["status"] == "overdue" else 1)
 
-    # Seasonal tyre-change suggestions (only in the configured switch months).
     today = date.today()
+
+    # Periodic roadworthiness inspection (§57a "Pickerl" / TÜV/HU) coming due.
+    inspection_items = []
+    for vehicle in vehicles:
+        status = vehicle.inspection_status(today)
+        if status in ("due_soon", "overdue"):
+            inspection_items.append(
+                {"vehicle": vehicle, "status": status, "due": vehicle.inspection_due}
+            )
+    inspection_items.sort(key=lambda i: 0 if i["status"] == "overdue" else 1)
+
+    # Seasonal tyre-change suggestions (only in the configured switch months).
     season_reminders = []
     for vehicle in vehicles:
         season = due_tire_switch(
@@ -75,6 +86,7 @@ def dashboard(
         "dashboard.html",
         vehicles=vehicles,
         due_items=due_items,
+        inspection_items=inspection_items,
         season_reminders=season_reminders,
         recent_fuel=recent_fuel,
         total_spent=total_spent,
