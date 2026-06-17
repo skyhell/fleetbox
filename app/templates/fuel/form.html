@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t('fuel.edit') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('fuel.edit') }} — {{ vehicle.display_name }}</h1>
+  <form method="post" action="/vehicles/{{ vehicle.id }}/fuel/{{ log.id }}/edit">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-row">
+      <label>{{ t('fuel.field.date') }} <span class="req">*</span>
+        <input type="date" name="filled_on" required value="{{ log.filled_on.isoformat() }}">
+      </label>
+      <label>{{ t(vehicle.reading_label_key) }}
+        <input type="number" name="mileage" min="0" value="{{ log.mileage if log.mileage is not none else '' }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('fuel.field.quantity') }} <span class="req">*</span>
+        <input type="text" name="quantity" inputmode="decimal" required value="{{ '%.2f'|format(log.quantity) }}">
+      </label>
+      <label>{{ t('fuel.field.price_per_unit') }}
+        <input type="text" name="price_per_unit" inputmode="decimal" value="{{ '%.3f'|format(log.price_per_unit) if log.price_per_unit is not none else '' }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('fuel.field.total_cost') }}
+        <input type="text" name="total_cost" inputmode="decimal" value="{{ '%.2f'|format(log.total_cost) if log.total_cost is not none else '' }}">
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" name="full_tank" value="1" {{ 'checked' if log.full_tank else '' }}> {{ t('fuel.field.full_tank') }}
+      </label>
+    </div>
+    <label>{{ t('fuel.field.notes') }}
+      <textarea name="notes" rows="2">{{ log.notes or '' }}</textarea>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="/vehicles/{{ vehicle.id }}">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

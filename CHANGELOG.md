@@ -5,6 +5,15 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-17
+
+### Added
+- **Fuel log improvements**: existing refuelings can now be **edited** (not just
+  added/deleted); the log table shows **per-fill consumption** and a summary line
+  (total filled, total cost, average consumption and average price); and the unit
+  price is now derived from total ÷ quantity when only the receipt total is
+  entered (previously only the reverse).
+
 ## [0.6.0] - 2026-06-17
 
 ### Added

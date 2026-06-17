@@ -14,7 +14,7 @@ from app.models import (
     User,
     Vehicle,
 )
-from app.stats import compute_stats
+from app.stats import compute_stats, fuel_summary
 
 PASSWORD = "Secret123"
 
@@ -104,6 +104,26 @@ def test_no_data_is_safe(db_session):
     stats = compute_stats(vehicle)
     assert stats.avg_consumption is None
     assert not stats.has_any_data
+
+
+def test_fuel_summary_totals_and_per_fill(db_session):
+    vehicle = _make_vehicle(db_session, fuel_type=FuelType.diesel)
+    f1 = FuelLog(vehicle_id=vehicle.id, filled_on=date(2026, 1, 1), mileage=1000,
+                 quantity=30, total_cost=45.0, full_tank=True)
+    f2 = FuelLog(vehicle_id=vehicle.id, filled_on=date(2026, 2, 1), mileage=1500,
+                 quantity=40, total_cost=60.0, full_tank=True)
+    db_session.add_all([f1, f2])
+    db_session.flush()
+
+    summary = fuel_summary(vehicle)
+    assert summary.consumption_unit == "L/100km"
+    assert summary.total_quantity == 70.0
+    assert summary.total_cost == 105.0
+    assert summary.avg_consumption == 8.0  # 40 L / 500 km
+    assert summary.avg_price == round(105.0 / 70.0, 3)
+    # The first fill opens the interval (no consumption); the second closes it.
+    assert f1.id not in summary.per_fill
+    assert summary.per_fill[f2.id] == 8.0
 
 
 def test_stats_page_renders(client):
