@@ -394,5 +394,71 @@
   </details>
 </section>
 
+{# ---- Other expenses ---- #}
+<section class="card">
+  <h2>{{ t('expense.title') }}</h2>
+  {% if expenses %}
+  <p class="muted small">
+    {{ t('expense.summary.total') }}: {{ '%.2f'|format(expenses | sum(attribute='amount')) }}
+  </p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('expense.field.date') }}</th>
+        <th>{{ t('expense.field.category') }}</th>
+        <th>{{ t('expense.field.title') }}</th>
+        <th>{{ t('expense.field.amount') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in expenses %}
+      <tr>
+        <td>{{ e.spent_on }}</td>
+        <td>{{ t(e.category_label_key) }}</td>
+        <td>{{ e.title }}{% if e.notes %}<br><span class="muted small">{{ e.notes }}</span>{% endif %}</td>
+        <td>{{ '%.2f'|format(e.amount) }}</td>
+        <td>
+          <div class="row-actions">
+            <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/expenses/{{ e.id }}/edit">{{ t('common.edit') }}</a>
+            <form method="post" action="/vehicles/{{ vehicle.id }}/expenses/{{ e.id }}/delete"
+                  data-confirm="{{ t('common.delete') }}?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm btn-danger" type="submit">×</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+
+  <details class="adder">
+    <summary class="btn btn-sm">+ {{ t('expense.add') }}</summary>
+    <form method="post" action="/vehicles/{{ vehicle.id }}/expenses" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-row">
+        <label>{{ t('expense.field.category') }}
+          <select name="category">
+            {% for c in ExpenseCategory %}<option value="{{ c.value }}">{{ t('expense.category.' + c.value) }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>{{ t('expense.field.title') }} <span class="req">*</span>
+          <input type="text" name="title" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>{{ t('expense.field.date') }} <span class="req">*</span>
+          <input type="date" name="spent_on" required>
+        </label>
+        <label>{{ t('expense.field.amount') }}<input type="text" name="amount" inputmode="decimal"></label>
+      </div>
+      <label>{{ t('expense.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+    </form>
+  </details>
+</section>
+
 <p><a class="btn" href="/vehicles">← {{ t('common.back') }}</a></p>
 {% endblock %}

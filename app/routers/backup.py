@@ -20,6 +20,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import (
+    Expense,
+    ExpenseCategory,
     FuelLog,
     FuelType,
     ServiceInterval,
@@ -52,6 +54,9 @@ INTERVAL_COLUMNS = [
 FUEL_COLUMNS = [
     "vehicle", "filled_on", "mileage", "quantity",
     "price_per_unit", "total_cost", "full_tank", "notes",
+]
+EXPENSE_COLUMNS = [
+    "vehicle", "spent_on", "category", "title", "amount", "notes",
 ]
 
 
@@ -95,7 +100,7 @@ def _cell(value) -> str:
         return ""
     if isinstance(value, bool):
         return "true" if value else "false"
-    if isinstance(value, FuelType | ServiceType | UsageUnit):
+    if isinstance(value, FuelType | ServiceType | UsageUnit | ExpenseCategory):
         return value.value
     if isinstance(value, date):
         return value.isoformat()
@@ -168,6 +173,18 @@ def export_fuel(db: Session = Depends(get_db), user: User = Depends(require_user
     return _csv_response("fuel_logs.csv", FUEL_COLUMNS, rows)
 
 
+@router.get("/export/expenses.csv")
+def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    rows = []
+    for v in _user_vehicles(db, user):
+        for e in v.expenses:
+            rows.append([
+                v.name, _cell(e.spent_on), _cell(e.category), _cell(e.title),
+                _cell(e.amount), _cell(e.notes),
+            ])
+    return _csv_response("expenses.csv", EXPENSE_COLUMNS, rows)
+
+
 # --- Import -----------------------------------------------------------------
 
 
@@ -191,10 +208,13 @@ async def import_csv(
     service_records: UploadFile | None = File(None),
     service_intervals: UploadFile | None = File(None),
     fuel_logs: UploadFile | None = File(None),
+    expenses: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
-    summary = {"vehicles": 0, "records": 0, "intervals": 0, "fuel": 0, "skipped": 0}
+    summary = {
+        "vehicles": 0, "records": 0, "intervals": 0, "fuel": 0, "expenses": 0, "skipped": 0
+    }
 
     # 1. Vehicles first — dedupe by name so re-importing is non-destructive.
     by_name: dict[str, Vehicle] = {
@@ -284,6 +304,22 @@ async def import_csv(
             notes=_s(row.get("notes")),
         ))
         summary["fuel"] += 1
+
+    # 5. Other expenses.
+    for row in await _read_rows(expenses):
+        vehicle = _vehicle(row)
+        if vehicle is None:
+            summary["skipped"] += 1
+            continue
+        db.add(Expense(
+            vehicle_id=vehicle.id,
+            category=_enum(ExpenseCategory, row.get("category"), ExpenseCategory.other),
+            title=_s(row.get("title")) or "—",
+            amount=_float(row.get("amount")) or 0.0,
+            spent_on=_date(row.get("spent_on")) or date.today(),
+            notes=_s(row.get("notes")),
+        ))
+        summary["expenses"] += 1
 
     db.commit()
     return render(request, "backup/index.html", summary=summary)

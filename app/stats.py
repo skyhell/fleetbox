@@ -19,9 +19,11 @@ class VehicleStats:
     usage_unit: str = "km"
     total_fuel_cost: float = 0.0
     total_service_cost: float = 0.0
+    total_other_cost: float = 0.0
     total_quantity: float = 0.0
     fillup_count: int = 0
     service_count: int = 0
+    expense_count: int = 0
     avg_consumption: float | None = None
     distance_tracked: int | None = None
     cost_per_unit: float | None = None
@@ -33,11 +35,11 @@ class VehicleStats:
 
     @property
     def total_cost(self) -> float:
-        return self.total_fuel_cost + self.total_service_cost
+        return self.total_fuel_cost + self.total_service_cost + self.total_other_cost
 
     @property
     def has_any_data(self) -> bool:
-        return bool(self.fillup_count or self.service_count)
+        return bool(self.fillup_count or self.service_count or self.expense_count)
 
 
 def _fill_consumption_pairs(logs, factor: float):
@@ -128,6 +130,7 @@ def fuel_summary(vehicle: Vehicle) -> FuelSummary:
 def compute_stats(vehicle: Vehicle) -> VehicleStats:
     fuel_logs = list(vehicle.fuel_logs)
     records = list(vehicle.service_records)
+    expenses = list(vehicle.expenses)
 
     consumption_unit, factor = _consumption_unit(vehicle)
 
@@ -136,9 +139,11 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
         usage_unit=vehicle.usage_unit.value,
         total_fuel_cost=sum(f.total_cost or 0.0 for f in fuel_logs),
         total_service_cost=sum(r.cost or 0.0 for r in records),
+        total_other_cost=sum(e.amount or 0.0 for e in expenses),
         total_quantity=sum(f.quantity or 0.0 for f in fuel_logs),
         fillup_count=len(fuel_logs),
         service_count=len(records),
+        expense_count=len(expenses),
     )
 
     stats.consumption_series, stats.avg_consumption = _consumption(fuel_logs, factor)
@@ -164,12 +169,14 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
         if stats.distance_tracked > 0:
             stats.cost_per_unit = round(stats.total_cost / stats.distance_tracked, 3)
 
-    # Monthly cost (fuel + service), oldest first.
+    # Monthly cost (fuel + service + other), oldest first.
     monthly: dict[str, float] = defaultdict(float)
     for f in fuel_logs:
         monthly[f.filled_on.strftime("%Y-%m")] += f.total_cost or 0.0
     for r in records:
         monthly[r.performed_on.strftime("%Y-%m")] += r.cost or 0.0
+    for e in expenses:
+        monthly[e.spent_on.strftime("%Y-%m")] += e.amount or 0.0
     stats.monthly_cost = [
         (month, round(total, 2)) for month, total in sorted(monthly.items()) if total
     ]

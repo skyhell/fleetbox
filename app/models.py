@@ -62,6 +62,21 @@ class TireSeason(str, enum.Enum):
     all_season = "all_season"
 
 
+class ExpenseCategory(str, enum.Enum):
+    """Category of a miscellaneous vehicle expense (not fuel or service)."""
+
+    insurance = "insurance"
+    tax = "tax"
+    registration = "registration"
+    parking = "parking"
+    toll = "toll"
+    vignette = "vignette"
+    fine = "fine"
+    accessory = "accessory"
+    cleaning = "cleaning"
+    other = "other"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -122,6 +137,9 @@ class Vehicle(Base):
         back_populates="vehicle", cascade="all, delete-orphan"
     )
     tire_sets: Mapped[list[TireSet]] = relationship(
+        back_populates="vehicle", cascade="all, delete-orphan"
+    )
+    expenses: Mapped[list[Expense]] = relationship(
         back_populates="vehicle", cascade="all, delete-orphan"
     )
 
@@ -364,3 +382,34 @@ class TireSet(Base):
     def season_label_key(self) -> str:
         """i18n key for the season, e.g. ``tire.season.winter``."""
         return f"tire.season.{self.season.value}"
+
+
+class Expense(Base):
+    """A miscellaneous vehicle expense that is neither fuel nor a service record.
+
+    Covers insurance, road tax, parking, tolls, the Austrian motorway vignette,
+    fines, accessories and so on, so a vehicle's total cost of ownership reflects
+    everything — not just fuel and maintenance.
+    """
+
+    __tablename__ = "expenses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(
+        ForeignKey("vehicles.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    category: Mapped[ExpenseCategory] = mapped_column(
+        Enum(ExpenseCategory), default=ExpenseCategory.other, nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    spent_on: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+
+    vehicle: Mapped[Vehicle] = relationship(back_populates="expenses")
+
+    @property
+    def category_label_key(self) -> str:
+        """i18n key for the category, e.g. ``expense.category.insurance``."""
+        return f"expense.category.{self.category.value}"

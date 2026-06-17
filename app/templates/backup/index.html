@@ -7,7 +7,8 @@
 {% if summary %}
 <div class="alert alert-success">
   {{ t('backup.import.done', vehicles=summary.vehicles, records=summary.records,
-       intervals=summary.intervals, fuel=summary.fuel, skipped=summary.skipped) }}
+       intervals=summary.intervals, fuel=summary.fuel, expenses=summary.expenses,
+       skipped=summary.skipped) }}
 </div>
 {% endif %}
 
@@ -20,6 +21,7 @@
     <li><a class="btn btn-sm" href="/backup/export/service_records.csv">{{ t('service.records') }} (CSV)</a></li>
     <li><a class="btn btn-sm" href="/backup/export/service_intervals.csv">{{ t('service.intervals') }} (CSV)</a></li>
     <li><a class="btn btn-sm" href="/backup/export/fuel_logs.csv">{{ t('fuel.log') }} (CSV)</a></li>
+    <li><a class="btn btn-sm" href="/backup/export/expenses.csv">{{ t('expense.title') }} (CSV)</a></li>
   </ul>
 </section>
 
@@ -33,6 +35,7 @@
     <label>{{ t('service.records') }}<input type="file" name="service_records" accept=".csv,text/csv"></label>
     <label>{{ t('service.intervals') }}<input type="file" name="service_intervals" accept=".csv,text/csv"></label>
     <label>{{ t('fuel.log') }}<input type="file" name="fuel_logs" accept=".csv,text/csv"></label>
+    <label>{{ t('expense.title') }}<input type="file" name="expenses" accept=".csv,text/csv"></label>
     <button class="btn btn-primary" type="submit">{{ t('backup.import.submit') }}</button>
   </form>
 </section>

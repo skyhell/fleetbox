@@ -11,7 +11,7 @@ from app import __version__
 from app.config import settings
 from app.csrf import get_csrf_token
 from app.i18n import resolve_locale, translate
-from app.models import FuelType, ServiceType, TireSeason, UsageUnit
+from app.models import ExpenseCategory, FuelType, ServiceType, TireSeason, UsageUnit
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -73,6 +73,7 @@ def render(request: Request, template: str, **context):
         "FuelType": FuelType,
         "UsageUnit": UsageUnit,
         "TireSeason": TireSeason,
+        "ExpenseCategory": ExpenseCategory,
         "allow_registration": settings.allow_registration,
     }
     base_context.update(context)

@@ -44,8 +44,10 @@
     <tbody>
       <tr><td>{{ t('stats.fuel_cost') }}</td><td>{{ '%.2f'|format(stats.total_fuel_cost) }}</td></tr>
       <tr><td>{{ t('stats.service_cost') }}</td><td>{{ '%.2f'|format(stats.total_service_cost) }}</td></tr>
+      <tr><td>{{ t('stats.other_cost') }}</td><td>{{ '%.2f'|format(stats.total_other_cost) }}</td></tr>
       <tr><td>{{ t('fuel.log') }}</td><td>{{ stats.fillup_count }} · {{ '%.1f'|format(stats.total_quantity) }}</td></tr>
       <tr><td>{{ t('service.records') }}</td><td>{{ stats.service_count }}</td></tr>
+      <tr><td>{{ t('expense.title') }}</td><td>{{ stats.expense_count }}</td></tr>
     </tbody>
   </table>
 </section>

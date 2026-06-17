@@ -108,6 +108,7 @@ def vehicle_detail(
     tire_sets = sorted(
         vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
     )
+    expenses = sorted(vehicle.expenses, key=lambda e: e.spent_on, reverse=True)
     return render(
         request,
         "vehicles/detail.html",
@@ -118,6 +119,7 @@ def vehicle_detail(
         fuel=fuel,
         attachments=attachments,
         tire_sets=tire_sets,
+        expenses=expenses,
     )
 
 

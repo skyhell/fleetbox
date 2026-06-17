@@ -18,6 +18,7 @@ a **Proxmox** host with a single script.
 - ⏱️ **Service intervals** — by usage (km or operating hours) and/or time (months) with due/overdue warnings
 - 🧩 **Wear parts** — tyres, brake pads, filters, belts, batteries, …
 - ⛽ **Fuel log** — liters, price per liter, total cost, consumption tracking
+- 💶 **Other expenses** — insurance, tax, parking, tolls, vignette, fines, accessories; feeds total cost of ownership
 - 🛞 **Tyre tracker** — summer/winter/all-season sets, storage location, tread depth, mount/unmount with reading
 - 🛠️ **Inspection due date** — track the next roadworthiness inspection (§57a "Pickerl" / TÜV/HU) with due/overdue warnings
 - 🔔 **Reminders** — email digests for due services, inspections and seasonal tyre changes (opt-in per user)

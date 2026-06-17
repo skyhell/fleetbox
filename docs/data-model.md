@@ -6,6 +6,7 @@ User 1───* Vehicle 1───* ServiceRecord 0───* Attachment
                    1───* FuelLog
                    1───* Attachment
                    1───* TireSet
+                   1───* Expense
 ```
 
 ## User
@@ -120,12 +121,31 @@ is not the one currently mounted.
 
 Mounting a set automatically unmounts any other set on the vehicle.
 
+## Expense
+A miscellaneous vehicle expense that is neither fuel nor a service record
+(insurance, road tax, parking, tolls, the Austrian motorway vignette, fines,
+accessories, …). Expenses count towards the vehicle's total cost and the monthly
+cost chart on the statistics page.
+
+| Field        | Type   | Notes                                  |
+|--------------|--------|----------------------------------------|
+| `vehicle_id` | int FK | owning vehicle (cascade delete)        |
+| `category`   | enum   | `ExpenseCategory`                      |
+| `title`      | str    | short description                      |
+| `amount`     | float  | cost in the instance's currency        |
+| `spent_on`   | date   |                                        |
+| `notes`      | text   | optional                               |
+
 ## ServiceType values
 `oil_change`, `brake_replacement`, `wear_part`, `inspection`, `tyre_change`,
 `repair`, `other`
 
 ## TireSeason values
 `summer`, `winter`, `all_season`
+
+## ExpenseCategory values
+`insurance`, `tax`, `registration`, `parking`, `toll`, `vignette`, `fine`,
+`accessory`, `cleaning`, `other`
 
 ## FuelType values
 `petrol`, `diesel`, `electric`, `lpg`, `cng`, `hybrid`, `other`

@@ -6,6 +6,8 @@ import re
 from datetime import date
 
 from app.models import (
+    Expense,
+    ExpenseCategory,
     FuelLog,
     FuelType,
     ServiceRecord,
@@ -104,6 +106,28 @@ def test_no_data_is_safe(db_session):
     stats = compute_stats(vehicle)
     assert stats.avg_consumption is None
     assert not stats.has_any_data
+
+
+def test_expenses_count_towards_total_cost(db_session):
+    vehicle = _make_vehicle(db_session, fuel_type=FuelType.diesel)
+    db_session.add_all([
+        FuelLog(vehicle_id=vehicle.id, filled_on=date(2026, 1, 1), mileage=100,
+                quantity=10, total_cost=20.0, full_tank=True),
+        ServiceRecord(vehicle_id=vehicle.id, service_type=ServiceType.repair,
+                      title="Fix", performed_on=date(2026, 1, 2), cost=100.0),
+        Expense(vehicle_id=vehicle.id, category=ExpenseCategory.insurance,
+                title="Annual policy", amount=500.0, spent_on=date(2026, 1, 3)),
+        Expense(vehicle_id=vehicle.id, category=ExpenseCategory.vignette,
+                title="Autobahnvignette", amount=96.4, spent_on=date(2026, 1, 4)),
+    ])
+    db_session.flush()
+
+    stats = compute_stats(vehicle)
+    assert stats.expense_count == 2
+    assert stats.total_other_cost == round(500.0 + 96.4, 2)
+    assert stats.total_cost == round(20.0 + 100.0 + 596.4, 2)
+    # The two expenses fall in 2026-01 alongside the fuel + service costs.
+    assert dict(stats.monthly_cost)["2026-01"] == round(20.0 + 100.0 + 596.4, 2)
 
 
 def test_fuel_summary_totals_and_per_fill(db_session):

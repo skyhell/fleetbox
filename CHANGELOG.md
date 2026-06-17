@@ -5,6 +5,15 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-17
+
+### Added
+- **Other expenses** per vehicle: track costs that are neither fuel nor service
+  — insurance, road tax, parking, tolls, the Austrian motorway vignette, fines,
+  accessories and so on — each with a category, amount, date and notes. They
+  count towards the vehicle's total cost and the monthly cost chart on the
+  statistics page, and are included in the CSV backup (export & import).
+
 ## [0.7.0] - 2026-06-17
 
 ### Added

@@ -43,7 +43,7 @@ fleetbox/
 │   ├── mailer.py          # Minimal stdlib SMTP sender
 │   ├── cli.py             # init-db / create-admin / disable-2fa / send-reminders / serve
 │   ├── routers/           # auth, account, dashboard, vehicles, service, fuel,
-│   │                      #   stats, tires, attachments, backup, admin, pwa
+│   │                      #   expenses, stats, tires, attachments, backup, admin, pwa
 │   ├── templates/         # Jinja2 HTML templates
 │   ├── locales/           # de.json, en.json translation catalogs
 │   └── static/            # CSS / JS / app icons / offline.html
