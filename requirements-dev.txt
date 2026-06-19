@@ -6,4 +6,4 @@ httpx>=0.28
 ruff>=0.9
 mypy>=1.14
 bandit>=1.9.4
-pip-audit>=2.7
+pip-audit>=2.10.1
