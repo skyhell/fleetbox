@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-21
+
 ### Added
 - **Edit service records**: existing service entries can now be edited (not just
   added or deleted), the same way refuelings already could. The vehicle's
