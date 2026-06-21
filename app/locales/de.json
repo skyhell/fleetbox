@@ -80,6 +80,7 @@
   "inspection.due": "Fällig am",
 
   "service.records": "Service-Einträge",
+  "service.edit": "Service-Eintrag bearbeiten",
   "service.intervals": "Serviceintervalle",
   "service.add_record": "Service-Eintrag hinzufügen",
   "service.add_interval": "Serviceintervall hinzufügen",

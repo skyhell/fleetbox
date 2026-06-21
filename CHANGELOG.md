@@ -5,6 +5,11 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Edit service records**: existing service entries can now be edited (not just
+  added or deleted), the same way refuelings already could. The vehicle's
+  mileage is kept in sync when an edited record reports a higher reading.
+
 ## [0.8.0] - 2026-06-17
 
 ### Added

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import ServiceInterval, ServiceRecord, ServiceType, User, Vehicle
 from app.security import require_user
+from app.templating import render
 
 router = APIRouter(prefix="/vehicles/{vehicle_id}", tags=["service"])
 
@@ -72,6 +73,55 @@ def add_record(
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
+def _get_owned_record(db: Session, vehicle: Vehicle, record_id: int) -> ServiceRecord:
+    record = db.get(ServiceRecord, record_id)
+    if record is None or record.vehicle_id != vehicle.id:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+
+@router.get("/records/{record_id}/edit")
+def edit_record_form(
+    request: Request,
+    vehicle_id: int,
+    record_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    record = _get_owned_record(db, vehicle, record_id)
+    return render(request, "service/form.html", vehicle=vehicle, record=record)
+
+
+@router.post("/records/{record_id}/edit")
+def update_record(
+    vehicle_id: int,
+    record_id: int,
+    service_type: str = Form(...),
+    title: str = Form(...),
+    performed_on: str = Form(...),
+    mileage: str = Form(""),
+    cost: str = Form(""),
+    workshop: str = Form(""),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    record = _get_owned_record(db, vehicle, record_id)
+    record.service_type = ServiceType(service_type)
+    record.title = title
+    record.performed_on = _date(performed_on) or date.today()
+    record.mileage = _int(mileage)
+    record.cost = _float(cost)
+    record.workshop = workshop or None
+    record.notes = notes or None
+    if record.mileage and record.mileage > vehicle.mileage:
+        vehicle.mileage = record.mileage
+    db.commit()
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
 @router.post("/records/{record_id}/delete")
 def delete_record(
     vehicle_id: int,
@@ -80,9 +130,7 @@ def delete_record(
     user: User = Depends(require_user),
 ):
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
-    record = db.get(ServiceRecord, record_id)
-    if record is None or record.vehicle_id != vehicle.id:
-        raise HTTPException(status_code=404, detail="Record not found")
+    record = _get_owned_record(db, vehicle, record_id)
     db.delete(record)
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

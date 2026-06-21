@@ -80,6 +80,7 @@
   "inspection.due": "Due on",
 
   "service.records": "Service records",
+  "service.edit": "Edit service record",
   "service.intervals": "Service intervals",
   "service.add_record": "Add service record",
   "service.add_interval": "Add service interval",

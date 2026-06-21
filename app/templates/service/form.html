@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ t('service.edit') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('service.edit') }} — {{ vehicle.display_name }}</h1>
+  <form method="post" action="/vehicles/{{ vehicle.id }}/records/{{ record.id }}/edit">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-row">
+      <label>{{ t('service.field.type') }}
+        <select name="service_type">
+          {% for st in ServiceType %}<option value="{{ st.value }}" {{ 'selected' if st == record.service_type else '' }}>{{ t('service.type.' + st.value) }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>{{ t('service.field.title') }} <span class="req">*</span>
+        <input type="text" name="title" required value="{{ record.title }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('service.field.date') }} <span class="req">*</span>
+        <input type="date" name="performed_on" required value="{{ record.performed_on.isoformat() }}">
+      </label>
+      <label>{{ t(vehicle.reading_label_key) }}
+        <input type="number" name="mileage" min="0" value="{{ record.mileage if record.mileage is not none else '' }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('service.field.cost') }}
+        <input type="text" name="cost" inputmode="decimal" value="{{ '%.2f'|format(record.cost) if record.cost is not none else '' }}">
+      </label>
+      <label>{{ t('service.field.workshop') }}
+        <input type="text" name="workshop" value="{{ record.workshop or '' }}">
+      </label>
+    </div>
+    <label>{{ t('service.field.notes') }}
+      <textarea name="notes" rows="2">{{ record.notes or '' }}</textarea>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="/vehicles/{{ vehicle.id }}">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
