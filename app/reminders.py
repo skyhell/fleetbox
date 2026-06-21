@@ -71,7 +71,8 @@ def _service_reminders(vehicle: Vehicle, t) -> list[Reminder]:
         bits: list[str] = [t(f"service.status.{status}")]
         due_km = iv.due_mileage()
         if due_km is not None:
-            bits.append(f"{due_km} {vehicle.usage_unit_label}")
+            reading = f"{due_km:.2f}".rstrip("0").rstrip(".")
+            bits.append(f"{reading} {vehicle.usage_unit_label}")
         due_on = iv.due_date()
         if due_on is not None:
             bits.append(due_on.isoformat())

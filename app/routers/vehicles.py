@@ -29,6 +29,12 @@ def _parse_int(value: str | None) -> int | None:
     return int(value) if value else None
 
 
+def _parse_reading(value: str | None) -> float | None:
+    """Parse an odometer / hour-meter reading, allowing up to 2 decimals."""
+    value = (value or "").strip().replace(",", ".")
+    return round(float(value), 2) if value else None
+
+
 def _parse_date(value: str | None) -> date | None:
     value = (value or "").strip()
     return date.fromisoformat(value) if value else None
@@ -78,7 +84,7 @@ def create_vehicle(
         license_plate=license_plate or None,
         fuel_type=FuelType(fuel_type),
         usage_unit=UsageUnit(usage_unit),
-        mileage=_parse_int(mileage) or 0,
+        mileage=_parse_reading(mileage) or 0,
         inspection_due=_parse_date(inspection_due),
         notes=notes or None,
     )
@@ -161,7 +167,7 @@ def update_vehicle(
     vehicle.license_plate = license_plate or None
     vehicle.fuel_type = FuelType(fuel_type)
     vehicle.usage_unit = UsageUnit(usage_unit)
-    vehicle.mileage = _parse_int(mileage) or 0
+    vehicle.mileage = _parse_reading(mileage) or 0
     vehicle.inspection_due = _parse_date(inspection_due)
     vehicle.notes = notes or None
     db.commit()

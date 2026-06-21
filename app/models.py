@@ -117,7 +117,8 @@ class Vehicle(Base):
         Enum(UsageUnit), default=UsageUnit.km, nullable=False
     )
     # Current odometer / hour-meter reading, expressed in ``usage_unit``.
-    mileage: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Float so it can hold fractional km or operating hours (2 decimals).
+    mileage: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     # Next periodic roadworthiness inspection due date (§57a "Pickerl" / TÜV/HU).
     inspection_due: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
@@ -202,7 +203,7 @@ class ServiceRecord(Base):
     )
     title: Mapped[str] = mapped_column(String(160), nullable=False)
     performed_on: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
-    mileage: Mapped[int | None] = mapped_column(Integer)
+    mileage: Mapped[float | None] = mapped_column(Float)
     cost: Mapped[float | None] = mapped_column(Float)
     workshop: Mapped[str | None] = mapped_column(String(160))
     notes: Mapped[str | None] = mapped_column(Text)
@@ -227,15 +228,15 @@ class ServiceInterval(Base):
     service_type: Mapped[ServiceType] = mapped_column(
         Enum(ServiceType), default=ServiceType.other, nullable=False
     )
-    interval_km: Mapped[int | None] = mapped_column(Integer)
+    interval_km: Mapped[float | None] = mapped_column(Float)
     interval_months: Mapped[int | None] = mapped_column(Integer)
     last_service_date: Mapped[date | None] = mapped_column(Date)
-    last_service_mileage: Mapped[int | None] = mapped_column(Integer)
+    last_service_mileage: Mapped[float | None] = mapped_column(Float)
     notes: Mapped[str | None] = mapped_column(Text)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="service_intervals")
 
-    def due_mileage(self) -> int | None:
+    def due_mileage(self) -> float | None:
         if self.interval_km is None or self.last_service_mileage is None:
             return None
         return self.last_service_mileage + self.interval_km
@@ -253,7 +254,7 @@ class ServiceInterval(Base):
         )
         return date(year, month, day)
 
-    def status(self, current_mileage: int) -> str:
+    def status(self, current_mileage: float) -> str:
         """Return one of: 'ok', 'due_soon', 'overdue', 'unknown'."""
         statuses: list[str] = []
 
@@ -299,7 +300,7 @@ class FuelLog(Base):
         ForeignKey("vehicles.id", ondelete="CASCADE"), index=True, nullable=False
     )
     filled_on: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
-    mileage: Mapped[int | None] = mapped_column(Integer)
+    mileage: Mapped[float | None] = mapped_column(Float)
     quantity: Mapped[float] = mapped_column(Float, nullable=False)  # liters or kWh
     price_per_unit: Mapped[float | None] = mapped_column(Float)
     total_cost: Mapped[float | None] = mapped_column(Float)
@@ -372,7 +373,7 @@ class TireSet(Base):
     tread_depth_mm: Mapped[float | None] = mapped_column(Float)
     is_mounted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     mounted_on: Mapped[date | None] = mapped_column(Date)
-    mounted_mileage: Mapped[int | None] = mapped_column(Integer)
+    mounted_mileage: Mapped[float | None] = mapped_column(Float)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 

@@ -17,7 +17,7 @@
     <p class="muted">{{ v.make or '' }} {{ v.model or '' }} {% if v.year %}· {{ v.year }}{% endif %}</p>
     <p>
       {% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}
-      <span class="muted">{{ v.mileage }} {{ v.usage_unit_label }} · {{ t('fuel.type.' + v.fuel_type.value) }}</span>
+      <span class="muted">{{ v.mileage|num }} {{ v.usage_unit_label }} · {{ t('fuel.type.' + v.fuel_type.value) }}</span>
     </p>
   </a>
   {% endfor %}

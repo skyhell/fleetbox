@@ -20,7 +20,7 @@
         <input type="date" name="performed_on" required value="{{ record.performed_on.isoformat() }}">
       </label>
       <label>{{ t(vehicle.reading_label_key) }}
-        <input type="number" name="mileage" min="0" value="{{ record.mileage if record.mileage is not none else '' }}">
+        <input type="number" name="mileage" min="0" step="0.01" value="{{ record.mileage|num if record.mileage is not none else '' }}">
       </label>
     </div>
     <div class="form-row">

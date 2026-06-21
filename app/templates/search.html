@@ -24,7 +24,7 @@
       <tr>
         <td><a href="/vehicles/{{ v.id }}">{{ v.display_name }}</a></td>
         <td>{% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}</td>
-        <td class="muted">{{ v.mileage }} {{ v.usage_unit_label }}</td>
+        <td class="muted">{{ v.mileage|num }} {{ v.usage_unit_label }}</td>
       </tr>
       {% endfor %}
     </tbody>

@@ -25,7 +25,7 @@ class VehicleStats:
     service_count: int = 0
     expense_count: int = 0
     avg_consumption: float | None = None
-    distance_tracked: int | None = None
+    distance_tracked: float | None = None
     cost_per_unit: float | None = None
 
     # (label, value) series for charting, oldest first.
@@ -53,7 +53,7 @@ def _fill_consumption_pairs(logs, factor: float):
     """
     entries = sorted((f for f in logs if f.mileage is not None), key=lambda f: f.mileage)
     accumulated = 0.0
-    last_full_mileage: int | None = None
+    last_full_mileage: float | None = None
 
     for f in entries:
         accumulated += f.quantity or 0.0

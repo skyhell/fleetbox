@@ -23,14 +23,15 @@ def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
     return vehicle
 
 
-def _int(v: str | None) -> int | None:
-    v = (v or "").strip()
-    return int(v) if v else None
-
-
 def _float(v: str | None) -> float | None:
     v = (v or "").strip().replace(",", ".")
     return float(v) if v else None
+
+
+def _reading(v: str | None) -> float | None:
+    """Parse an odometer / hour-meter reading, allowing up to 2 decimals."""
+    f = _float(v)
+    return round(f, 2) if f is not None else None
 
 
 def _reconcile_price(
@@ -69,7 +70,7 @@ def add_fuel(
     log = FuelLog(
         vehicle_id=vehicle.id,
         filled_on=date.fromisoformat(filled_on) if filled_on else date.today(),
-        mileage=_int(mileage),
+        mileage=_reading(mileage),
         quantity=qty,
         price_per_unit=ppu,
         total_cost=total,
@@ -124,7 +125,7 @@ def update_fuel(
     ppu, total = _reconcile_price(qty, _float(price_per_unit), _float(total_cost))
 
     log.filled_on = date.fromisoformat(filled_on) if filled_on else date.today()
-    log.mileage = _int(mileage)
+    log.mileage = _reading(mileage)
     log.quantity = qty
     log.price_per_unit = ppu
     log.total_cost = total

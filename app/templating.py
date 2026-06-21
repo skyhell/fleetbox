@@ -18,6 +18,17 @@ TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
+def _format_number(value) -> str:
+    """Format a reading: whole numbers without decimals, otherwise up to 2."""
+    if value is None:
+        return ""
+    text = f"{float(value):.2f}".rstrip("0").rstrip(".")
+    return text or "0"
+
+
+templates.env.filters["num"] = _format_number
+
+
 def get_locale(request: Request) -> str:
     """Resolve and persist the active locale for the request."""
     query_lang = request.query_params.get("lang")

@@ -33,6 +33,12 @@ def _float(v: str | None) -> float | None:
     return float(v) if v else None
 
 
+def _reading(v: str | None) -> float | None:
+    """Parse an odometer / hour-meter reading, allowing up to 2 decimals."""
+    f = _float(v)
+    return round(f, 2) if f is not None else None
+
+
 def _date(v: str | None) -> date | None:
     v = (v or "").strip()
     return date.fromisoformat(v) if v else None
@@ -60,7 +66,7 @@ def add_record(
         service_type=ServiceType(service_type),
         title=title,
         performed_on=_date(performed_on) or date.today(),
-        mileage=_int(mileage),
+        mileage=_reading(mileage),
         cost=_float(cost),
         workshop=workshop or None,
         notes=notes or None,
@@ -112,7 +118,7 @@ def update_record(
     record.service_type = ServiceType(service_type)
     record.title = title
     record.performed_on = _date(performed_on) or date.today()
-    record.mileage = _int(mileage)
+    record.mileage = _reading(mileage)
     record.cost = _float(cost)
     record.workshop = workshop or None
     record.notes = notes or None
@@ -157,10 +163,10 @@ def add_interval(
         vehicle_id=vehicle.id,
         name=name,
         service_type=ServiceType(service_type),
-        interval_km=_int(interval_km),
+        interval_km=_reading(interval_km),
         interval_months=_int(interval_months),
         last_service_date=_date(last_service_date),
-        last_service_mileage=_int(last_service_mileage),
+        last_service_mileage=_reading(last_service_mileage),
         notes=notes or None,
     )
     db.add(interval)

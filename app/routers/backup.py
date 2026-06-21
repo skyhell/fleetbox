@@ -78,6 +78,12 @@ def _float(v: str | None) -> float | None:
     return float(v) if v else None
 
 
+def _reading(v: str | None) -> float | None:
+    """Parse an odometer / hour-meter reading, allowing up to 2 decimals."""
+    f = _float(v)
+    return round(f, 2) if f is not None else None
+
+
 def _date(v: str | None) -> date | None:
     v = (v or "").strip()
     return date.fromisoformat(v) if v else None
@@ -235,7 +241,7 @@ async def import_csv(
             license_plate=_s(row.get("license_plate")),
             fuel_type=_enum(FuelType, row.get("fuel_type"), FuelType.petrol),
             usage_unit=_enum(UsageUnit, row.get("usage_unit"), UsageUnit.km),
-            mileage=_int(row.get("mileage")) or 0,
+            mileage=_reading(row.get("mileage")) or 0,
             inspection_due=_date(row.get("inspection_due")),
             notes=_s(row.get("notes")),
         )
@@ -258,7 +264,7 @@ async def import_csv(
             service_type=_enum(ServiceType, row.get("service_type"), ServiceType.other),
             title=_s(row.get("title")) or "—",
             performed_on=_date(row.get("performed_on")) or date.today(),
-            mileage=_int(row.get("mileage")),
+            mileage=_reading(row.get("mileage")),
             cost=_float(row.get("cost")),
             workshop=_s(row.get("workshop")),
             notes=_s(row.get("notes")),
@@ -275,10 +281,10 @@ async def import_csv(
             vehicle_id=vehicle.id,
             name=_s(row.get("name")) or "—",
             service_type=_enum(ServiceType, row.get("service_type"), ServiceType.other),
-            interval_km=_int(row.get("interval_km")),
+            interval_km=_reading(row.get("interval_km")),
             interval_months=_int(row.get("interval_months")),
             last_service_date=_date(row.get("last_service_date")),
-            last_service_mileage=_int(row.get("last_service_mileage")),
+            last_service_mileage=_reading(row.get("last_service_mileage")),
             notes=_s(row.get("notes")),
         ))
         summary["intervals"] += 1
@@ -296,7 +302,7 @@ async def import_csv(
         db.add(FuelLog(
             vehicle_id=vehicle.id,
             filled_on=_date(row.get("filled_on")) or date.today(),
-            mileage=_int(row.get("mileage")),
+            mileage=_reading(row.get("mileage")),
             quantity=quantity,
             price_per_unit=_float(row.get("price_per_unit")),
             total_cost=_float(row.get("total_cost")),

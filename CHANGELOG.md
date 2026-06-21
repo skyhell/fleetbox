@@ -10,6 +10,12 @@ All notable changes to FleetBox are documented here. The format is based on
   added or deleted), the same way refuelings already could. The vehicle's
   mileage is kept in sync when an edited record reports a higher reading.
 
+### Changed
+- **Fractional readings**: odometer and hour-meter readings (km and operating
+  hours) now accept up to 2 decimal places — on vehicles, fuel logs, service
+  records and service intervals. Whole numbers are still shown without trailing
+  decimals.
+
 ## [0.8.0] - 2026-06-17
 
 ### Added

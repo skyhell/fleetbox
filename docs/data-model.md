@@ -37,13 +37,14 @@ A vehicle owned by exactly one user.
 | `license_plate` | str       | optional                       |
 | `fuel_type`     | enum      | petrol/diesel/electric/…       |
 | `usage_unit`    | enum      | `km` (distance) or `h` (operating hours) |
-| `mileage`       | int       | current odometer / hour-meter reading, in `usage_unit` |
+| `mileage`       | float     | current odometer / hour-meter reading, in `usage_unit` (up to 2 decimals) |
 | `inspection_due`| date      | next roadworthiness inspection (§57a "Pickerl" / TÜV/HU), optional |
 | `notes`         | text      | optional                       |
 
 All reading fields below (`ServiceRecord.mileage`, `FuelLog.mileage`,
 `ServiceInterval.interval_km` / `last_service_mileage`) are expressed in the
-vehicle's `usage_unit`.
+vehicle's `usage_unit` and stored as floats, allowing up to 2 decimal places
+(e.g. fractional operating hours or kilometres).
 
 ## ServiceRecord
 A completed maintenance event (oil change, brake replacement, inspection, …).
@@ -53,7 +54,7 @@ A completed maintenance event (oil change, brake replacement, inspection, …).
 | `service_type` | enum   | `ServiceType`                               |
 | `title`        | str    | short description                           |
 | `performed_on` | date   |                                             |
-| `mileage`      | int    | optional; bumps the vehicle odometer        |
+| `mileage`      | float  | optional; bumps the vehicle odometer        |
 | `cost`         | float  | optional                                    |
 | `workshop`     | str    | optional                                    |
 
@@ -67,10 +68,10 @@ the interval, by **usage** (`interval_km`, in the vehicle's `usage_unit`) and/or
 |------------------------|------|-----------------------------|
 | `name`                 | str  | e.g. "Oil change"           |
 | `service_type`         | enum |                             |
-| `interval_km`          | int  | optional                    |
+| `interval_km`          | float | optional                   |
 | `interval_months`      | int  | optional                    |
 | `last_service_date`    | date | optional                    |
-| `last_service_mileage` | int  | optional                    |
+| `last_service_mileage` | float | optional                   |
 
 ## FuelLog
 A refueling / charging event.
@@ -78,7 +79,7 @@ A refueling / charging event.
 | Field            | Type  | Notes                                  |
 |------------------|-------|----------------------------------------|
 | `filled_on`      | date  |                                        |
-| `mileage`        | int   | optional; bumps the vehicle odometer   |
+| `mileage`        | float | optional; bumps the vehicle odometer   |
 | `quantity`       | float | liters or kWh                          |
 | `price_per_unit` | float | optional                               |
 | `total_cost`     | float | derived from price × quantity if blank |
@@ -117,7 +118,7 @@ is not the one currently mounted.
 | `tread_depth_mm`   | float    | optional                                       |
 | `is_mounted`       | bool     | currently on the vehicle (≤1 mounted per vehicle) |
 | `mounted_on`       | date     | recorded when mounted                          |
-| `mounted_mileage`  | int      | vehicle reading when mounted                   |
+| `mounted_mileage`  | float    | vehicle reading when mounted                   |
 
 Mounting a set automatically unmounts any other set on the vehicle.
 
