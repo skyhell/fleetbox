@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0-beta.1] - 2026-06-21
+
 ### Changed
 - **Visual refresh**: a more modern, cohesive look across all pages — refined
   colour tokens and shadows, a sticky translucent top bar with pill navigation,
