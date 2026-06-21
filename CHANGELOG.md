@@ -5,6 +5,14 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Visual refresh**: a more modern, cohesive look across all pages — refined
+  colour tokens and shadows, a sticky translucent top bar with pill navigation,
+  card hover elevation, zebra-striped tables, pill-shaped status badges, softer
+  input focus rings and tidier empty states. Pure CSS (plus one class tweak); no
+  behaviour, layout or markup logic changed, and light/dark/auto themes all keep
+  working.
+
 ## [0.9.0] - 2026-06-21
 
 ### Added
