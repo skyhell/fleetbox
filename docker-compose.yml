@@ -10,6 +10,8 @@ services:
       # CHANGE THIS in production:
       FLEETBOX_SECRET_KEY: "change-me-please-generate-a-random-value"
       FLEETBOX_DATABASE_URL: "sqlite:////data/fleetbox.db"
+      # Keep uploaded documents/photos in the persistent volume too:
+      FLEETBOX_UPLOAD_DIR: "/data/uploads"
       FLEETBOX_DEFAULT_LOCALE: "de"
       FLEETBOX_ALLOW_REGISTRATION: "true"
     volumes:

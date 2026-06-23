@@ -5,6 +5,16 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Docker step-by-step guide** (`docs/docker-step-by-step.md`): full Docker /
+  Compose walkthrough covering the secret key, persistent uploads, updates,
+  backup/restore, HTTPS reverse proxy, email reminders and PostgreSQL.
+
+### Fixed
+- **Docker uploads now persist**: `docker-compose.yml` sets
+  `FLEETBOX_UPLOAD_DIR=/data/uploads` so uploaded documents and photos are stored
+  in the `fleetbox-data` volume instead of the ephemeral container filesystem.
+
 ## [0.10.0-beta.1] - 2026-06-21
 
 ### Changed

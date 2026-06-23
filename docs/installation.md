@@ -68,7 +68,9 @@ cd fleetbox
 docker compose up -d
 ```
 
-Data is persisted in the `fleetbox-data` named volume.
+Data is persisted in the `fleetbox-data` named volume. For the full walkthrough
+(secret key, persistent uploads, updates, backup, HTTPS, PostgreSQL) see
+[docker-step-by-step.md](docker-step-by-step.md).
 
 ## 3. Bare metal / virtualenv
 

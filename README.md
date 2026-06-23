@@ -88,6 +88,7 @@ All documentation lives in [`docs/`](docs/) and is written in **English**:
 
 - [Installation](docs/installation.md)
 - [Proxmox install — step by step](docs/proxmox-step-by-step.md) ([HTML version](docs/proxmox-step-by-step.html))
+- [Docker install — step by step](docs/docker-step-by-step.md)
 - [Configuration](docs/configuration.md)
 - [Reverse proxy & HTTPS (nginx)](docs/reverse-proxy.md)
 - [Development guide](docs/development.md)
