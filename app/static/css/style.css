@@ -456,9 +456,6 @@ form { display: inline; }
 .attachment-icon { font-weight: 700; color: var(--muted); letter-spacing: 1px; }
 .attachment-meta { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.85rem; word-break: break-word; }
 .attachment-delete { position: absolute; top: 0.4rem; right: 0.4rem; }
-.attachment .star { background: none; border: none; cursor: pointer; padding: 0; color: var(--muted); font-size: 1rem; display: inline-flex; align-items: center; gap: 0.25rem; }
-.attachment .star .small { font-size: 0.78rem; }
-.attachment .star.is-primary { color: var(--due); }
 .vehicle-hero { width: 100%; max-width: 320px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 0.85rem; box-shadow: var(--shadow); }
 .vehicle-thumb { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 0.6rem; }
 input[type="file"] { width: 100%; margin-top: 0.3rem; font-size: 0.9rem; }

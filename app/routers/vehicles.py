@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import FuelType, UsageUnit, User, Vehicle
+from app.routers.attachments import save_attachment
 from app.security import require_user
 from app.stats import fuel_summary
 from app.templating import render
@@ -40,6 +41,23 @@ def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
 
 
+def _require_photo(photo: UploadFile | None) -> UploadFile | None:
+    """Return the uploaded photo, or None when the field was left empty.
+
+    The vehicle form's photo field accepts images only (documents belong in
+    the attachments section), so anything without an image content type is
+    rejected up front — before the vehicle row is created or modified.
+    """
+    if photo is None or not photo.filename:
+        return None
+    if not (photo.content_type or "").startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported file type",
+        )
+    return photo
+
+
 @router.get("")
 def list_vehicles(
     request: Request,
@@ -58,7 +76,7 @@ def new_vehicle_form(request: Request, user: User = Depends(require_user)):
 
 
 @router.post("/new")
-def create_vehicle(
+async def create_vehicle(
     request: Request,
     name: str = Form(...),
     make: str = Form(""),
@@ -71,9 +89,11 @@ def create_vehicle(
     mileage: str = Form("0"),
     inspection_due: str = Form(""),
     notes: str = Form(""),
+    photo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
+    photo = _require_photo(photo)
     vehicle = Vehicle(
         owner_id=user.id,
         name=name,
@@ -89,6 +109,9 @@ def create_vehicle(
         notes=notes or None,
     )
     db.add(vehicle)
+    db.flush()  # assign an id so the photo can reference the vehicle
+    if photo is not None:
+        await save_attachment(db, vehicle, photo, as_title_image=True)
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
@@ -108,8 +131,12 @@ def vehicle_detail(
     records = sorted(vehicle.service_records, key=lambda r: r.performed_on, reverse=True)
     fuel_logs = sorted(vehicle.fuel_logs, key=lambda f: f.filled_on, reverse=True)
     fuel = fuel_summary(vehicle)
+    # The vehicle photo (title image) is managed on the vehicle form and shown
+    # in the header — keep it out of the documents list.
     attachments = sorted(
-        vehicle.attachments, key=lambda a: a.uploaded_at, reverse=True
+        (a for a in vehicle.attachments if not a.is_primary),
+        key=lambda a: a.uploaded_at,
+        reverse=True,
     )
     tire_sets = sorted(
         vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
@@ -141,7 +168,7 @@ def edit_vehicle_form(
 
 
 @router.post("/{vehicle_id}/edit")
-def update_vehicle(
+async def update_vehicle(
     request: Request,
     vehicle_id: int,
     name: str = Form(...),
@@ -155,9 +182,11 @@ def update_vehicle(
     mileage: str = Form("0"),
     inspection_due: str = Form(""),
     notes: str = Form(""),
+    photo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
+    photo = _require_photo(photo)
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
     vehicle.name = name
     vehicle.make = make or None
@@ -170,6 +199,9 @@ def update_vehicle(
     vehicle.mileage = _parse_reading(mileage) or 0
     vehicle.inspection_due = _parse_date(inspection_due)
     vehicle.notes = notes or None
+    if photo is not None:
+        # Replaces the current vehicle photo, if any.
+        await save_attachment(db, vehicle, photo, as_title_image=True)
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 

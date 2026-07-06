@@ -78,6 +78,8 @@
   "vehicle.field.reading_h": "Operating hours (h)",
   "vehicle.field.inspection_due": "Roadworthiness inspection due",
   "vehicle.field.notes": "Notes",
+  "vehicle.field.photo": "Vehicle photo",
+  "vehicle.field.photo_hint": "JPG, PNG, GIF or WebP, up to 10 MB. A new image replaces the current vehicle photo.",
 
   "inspection.title": "Roadworthiness inspection",
   "inspection.due": "Due on",
@@ -153,8 +155,6 @@
   "attachment.field.file": "File",
   "attachment.field.title": "Title",
   "attachment.field.record": "Link to service record",
-  "attachment.set_primary": "Set as title image",
-  "attachment.is_primary": "Title image",
   "attachment.hint": "Images (JPG, PNG, GIF, WebP) and PDF, up to 10 MB.",
   "attachment.too_large": "The file is too large.",
   "attachment.unsupported": "Unsupported file type.",

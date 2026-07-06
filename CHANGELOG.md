@@ -6,6 +6,17 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Vehicle photo on the vehicle form**: the vehicle photo (title image) is now
+  managed directly on the create/edit form — upload an image there and it
+  becomes the vehicle's photo; uploading a new one replaces it. Images only
+  (JPG, PNG, GIF, WebP); the size cap and storage rules match regular uploads.
+
+### Changed
+- **Title image is set only via the vehicle form**: uploaded documents no
+  longer become the title image automatically, the "set as title image" star
+  on attachments is gone, and the vehicle photo no longer appears in the
+  documents list (it is shown in the vehicle header instead). Existing title
+  images keep working unchanged.
 - **Full backup as ZIP**: the Backup page now offers a one-click complete
   backup — a single ZIP archive containing every CSV export plus all uploaded
   documents & photos. Importing the archive restores data and files in one

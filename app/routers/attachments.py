@@ -33,32 +33,29 @@ def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
     return vehicle
 
 
-@router.post("/attachments")
-async def upload_attachment(
-    vehicle_id: int,
-    file: UploadFile = File(...),
-    title: str = Form(""),
-    service_record_id: str = Form(""),
-    db: Session = Depends(get_db),
-    user: User = Depends(require_user),
-):
-    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+async def save_attachment(
+    db: Session,
+    vehicle: Vehicle,
+    file: UploadFile,
+    *,
+    title: str | None = None,
+    service_record_id: int | None = None,
+    as_title_image: bool = False,
+) -> Attachment:
+    """Validate, store on disk and register an uploaded file for a vehicle.
 
+    Raises 415 for disallowed content types and 413 when the size cap is
+    exceeded (any partial file is removed from disk). With ``as_title_image``
+    the upload becomes the vehicle's photo, replacing (deleting) the previous
+    one — the vehicle photo is managed exclusively through the vehicle form.
+    Regular uploads never touch the title image. The caller commits.
+    """
     extension = ALLOWED_UPLOAD_TYPES.get(file.content_type or "")
     if extension is None:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="Unsupported file type",
         )
-
-    # Optional link to one of this vehicle's service records.
-    record_id = service_record_id.strip()
-    linked_record_id: int | None = None
-    if record_id:
-        record = db.get(ServiceRecord, int(record_id))
-        if record is None or record.vehicle_id != vehicle.id:
-            raise HTTPException(status_code=404, detail="Service record not found")
-        linked_record_id = record.id
 
     stored_name = secrets.token_hex(16) + extension
     settings.upload_path.mkdir(parents=True, exist_ok=True)
@@ -81,17 +78,46 @@ async def upload_attachment(
 
     attachment = Attachment(
         vehicle_id=vehicle.id,
-        service_record_id=linked_record_id,
-        title=title.strip() or None,
+        service_record_id=service_record_id,
+        title=(title or "").strip() or None,
         filename=file.filename or stored_name,
         stored_name=stored_name,
         content_type=file.content_type,
         size=size,
     )
-    # The first uploaded image becomes the vehicle's title image automatically.
-    if attachment.is_image and vehicle.primary_image is None:
+    if as_title_image and attachment.is_image:
+        # Replace the previous vehicle photo (row and file).
+        for old in [a for a in vehicle.attachments if a.is_primary]:
+            (settings.upload_path / old.stored_name).unlink(missing_ok=True)
+            db.delete(old)
         attachment.is_primary = True
     db.add(attachment)
+    return attachment
+
+
+@router.post("/attachments")
+async def upload_attachment(
+    vehicle_id: int,
+    file: UploadFile = File(...),
+    title: str = Form(""),
+    service_record_id: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+
+    # Optional link to one of this vehicle's service records.
+    record_id = service_record_id.strip()
+    linked_record_id: int | None = None
+    if record_id:
+        record = db.get(ServiceRecord, int(record_id))
+        if record is None or record.vehicle_id != vehicle.id:
+            raise HTTPException(status_code=404, detail="Service record not found")
+        linked_record_id = record.id
+
+    await save_attachment(
+        db, vehicle, file, title=title, service_record_id=linked_record_id
+    )
     db.commit()
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
@@ -120,28 +146,6 @@ def download_attachment(
         filename=attachment.filename,
         content_disposition_type=disposition,
     )
-
-
-@router.post("/attachments/{attachment_id}/primary")
-def set_primary_attachment(
-    vehicle_id: int,
-    attachment_id: int,
-    db: Session = Depends(get_db),
-    user: User = Depends(require_user),
-):
-    vehicle = _get_owned_vehicle(db, user, vehicle_id)
-    attachment = db.get(Attachment, attachment_id)
-    if attachment is None or attachment.vehicle_id != vehicle.id or not attachment.is_image:
-        raise HTTPException(status_code=404, detail="Image not found")
-
-    # Toggle: clicking the current title image clears it; otherwise this image
-    # becomes the title image and any previous one is unset.
-    make_primary = not attachment.is_primary
-    for other in vehicle.attachments:
-        other.is_primary = False
-    attachment.is_primary = make_primary
-    db.commit()
-    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/attachments/{attachment_id}/delete")

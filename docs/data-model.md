@@ -100,7 +100,7 @@ PDF, capped at `FLEETBOX_MAX_UPLOAD_BYTES` (10 MiB by default).
 | `stored_name`       | str      | opaque name on disk                              |
 | `content_type`      | str      | validated MIME type                              |
 | `size`              | int      | bytes                                            |
-| `is_primary`        | bool     | this image is the vehicle's title image (≤1 per vehicle) |
+| `is_primary`        | bool     | this image is the vehicle's photo / title image (≤1 per vehicle, managed on the vehicle form) |
 | `uploaded_at`       | datetime |                                                  |
 
 ## TireSet

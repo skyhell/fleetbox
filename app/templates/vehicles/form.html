@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card narrow">
   <h1>{{ t('vehicle.edit') if vehicle else t('vehicle.add') }}</h1>
-  <form method="post" action="{{ '/vehicles/%d/edit'|format(vehicle.id) if vehicle else '/vehicles/new' }}">
+  <form method="post" action="{{ '/vehicles/%d/edit'|format(vehicle.id) if vehicle else '/vehicles/new' }}" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>{{ t('vehicle.field.name') }} <span class="req">*</span>
       <input type="text" name="name" required value="{{ vehicle.name if vehicle else '' }}">
@@ -54,6 +54,14 @@
     <label>{{ t('vehicle.field.notes') }}
       <textarea name="notes" rows="3">{{ vehicle.notes or '' if vehicle else '' }}</textarea>
     </label>
+    {% if vehicle and vehicle.primary_image %}
+    <img class="vehicle-thumb" src="/vehicles/{{ vehicle.id }}/attachments/{{ vehicle.primary_image.id }}"
+         alt="{{ vehicle.name }}">
+    {% endif %}
+    <label>{{ t('vehicle.field.photo') }}
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/gif,image/webp">
+    </label>
+    <p class="muted small">{{ t('vehicle.field.photo_hint') }}</p>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
       <a class="btn" href="{{ '/vehicles/%d'|format(vehicle.id) if vehicle else '/vehicles' }}">{{ t('common.cancel') }}</a>
