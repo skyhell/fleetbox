@@ -15,6 +15,9 @@
   "theme.auto": "Auto",
   "theme.light": "Hell",
   "theme.dark": "Dunkel",
+  "nav.style": "Stil",
+  "skin.apple": "Apple",
+  "skin.classic": "Klassisch",
 
   "auth.login.title": "Anmelden",
   "auth.login.identifier": "E-Mail oder Benutzername",

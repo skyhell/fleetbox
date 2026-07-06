@@ -15,6 +15,9 @@
   "theme.auto": "Auto",
   "theme.light": "Light",
   "theme.dark": "Dark",
+  "nav.style": "Style",
+  "skin.apple": "Apple",
+  "skin.classic": "Classic",
 
   "auth.login.title": "Log in",
   "auth.login.identifier": "Email or username",

@@ -51,6 +51,11 @@ def get_locale(request: Request) -> str:
 
 THEMES = ("auto", "light", "dark")
 
+# Visual design skins: the modern Apple-style look (default) and the previous
+# "classic" look. Each is a self-contained stylesheet; the skin only decides
+# which one base.html links.
+SKINS = ("apple", "classic")
+
 
 def get_theme(request: Request) -> str:
     """Resolve and persist the colour theme: auto (follow OS), light or dark."""
@@ -60,6 +65,16 @@ def get_theme(request: Request) -> str:
         return query_theme
     theme = request.session.get("theme")
     return theme if theme in THEMES else "auto"
+
+
+def get_skin(request: Request) -> str:
+    """Resolve and persist the visual design skin: apple (default) or classic."""
+    query_skin = request.query_params.get("skin")
+    if query_skin in SKINS:
+        request.session["skin"] = query_skin
+        return query_skin
+    skin = request.session.get("skin")
+    return skin if skin in SKINS else "apple"
 
 
 def render(request: Request, template: str, **context):
@@ -76,6 +91,8 @@ def render(request: Request, template: str, **context):
         "locale": locale,
         "theme": get_theme(request),
         "themes": THEMES,
+        "skin": get_skin(request),
+        "skins": SKINS,
         "supported_locales": settings.supported_locales,
         "user": getattr(request.state, "user", None),
         "app_version": __version__,

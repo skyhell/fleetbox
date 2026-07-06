@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ locale }}" data-theme="{{ theme }}">
+<html lang="{{ locale }}" data-theme="{{ theme }}" data-skin="{{ skin }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ t('app.name') }}{% endblock %} · {{ t('app.name') }}</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/{{ 'classic' if skin == 'classic' else 'style' }}.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
@@ -43,6 +43,12 @@
       {% for th in themes %}
         <a href="?theme={{ th }}" class="{{ 'active' if th == theme else '' }}"
            title="{{ t('theme.' + th) }}" aria-label="{{ t('theme.' + th) }}">{{ theme_icons[th] }}</a>
+      {% endfor %}
+    </span>
+    <span class="skinswitch" title="{{ t('nav.style') }}">
+      {% for sk in skins %}
+        <a href="?skin={{ sk }}" class="{{ 'active' if sk == skin else '' }}"
+           title="{{ t('skin.' + sk) }}" aria-label="{{ t('skin.' + sk) }}">{{ t('skin.' + sk) }}</a>
       {% endfor %}
     </span>
     {% if user %}

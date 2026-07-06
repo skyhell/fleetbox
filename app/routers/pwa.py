@@ -25,6 +25,7 @@ router = APIRouter()
 # cache name below, never user-specific.
 _PRECACHE = [
     "/static/css/style.css",
+    "/static/css/classic.css",
     "/static/js/app.js",
     "/static/offline.html",
     "/static/icons/icon.svg",

@@ -5,6 +5,16 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-06
+
+### Added
+- **Switchable design skins**: a new **Style** switch (Apple / Classic) in the
+  top bar, alongside the existing theme switch. "Apple" is the refined,
+  spacious default look; "Classic" restores the previous design. The choice
+  persists in the session and is fully independent of the light/dark/auto theme,
+  so any of the four combinations works. Each skin is a self-contained
+  stylesheet (`style.css` / `classic.css`), both precached for offline use.
+
 ## [0.10.0] - 2026-07-06
 
 ### Added
