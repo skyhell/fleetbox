@@ -5,7 +5,11 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-06
+
 ### Added
+- **Chain service type**: new "Kette" / "Chain" maintenance type for tracking
+  chain maintenance (e.g. bicycles, motorcycles).
 - **Docker step-by-step guide** (`docs/docker-step-by-step.md`): full Docker /
   Compose walkthrough covering the secret key, persistent uploads, updates,
   backup/restore, HTTPS reverse proxy, email reminders and PostgreSQL.

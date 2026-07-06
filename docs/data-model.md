@@ -139,7 +139,7 @@ cost chart on the statistics page.
 
 ## ServiceType values
 `oil_change`, `brake_replacement`, `wear_part`, `inspection`, `tyre_change`,
-`repair`, `other`
+`chain`, `repair`, `other`
 
 ## TireSeason values
 `summer`, `winter`, `all_season`
