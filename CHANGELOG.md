@@ -6,6 +6,11 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Quick-add buttons on the vehicle page**: "+ Service" and "+ Refuel" sit at
+  the top of the vehicle page and open focused entry forms with smart
+  prefills — date set to today, the reading set to the vehicle's current
+  odometer / hour meter, "full tank" preselected and the first field focused —
+  so a refueling or service entry takes just a few keystrokes.
 - **Vehicle photo on the vehicle form**: the vehicle photo (title image) is now
   managed directly on the create/edit form — upload an image there and it
   becomes the vehicle's photo; uploading a new one replaces it. Images only

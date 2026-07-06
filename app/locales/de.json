@@ -78,6 +78,8 @@
   "vehicle.field.reading_h": "Betriebsstunden (h)",
   "vehicle.field.inspection_due": "Pickerl fällig am (§57a)",
   "vehicle.field.notes": "Notizen",
+  "vehicle.quick.service": "Service",
+  "vehicle.quick.fuel": "Tanken",
   "vehicle.field.photo": "Fahrzeugbild",
   "vehicle.field.photo_hint": "JPG, PNG, GIF oder WebP, bis zu 10 MB. Ein neues Bild ersetzt das aktuelle Fahrzeugbild.",
 

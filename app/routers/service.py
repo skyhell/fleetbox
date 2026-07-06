@@ -47,6 +47,21 @@ def _date(v: str | None) -> date | None:
 # --- Service records --------------------------------------------------------
 
 
+@router.get("/records/new")
+def new_record_form(
+    request: Request,
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Quick-add page: date and reading are prefilled for fast entry."""
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    return render(
+        request, "service/form.html",
+        vehicle=vehicle, record=None, today=date.today().isoformat(),
+    )
+
+
 @router.post("/records")
 def add_record(
     vehicle_id: int,

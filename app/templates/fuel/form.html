@@ -1,36 +1,36 @@
 {% extends "base.html" %}
-{% block title %}{{ t('fuel.edit') }}{% endblock %}
+{% block title %}{{ t('fuel.edit') if log else t('fuel.add') }}{% endblock %}
 {% block content %}
 <div class="card narrow">
-  <h1>{{ t('fuel.edit') }} — {{ vehicle.display_name }}</h1>
-  <form method="post" action="/vehicles/{{ vehicle.id }}/fuel/{{ log.id }}/edit">
+  <h1>{{ t('fuel.edit') if log else t('fuel.add') }} — {{ vehicle.display_name }}</h1>
+  <form method="post" action="{{ '/vehicles/%d/fuel/%d/edit'|format(vehicle.id, log.id) if log else '/vehicles/%d/fuel'|format(vehicle.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="form-row">
       <label>{{ t('fuel.field.date') }} <span class="req">*</span>
-        <input type="date" name="filled_on" required value="{{ log.filled_on.isoformat() }}">
+        <input type="date" name="filled_on" required value="{{ log.filled_on.isoformat() if log else today }}">
       </label>
       <label>{{ t(vehicle.reading_label_key) }}
-        <input type="number" name="mileage" min="0" step="0.01" value="{{ log.mileage|num if log.mileage is not none else '' }}">
+        <input type="number" name="mileage" min="0" step="0.01" value="{{ (log.mileage|num if log.mileage is not none else '') if log else vehicle.mileage|num }}">
       </label>
     </div>
     <div class="form-row">
       <label>{{ t('fuel.field.quantity') }} <span class="req">*</span>
-        <input type="text" name="quantity" inputmode="decimal" required value="{{ '%.2f'|format(log.quantity) }}">
+        <input type="text" name="quantity" inputmode="decimal" required value="{{ '%.2f'|format(log.quantity) if log else '' }}" {{ 'autofocus' if not log else '' }}>
       </label>
       <label>{{ t('fuel.field.price_per_unit') }}
-        <input type="text" name="price_per_unit" inputmode="decimal" value="{{ '%.3f'|format(log.price_per_unit) if log.price_per_unit is not none else '' }}">
+        <input type="text" name="price_per_unit" inputmode="decimal" value="{{ '%.3f'|format(log.price_per_unit) if log and log.price_per_unit is not none else '' }}">
       </label>
     </div>
     <div class="form-row">
       <label>{{ t('fuel.field.total_cost') }}
-        <input type="text" name="total_cost" inputmode="decimal" value="{{ '%.2f'|format(log.total_cost) if log.total_cost is not none else '' }}">
+        <input type="text" name="total_cost" inputmode="decimal" value="{{ '%.2f'|format(log.total_cost) if log and log.total_cost is not none else '' }}">
       </label>
       <label class="checkbox">
-        <input type="checkbox" name="full_tank" value="1" {{ 'checked' if log.full_tank else '' }}> {{ t('fuel.field.full_tank') }}
+        <input type="checkbox" name="full_tank" value="1" {{ 'checked' if (log and log.full_tank) or not log else '' }}> {{ t('fuel.field.full_tank') }}
       </label>
     </div>
     <label>{{ t('fuel.field.notes') }}
-      <textarea name="notes" rows="2">{{ log.notes or '' }}</textarea>
+      <textarea name="notes" rows="2">{{ log.notes or '' if log else '' }}</textarea>
     </label>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>

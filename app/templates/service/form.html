@@ -1,38 +1,38 @@
 {% extends "base.html" %}
-{% block title %}{{ t('service.edit') }}{% endblock %}
+{% block title %}{{ t('service.edit') if record else t('service.add_record') }}{% endblock %}
 {% block content %}
 <div class="card narrow">
-  <h1>{{ t('service.edit') }} — {{ vehicle.display_name }}</h1>
-  <form method="post" action="/vehicles/{{ vehicle.id }}/records/{{ record.id }}/edit">
+  <h1>{{ t('service.edit') if record else t('service.add_record') }} — {{ vehicle.display_name }}</h1>
+  <form method="post" action="{{ '/vehicles/%d/records/%d/edit'|format(vehicle.id, record.id) if record else '/vehicles/%d/records'|format(vehicle.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="form-row">
       <label>{{ t('service.field.type') }}
         <select name="service_type">
-          {% for st in ServiceType %}<option value="{{ st.value }}" {{ 'selected' if st == record.service_type else '' }}>{{ t('service.type.' + st.value) }}</option>{% endfor %}
+          {% for st in ServiceType %}<option value="{{ st.value }}" {{ 'selected' if record and st == record.service_type else '' }}>{{ t('service.type.' + st.value) }}</option>{% endfor %}
         </select>
       </label>
       <label>{{ t('service.field.title') }} <span class="req">*</span>
-        <input type="text" name="title" required value="{{ record.title }}">
+        <input type="text" name="title" required value="{{ record.title if record else '' }}" {{ 'autofocus' if not record else '' }}>
       </label>
     </div>
     <div class="form-row">
       <label>{{ t('service.field.date') }} <span class="req">*</span>
-        <input type="date" name="performed_on" required value="{{ record.performed_on.isoformat() }}">
+        <input type="date" name="performed_on" required value="{{ record.performed_on.isoformat() if record else today }}">
       </label>
       <label>{{ t(vehicle.reading_label_key) }}
-        <input type="number" name="mileage" min="0" step="0.01" value="{{ record.mileage|num if record.mileage is not none else '' }}">
+        <input type="number" name="mileage" min="0" step="0.01" value="{{ (record.mileage|num if record.mileage is not none else '') if record else vehicle.mileage|num }}">
       </label>
     </div>
     <div class="form-row">
       <label>{{ t('service.field.cost') }}
-        <input type="text" name="cost" inputmode="decimal" value="{{ '%.2f'|format(record.cost) if record.cost is not none else '' }}">
+        <input type="text" name="cost" inputmode="decimal" value="{{ '%.2f'|format(record.cost) if record and record.cost is not none else '' }}">
       </label>
       <label>{{ t('service.field.workshop') }}
-        <input type="text" name="workshop" value="{{ record.workshop or '' }}">
+        <input type="text" name="workshop" value="{{ record.workshop or '' if record else '' }}">
       </label>
     </div>
     <label>{{ t('service.field.notes') }}
-      <textarea name="notes" rows="2">{{ record.notes or '' }}</textarea>
+      <textarea name="notes" rows="2">{{ record.notes or '' if record else '' }}</textarea>
     </label>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>

@@ -49,6 +49,21 @@ def _reconcile_price(
     return ppu, total
 
 
+@router.get("/new")
+def new_fuel_form(
+    request: Request,
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Quick-add page: date and reading are prefilled for fast entry."""
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    return render(
+        request, "fuel/form.html",
+        vehicle=vehicle, log=None, today=date.today().isoformat(),
+    )
+
+
 @router.post("")
 def add_fuel(
     vehicle_id: int,

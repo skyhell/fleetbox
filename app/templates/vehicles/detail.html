@@ -27,6 +27,10 @@
     {% if vehicle.notes %}<p>{{ vehicle.notes }}</p>{% endif %}
   </div>
   <div class="head-actions">
+    <a class="btn btn-primary" href="/vehicles/{{ vehicle.id }}/records/new"
+       title="{{ t('service.add_record') }}">+ {{ t('vehicle.quick.service') }}</a>
+    <a class="btn btn-primary" href="/vehicles/{{ vehicle.id }}/fuel/new"
+       title="{{ t('fuel.add') }}">+ {{ t('vehicle.quick.fuel') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/stats">{{ t('stats.title') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/edit">{{ t('common.edit') }}</a>
     <form method="post" action="/vehicles/{{ vehicle.id }}/delete"
