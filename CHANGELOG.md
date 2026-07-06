@@ -5,7 +5,17 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-07
+
 ### Added
+- **Full backup as ZIP**: the Backup page now offers a one-click complete
+  backup — a single ZIP archive containing every CSV export plus all uploaded
+  documents & photos. Importing the archive restores data and files in one
+  step: existing vehicles (matched by name) stay untouched, documents that
+  already exist (same filename & size) are skipped, and attachments are
+  re-linked to their service record when it can be identified unambiguously.
+  Files from the archive are always written under fresh server-generated names
+  inside the upload directory (zip-slip safe) and respect the upload size cap.
 - **Quick-add buttons on the vehicle page**: "+ Service" and "+ Refuel" sit at
   the top of the vehicle page and open focused entry forms with smart
   prefills — date set to today, the reading set to the vehicle's current
@@ -17,29 +27,19 @@ All notable changes to FleetBox are documented here. The format is based on
   (JPG, PNG, GIF, WebP); the size cap and storage rules match regular uploads.
 
 ### Changed
-- **Fuel types trimmed**: LPG (Autogas) and CNG (Erdgas) are no longer offered
-  when creating or editing a vehicle. Existing vehicles that use them keep
-  their value (it stays selected on the edit form) and old CSV backups still
-  import.
+- **Modernized Apple skin**: token-driven stylesheet rewrite with
+  cross-document view transitions, fluid type via `clamp()`, `color-mix()`
+  state colors, tinted status badges, a subtle aurora mesh background and a
+  blue-to-indigo gradient accent. CSS-only; the Classic skin is untouched.
 - **Title image is set only via the vehicle form**: uploaded documents no
   longer become the title image automatically, the "set as title image" star
   on attachments is gone, and the vehicle photo no longer appears in the
   documents list (it is shown in the vehicle header instead). Existing title
   images keep working unchanged.
-- **Full backup as ZIP**: the Backup page now offers a one-click complete
-  backup — a single ZIP archive containing every CSV export plus all uploaded
-  documents & photos. Importing the archive restores data and files in one
-  step: existing vehicles (matched by name) stay untouched, documents that
-  already exist (same filename & size) are skipped, and attachments are
-  re-linked to their service record when it can be identified unambiguously.
-  Files from the archive are always written under fresh server-generated names
-  inside the upload directory (zip-slip safe) and respect the upload size cap.
-
-### Changed
-- **Modernized Apple skin**: token-driven stylesheet rewrite with
-  cross-document view transitions, fluid type via `clamp()`, `color-mix()`
-  state colors, tinted status badges, a subtle aurora mesh background and a
-  blue-to-indigo gradient accent. CSS-only; the Classic skin is untouched.
+- **Fuel types trimmed**: LPG (Autogas) and CNG (Erdgas) are no longer offered
+  when creating or editing a vehicle. Existing vehicles that use them keep
+  their value (it stays selected on the edit form) and old CSV backups still
+  import.
 
 ## [0.11.0] - 2026-07-06
 
