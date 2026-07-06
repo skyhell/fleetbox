@@ -33,6 +33,7 @@ class ServiceType(str, enum.Enum):
     wear_part = "wear_part"
     inspection = "inspection"
     tyre_change = "tyre_change"
+    chain = "chain"
     repair = "repair"
     other = "other"
 

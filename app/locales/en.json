@@ -109,6 +109,7 @@
   "service.type.wear_part": "Wear part",
   "service.type.inspection": "Inspection",
   "service.type.tyre_change": "Tyre change",
+  "service.type.chain": "Chain",
   "service.type.repair": "Repair",
   "service.type.other": "Other",
 

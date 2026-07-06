@@ -109,6 +109,7 @@
   "service.type.wear_part": "Verschleißteil",
   "service.type.inspection": "Inspektion",
   "service.type.tyre_change": "Reifenwechsel",
+  "service.type.chain": "Kette",
   "service.type.repair": "Reparatur",
   "service.type.other": "Sonstiges",
 
