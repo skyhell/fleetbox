@@ -1,4 +1,4 @@
-"""CSV export / import for backup and migration.
+"""CSV / ZIP export & import for backup and migration.
 
 Each entity type is a separate CSV with a stable, human-readable schema. Child
 records (service records, intervals, fuel logs) reference their vehicle by
@@ -6,20 +6,32 @@ records (service records, intervals, fuel logs) reference their vehicle by
 imported into a fresh account on another. On import, vehicles are processed
 first; child rows are then linked to vehicles by name and rows referencing an
 unknown vehicle are skipped.
+
+Besides the per-entity CSVs there is a **full backup**: a single ZIP archive
+containing every CSV plus all uploaded documents & photos (under ``uploads/``)
+and an ``attachments.csv`` describing them. Importing the ZIP restores data and
+files together. Uploaded files are never extracted to paths taken from the
+archive — they are streamed into freshly generated names inside the configured
+upload directory, so a malicious archive cannot escape it (zip-slip).
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import secrets
+import tempfile
+import zipfile
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.config import ALLOWED_UPLOAD_TYPES, settings
 from app.database import get_db
 from app.models import (
+    Attachment,
     Expense,
     ExpenseCategory,
     FuelLog,
@@ -35,6 +47,13 @@ from app.security import require_user
 from app.templating import render
 
 router = APIRouter(prefix="/backup", tags=["backup"])
+
+# Streaming chunk size for reading uploads / archive members.
+_CHUNK = 64 * 1024
+# Hard cap for an uploaded backup archive (compressed size).
+_MAX_ZIP_BYTES = 1024 * 1024 * 1024  # 1 GiB
+# Cap for a single CSV inside the archive — real exports are tiny.
+_MAX_CSV_BYTES = 10 * 1024 * 1024  # 10 MiB
 
 
 # --- Column schemas ---------------------------------------------------------
@@ -57,6 +76,12 @@ FUEL_COLUMNS = [
 ]
 EXPENSE_COLUMNS = [
     "vehicle", "spent_on", "category", "title", "amount", "notes",
+]
+# ``file`` is the member path inside the ZIP; the record columns let the import
+# re-link an attachment to its service record when exactly one record matches.
+ATTACHMENT_COLUMNS = [
+    "vehicle", "file", "filename", "content_type", "title", "is_primary",
+    "record_title", "record_date",
 ]
 
 
@@ -86,7 +111,10 @@ def _reading(v: str | None) -> float | None:
 
 def _date(v: str | None) -> date | None:
     v = (v or "").strip()
-    return date.fromisoformat(v) if v else None
+    try:
+        return date.fromisoformat(v) if v else None
+    except ValueError:
+        return None
 
 
 def _bool(v: str | None) -> bool:
@@ -116,13 +144,17 @@ def _cell(value) -> str:
 # --- Export -----------------------------------------------------------------
 
 
-def _csv_response(filename: str, columns: list[str], rows: list[list]) -> Response:
+def _csv_text(columns: list[str], rows: list[list]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(columns)
     writer.writerows(rows)
+    return buffer.getvalue()
+
+
+def _csv_response(filename: str, columns: list[str], rows: list[list]) -> Response:
     return Response(
-        content=buffer.getvalue(),
+        content=_csv_text(columns, rows),
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
@@ -132,17 +164,14 @@ def _user_vehicles(db: Session, user: User) -> list[Vehicle]:
     return db.query(Vehicle).filter(Vehicle.owner_id == user.id).order_by(Vehicle.name).all()
 
 
-@router.get("/export/vehicles.csv")
-def export_vehicles(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    rows = [
+def _vehicle_rows(db: Session, user: User) -> list[list]:
+    return [
         [_cell(getattr(v, c)) for c in VEHICLE_COLUMNS]
         for v in _user_vehicles(db, user)
     ]
-    return _csv_response("vehicles.csv", VEHICLE_COLUMNS, rows)
 
 
-@router.get("/export/service_records.csv")
-def export_records(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def _record_rows(db: Session, user: User) -> list[list]:
     rows = []
     for v in _user_vehicles(db, user):
         for r in v.service_records:
@@ -150,11 +179,10 @@ def export_records(db: Session = Depends(get_db), user: User = Depends(require_u
                 v.name, _cell(r.service_type), _cell(r.title), _cell(r.performed_on),
                 _cell(r.mileage), _cell(r.cost), _cell(r.workshop), _cell(r.notes),
             ])
-    return _csv_response("service_records.csv", RECORD_COLUMNS, rows)
+    return rows
 
 
-@router.get("/export/service_intervals.csv")
-def export_intervals(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def _interval_rows(db: Session, user: User) -> list[list]:
     rows = []
     for v in _user_vehicles(db, user):
         for iv in v.service_intervals:
@@ -163,11 +191,10 @@ def export_intervals(db: Session = Depends(get_db), user: User = Depends(require
                 _cell(iv.interval_months), _cell(iv.last_service_date),
                 _cell(iv.last_service_mileage), _cell(iv.notes),
             ])
-    return _csv_response("service_intervals.csv", INTERVAL_COLUMNS, rows)
+    return rows
 
 
-@router.get("/export/fuel_logs.csv")
-def export_fuel(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def _fuel_rows(db: Session, user: User) -> list[list]:
     rows = []
     for v in _user_vehicles(db, user):
         for f in v.fuel_logs:
@@ -176,11 +203,10 @@ def export_fuel(db: Session = Depends(get_db), user: User = Depends(require_user
                 _cell(f.price_per_unit), _cell(f.total_cost), _cell(f.full_tank),
                 _cell(f.notes),
             ])
-    return _csv_response("fuel_logs.csv", FUEL_COLUMNS, rows)
+    return rows
 
 
-@router.get("/export/expenses.csv")
-def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_user)):
+def _expense_rows(db: Session, user: User) -> list[list]:
     rows = []
     for v in _user_vehicles(db, user):
         for e in v.expenses:
@@ -188,7 +214,73 @@ def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_
                 v.name, _cell(e.spent_on), _cell(e.category), _cell(e.title),
                 _cell(e.amount), _cell(e.notes),
             ])
-    return _csv_response("expenses.csv", EXPENSE_COLUMNS, rows)
+    return rows
+
+
+def _attachment_rows(db: Session, user: User) -> tuple[list[list], list[Attachment]]:
+    """Rows for attachments.csv plus the attachments whose files exist on disk."""
+    rows: list[list] = []
+    present: list[Attachment] = []
+    for v in _user_vehicles(db, user):
+        for a in v.attachments:
+            if not (settings.upload_path / a.stored_name).is_file():
+                continue
+            record = a.service_record
+            rows.append([
+                v.name, f"uploads/{a.stored_name}", _cell(a.filename),
+                _cell(a.content_type), _cell(a.title), _cell(a.is_primary),
+                _cell(record.title if record else None),
+                _cell(record.performed_on if record else None),
+            ])
+            present.append(a)
+    return rows, present
+
+
+@router.get("/export/vehicles.csv")
+def export_vehicles(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return _csv_response("vehicles.csv", VEHICLE_COLUMNS, _vehicle_rows(db, user))
+
+
+@router.get("/export/service_records.csv")
+def export_records(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return _csv_response("service_records.csv", RECORD_COLUMNS, _record_rows(db, user))
+
+
+@router.get("/export/service_intervals.csv")
+def export_intervals(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return _csv_response("service_intervals.csv", INTERVAL_COLUMNS, _interval_rows(db, user))
+
+
+@router.get("/export/fuel_logs.csv")
+def export_fuel(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return _csv_response("fuel_logs.csv", FUEL_COLUMNS, _fuel_rows(db, user))
+
+
+@router.get("/export/expenses.csv")
+def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return _csv_response("expenses.csv", EXPENSE_COLUMNS, _expense_rows(db, user))
+
+
+@router.get("/export/fleetbox-backup.zip")
+def export_zip(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """Full backup: every CSV plus all uploaded files, in one archive."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("vehicles.csv", _csv_text(VEHICLE_COLUMNS, _vehicle_rows(db, user)))
+        zf.writestr("service_records.csv", _csv_text(RECORD_COLUMNS, _record_rows(db, user)))
+        zf.writestr("service_intervals.csv", _csv_text(INTERVAL_COLUMNS, _interval_rows(db, user)))
+        zf.writestr("fuel_logs.csv", _csv_text(FUEL_COLUMNS, _fuel_rows(db, user)))
+        zf.writestr("expenses.csv", _csv_text(EXPENSE_COLUMNS, _expense_rows(db, user)))
+        att_rows, attachments = _attachment_rows(db, user)
+        zf.writestr("attachments.csv", _csv_text(ATTACHMENT_COLUMNS, att_rows))
+        for a in attachments:
+            zf.write(settings.upload_path / a.stored_name, f"uploads/{a.stored_name}")
+    filename = f"fleetbox-backup-{date.today().isoformat()}.zip"
+    return Response(
+        content=buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # --- Import -----------------------------------------------------------------
@@ -202,31 +294,26 @@ async def _read_rows(file: UploadFile | None) -> list[dict[str, str]]:
     return list(csv.DictReader(io.StringIO(text)))
 
 
-@router.get("")
-def backup_page(request: Request, user: User = Depends(require_user)):
-    return render(request, "backup/index.html")
-
-
-@router.post("/import")
-async def import_csv(
-    request: Request,
-    vehicles: UploadFile | None = File(None),
-    service_records: UploadFile | None = File(None),
-    service_intervals: UploadFile | None = File(None),
-    fuel_logs: UploadFile | None = File(None),
-    expenses: UploadFile | None = File(None),
-    db: Session = Depends(get_db),
-    user: User = Depends(require_user),
-):
+def _import_rows(
+    db: Session,
+    user: User,
+    vehicles: list[dict[str, str]],
+    service_records: list[dict[str, str]],
+    service_intervals: list[dict[str, str]],
+    fuel_logs: list[dict[str, str]],
+    expenses: list[dict[str, str]],
+) -> tuple[dict[str, int], dict[str, Vehicle]]:
+    """Import parsed CSV rows; returns the summary and the vehicle-by-name map."""
     summary = {
-        "vehicles": 0, "records": 0, "intervals": 0, "fuel": 0, "expenses": 0, "skipped": 0
+        "vehicles": 0, "records": 0, "intervals": 0, "fuel": 0,
+        "expenses": 0, "attachments": 0, "skipped": 0,
     }
 
     # 1. Vehicles first — dedupe by name so re-importing is non-destructive.
     by_name: dict[str, Vehicle] = {
         v.name: v for v in _user_vehicles(db, user)
     }
-    for row in await _read_rows(vehicles):
+    for row in vehicles:
         name = _s(row.get("name"))
         if not name or name in by_name:
             summary["skipped"] += 1
@@ -254,7 +341,7 @@ async def import_csv(
         return by_name.get(_s(row.get("vehicle")) or "")
 
     # 2. Service records.
-    for row in await _read_rows(service_records):
+    for row in service_records:
         vehicle = _vehicle(row)
         if vehicle is None:
             summary["skipped"] += 1
@@ -272,7 +359,7 @@ async def import_csv(
         summary["records"] += 1
 
     # 3. Service intervals.
-    for row in await _read_rows(service_intervals):
+    for row in service_intervals:
         vehicle = _vehicle(row)
         if vehicle is None:
             summary["skipped"] += 1
@@ -290,7 +377,7 @@ async def import_csv(
         summary["intervals"] += 1
 
     # 4. Fuel logs.
-    for row in await _read_rows(fuel_logs):
+    for row in fuel_logs:
         vehicle = _vehicle(row)
         if vehicle is None:
             summary["skipped"] += 1
@@ -312,7 +399,7 @@ async def import_csv(
         summary["fuel"] += 1
 
     # 5. Other expenses.
-    for row in await _read_rows(expenses):
+    for row in expenses:
         vehicle = _vehicle(row)
         if vehicle is None:
             summary["skipped"] += 1
@@ -326,6 +413,172 @@ async def import_csv(
             notes=_s(row.get("notes")),
         ))
         summary["expenses"] += 1
+
+    return summary, by_name
+
+
+@router.get("")
+def backup_page(request: Request, user: User = Depends(require_user)):
+    return render(request, "backup/index.html")
+
+
+@router.post("/import")
+async def import_csv(
+    request: Request,
+    vehicles: UploadFile | None = File(None),
+    service_records: UploadFile | None = File(None),
+    service_intervals: UploadFile | None = File(None),
+    fuel_logs: UploadFile | None = File(None),
+    expenses: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    summary, _ = _import_rows(
+        db, user,
+        await _read_rows(vehicles),
+        await _read_rows(service_records),
+        await _read_rows(service_intervals),
+        await _read_rows(fuel_logs),
+        await _read_rows(expenses),
+    )
+    db.commit()
+    return render(request, "backup/index.html", summary=summary)
+
+
+def _zip_rows(zf: zipfile.ZipFile, name: str) -> list[dict[str, str]]:
+    """Parse a CSV member of the archive; missing or oversized members → []."""
+    try:
+        info = zf.getinfo(name)
+    except KeyError:
+        return []
+    if info.file_size > _MAX_CSV_BYTES:
+        return []
+    with zf.open(info) as member:
+        text = io.TextIOWrapper(member, encoding="utf-8-sig")
+        return list(csv.DictReader(text))
+
+
+@router.post("/import/zip")
+async def import_zip(
+    request: Request,
+    archive: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Restore a full backup: CSV data plus the uploaded files.
+
+    Existing vehicles (matched by name) are left untouched; a file is skipped
+    when the vehicle already has an attachment with the same original filename
+    and size, so re-importing the same archive does not duplicate documents.
+    """
+    # Buffer the upload with a hard size cap (spills to disk beyond 32 MiB).
+    spool = tempfile.SpooledTemporaryFile(max_size=32 * 1024 * 1024)
+    size = 0
+    while chunk := await archive.read(_CHUNK):
+        size += len(chunk)
+        if size > _MAX_ZIP_BYTES:
+            raise HTTPException(status_code=413, detail="Archive too large")
+        spool.write(chunk)
+    spool.seek(0)
+
+    try:
+        zf = zipfile.ZipFile(spool)
+    except zipfile.BadZipFile:
+        return render(request, "backup/index.html", error_key="backup.import.bad_zip")
+
+    with zf:
+        summary, by_name = _import_rows(
+            db, user,
+            _zip_rows(zf, "vehicles.csv"),
+            _zip_rows(zf, "service_records.csv"),
+            _zip_rows(zf, "service_intervals.csv"),
+            _zip_rows(zf, "fuel_logs.csv"),
+            _zip_rows(zf, "expenses.csv"),
+        )
+        db.flush()  # children exist so attachments can re-link to records
+
+        members = set(zf.namelist())
+        # Dedupe key for files added during *this* import (the relationship
+        # collection does not see uncommitted rows added by id).
+        seen: set[tuple[int, str, int]] = set()
+        primaries_set: set[int] = set()
+
+        for row in _zip_rows(zf, "attachments.csv"):
+            vehicle = by_name.get(_s(row.get("vehicle")) or "")
+            member_name = _s(row.get("file")) or ""
+            content_type = _s(row.get("content_type")) or ""
+            extension = ALLOWED_UPLOAD_TYPES.get(content_type)
+            if (
+                vehicle is None
+                or extension is None
+                or not member_name.startswith("uploads/")
+                or member_name not in members
+            ):
+                summary["skipped"] += 1
+                continue
+            info = zf.getinfo(member_name)
+            if info.file_size > settings.max_upload_bytes:
+                summary["skipped"] += 1
+                continue
+            filename = _s(row.get("filename")) or member_name.rsplit("/", 1)[-1]
+            key = (vehicle.id, filename, info.file_size)
+            already = key in seen or any(
+                a.filename == filename and a.size == info.file_size
+                for a in vehicle.attachments
+            )
+            if already:
+                summary["skipped"] += 1
+                continue
+
+            # Stream into a fresh opaque name inside the upload directory; the
+            # archive's own paths are never used as extraction targets.
+            stored_name = secrets.token_hex(16) + extension
+            settings.upload_path.mkdir(parents=True, exist_ok=True)
+            target = settings.upload_path / stored_name
+            written = 0
+            try:
+                with zf.open(info) as src, target.open("wb") as out:
+                    while chunk := src.read(_CHUNK):
+                        written += len(chunk)
+                        if written > settings.max_upload_bytes:
+                            raise ValueError("member larger than declared")
+                        out.write(chunk)
+            except Exception:
+                target.unlink(missing_ok=True)
+                summary["skipped"] += 1
+                continue
+
+            attachment = Attachment(
+                vehicle_id=vehicle.id,
+                title=_s(row.get("title")),
+                filename=filename,
+                stored_name=stored_name,
+                content_type=content_type,
+                size=written,
+            )
+            # Re-link to a service record when exactly one matches title + date.
+            record_title = _s(row.get("record_title"))
+            record_date = _date(row.get("record_date"))
+            if record_title and record_date:
+                matches = [
+                    r for r in vehicle.service_records
+                    if r.title == record_title and r.performed_on == record_date
+                ]
+                if len(matches) == 1:
+                    attachment.service_record_id = matches[0].id
+            # Keep at most one title image per vehicle.
+            if (
+                _bool(row.get("is_primary"))
+                and attachment.is_image
+                and vehicle.id not in primaries_set
+                and vehicle.primary_image is None
+            ):
+                attachment.is_primary = True
+                primaries_set.add(vehicle.id)
+
+            db.add(attachment)
+            seen.add(key)
+            summary["attachments"] += 1
 
     db.commit()
     return render(request, "backup/index.html", summary=summary)

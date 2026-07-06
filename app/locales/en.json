@@ -214,13 +214,18 @@
   "admin.delete.confirm": "Really delete this user and all their vehicles?",
 
   "backup.title": "Backup & migration",
-  "backup.intro": "Export all your data as CSV files for safekeeping, or import them into another FleetBox instance.",
-  "backup.export.title": "Export (CSV)",
+  "backup.intro": "Back everything up with one click as a full backup (ZIP), or export and import individual CSV files — also for migrating to another FleetBox instance.",
+  "backup.export.title": "Export",
   "backup.export.hint": "Each file contains all of your records. Child records reference their vehicle by name.",
-  "backup.import.title": "Import (CSV)",
+  "backup.import.title": "Import",
   "backup.import.hint": "Upload any of the CSV files you exported earlier. Import vehicles together with their records — rows referencing an unknown vehicle are skipped. Existing vehicles (matched by name) are left untouched.",
   "backup.import.submit": "Import",
-  "backup.import.done": "Import finished: {vehicles} vehicles, {records} service records, {intervals} intervals, {fuel} fuel logs, {expenses} other expenses added. {skipped} rows skipped.",
+  "backup.import.done": "Import finished: {vehicles} vehicles, {records} service records, {intervals} intervals, {fuel} fuel logs, {expenses} other expenses, {attachments} documents added. {skipped} rows skipped.",
+  "backup.export.zip": "Download full backup (ZIP)",
+  "backup.export.zip_hint": "The full backup bundles every CSV file plus all uploaded documents & photos into one archive.",
+  "backup.import.zip_label": "Full backup (ZIP)",
+  "backup.import.zip_hint": "Restore a full backup (ZIP): data and documents in one step. Existing vehicles (matched by name) are left untouched; documents that already exist (same filename & size) are skipped.",
+  "backup.import.bad_zip": "The file is not a valid ZIP archive.",
 
   "account.security.title": "Account security",
 

@@ -8,13 +8,18 @@
 <div class="alert alert-success">
   {{ t('backup.import.done', vehicles=summary.vehicles, records=summary.records,
        intervals=summary.intervals, fuel=summary.fuel, expenses=summary.expenses,
-       skipped=summary.skipped) }}
+       attachments=summary.attachments, skipped=summary.skipped) }}
 </div>
+{% endif %}
+{% if error_key %}
+<div class="alert alert-error">{{ t(error_key) }}</div>
 {% endif %}
 
 {# ---- Export ---- #}
 <section class="card">
   <h2>{{ t('backup.export.title') }}</h2>
+  <p class="muted">{{ t('backup.export.zip_hint') }}</p>
+  <p><a class="btn btn-primary" href="/backup/export/fleetbox-backup.zip">{{ t('backup.export.zip') }}</a></p>
   <p class="muted">{{ t('backup.export.hint') }}</p>
   <ul class="export-list">
     <li><a class="btn btn-sm" href="/backup/export/vehicles.csv">{{ t('nav.vehicles') }} (CSV)</a></li>
@@ -28,8 +33,15 @@
 {# ---- Import ---- #}
 <section class="card">
   <h2>{{ t('backup.import.title') }}</h2>
-  <p class="muted">{{ t('backup.import.hint') }}</p>
-  <form method="post" action="/backup/import" enctype="multipart/form-data">
+  <p class="muted">{{ t('backup.import.zip_hint') }}</p>
+  <form method="post" action="/backup/import/zip" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('backup.import.zip_label') }}<input type="file" name="archive" accept=".zip,application/zip"></label>
+    <button class="btn btn-primary" type="submit">{{ t('backup.import.submit') }}</button>
+  </form>
+
+  <form method="post" action="/backup/import" enctype="multipart/form-data" class="inline-form">
+    <p class="muted">{{ t('backup.import.hint') }}</p>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>{{ t('nav.vehicles') }}<input type="file" name="vehicles" accept=".csv,text/csv"></label>
     <label>{{ t('service.records') }}<input type="file" name="service_records" accept=".csv,text/csv"></label>

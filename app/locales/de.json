@@ -214,13 +214,18 @@
   "admin.delete.confirm": "Diesen Benutzer und alle seine Fahrzeuge wirklich löschen?",
 
   "backup.title": "Sicherung & Migration",
-  "backup.intro": "Exportiere alle deine Daten als CSV-Dateien zur Sicherung oder importiere sie in eine andere FleetBox-Instanz.",
-  "backup.export.title": "Export (CSV)",
+  "backup.intro": "Sichere alles mit einem Klick als Komplett-Backup (ZIP) oder exportiere und importiere einzelne CSV-Dateien — auch zur Migration in eine andere FleetBox-Instanz.",
+  "backup.export.title": "Export",
   "backup.export.hint": "Jede Datei enthält alle deine Einträge. Untergeordnete Einträge verweisen über den Namen auf ihr Fahrzeug.",
-  "backup.import.title": "Import (CSV)",
+  "backup.import.title": "Import",
   "backup.import.hint": "Lade beliebige zuvor exportierte CSV-Dateien hoch. Importiere Fahrzeuge zusammen mit ihren Einträgen – Zeilen, die auf ein unbekanntes Fahrzeug verweisen, werden übersprungen. Bestehende Fahrzeuge (Abgleich über den Namen) bleiben unverändert.",
   "backup.import.submit": "Importieren",
-  "backup.import.done": "Import abgeschlossen: {vehicles} Fahrzeuge, {records} Service-Einträge, {intervals} Intervalle, {fuel} Tankvorgänge, {expenses} sonstige Kosten hinzugefügt. {skipped} Zeilen übersprungen.",
+  "backup.import.done": "Import abgeschlossen: {vehicles} Fahrzeuge, {records} Service-Einträge, {intervals} Intervalle, {fuel} Tankvorgänge, {expenses} sonstige Kosten, {attachments} Dokumente hinzugefügt. {skipped} Zeilen übersprungen.",
+  "backup.export.zip": "Komplett-Backup herunterladen (ZIP)",
+  "backup.export.zip_hint": "Das Komplett-Backup enthält alle CSV-Dateien plus sämtliche hochgeladenen Dokumente & Fotos in einem Archiv.",
+  "backup.import.zip_label": "Komplett-Backup (ZIP)",
+  "backup.import.zip_hint": "Stelle ein Komplett-Backup (ZIP) wieder her: Daten und Dokumente in einem Schritt. Bestehende Fahrzeuge (Abgleich über den Namen) bleiben unverändert; bereits vorhandene Dokumente (gleicher Dateiname & Größe) werden übersprungen.",
+  "backup.import.bad_zip": "Die Datei ist kein gültiges ZIP-Archiv.",
 
   "account.security.title": "Kontosicherheit",
 

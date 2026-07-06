@@ -25,7 +25,7 @@ a **Proxmox** host with a single script.
 - 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
 - 📎 **Documents & photos** — attach invoices, receipts and pictures; set one photo as the vehicle's title image
-- 💾 **CSV backup & migration** — export and re-import all your data
+- 💾 **Backup & migration** — one-click full backup (ZIP with all data **and** uploaded documents) plus per-entity CSV export/import
 - 👥 **Multi-user** — each user manages their own vehicles; an admin manages users
 - 🔐 **Two-factor authentication** — optional TOTP 2FA per user (Aegis, Google Authenticator, 1Password, …)
 - 🛡️ **Hardened by default** — CSRF tokens, login rate limiting, security headers, encrypted 2FA seeds, non-root systemd sandbox ([details](docs/security.md))

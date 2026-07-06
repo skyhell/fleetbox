@@ -5,6 +5,22 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Full backup as ZIP**: the Backup page now offers a one-click complete
+  backup — a single ZIP archive containing every CSV export plus all uploaded
+  documents & photos. Importing the archive restores data and files in one
+  step: existing vehicles (matched by name) stay untouched, documents that
+  already exist (same filename & size) are skipped, and attachments are
+  re-linked to their service record when it can be identified unambiguously.
+  Files from the archive are always written under fresh server-generated names
+  inside the upload directory (zip-slip safe) and respect the upload size cap.
+
+### Changed
+- **Modernized Apple skin**: token-driven stylesheet rewrite with
+  cross-document view transitions, fluid type via `clamp()`, `color-mix()`
+  state colors, tinted status badges, a subtle aurora mesh background and a
+  blue-to-indigo gradient accent. CSS-only; the Classic skin is untouched.
+
 ## [0.11.0] - 2026-07-06
 
 ### Added
