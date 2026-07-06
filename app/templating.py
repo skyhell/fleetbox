@@ -11,7 +11,14 @@ from app import __version__
 from app.config import settings
 from app.csrf import get_csrf_token
 from app.i18n import resolve_locale, translate
-from app.models import ExpenseCategory, FuelType, ServiceType, TireSeason, UsageUnit
+from app.models import (
+    SELECTABLE_FUEL_TYPES,
+    ExpenseCategory,
+    FuelType,
+    ServiceType,
+    TireSeason,
+    UsageUnit,
+)
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -99,6 +106,7 @@ def render(request: Request, template: str, **context):
         "docs_url": settings.docs_url,
         "ServiceType": ServiceType,
         "FuelType": FuelType,
+        "fuel_types": SELECTABLE_FUEL_TYPES,
         "UsageUnit": UsageUnit,
         "TireSeason": TireSeason,
         "ExpenseCategory": ExpenseCategory,

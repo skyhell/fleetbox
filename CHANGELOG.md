@@ -17,6 +17,10 @@ All notable changes to FleetBox are documented here. The format is based on
   (JPG, PNG, GIF, WebP); the size cap and storage rules match regular uploads.
 
 ### Changed
+- **Fuel types trimmed**: LPG (Autogas) and CNG (Erdgas) are no longer offered
+  when creating or editing a vehicle. Existing vehicles that use them keep
+  their value (it stays selected on the edit form) and old CSV backups still
+  import.
 - **Title image is set only via the vehicle form**: uploaded documents no
   longer become the title image automatically, the "set as title image" star
   on attachments is gone, and the vehicle photo no longer appears in the

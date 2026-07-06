@@ -55,6 +55,14 @@ class FuelType(str, enum.Enum):
     other = "other"
 
 
+# Fuel types offered in the vehicle form. lpg/cng are retired from selection
+# but stay in the enum so existing vehicles (and old CSV backups) keep loading;
+# a vehicle that already uses one keeps its value when edited.
+SELECTABLE_FUEL_TYPES = tuple(
+    ft for ft in FuelType if ft not in (FuelType.lpg, FuelType.cng)
+)
+
+
 class TireSeason(str, enum.Enum):
     """Seasonal classification of a set of tyres."""
 

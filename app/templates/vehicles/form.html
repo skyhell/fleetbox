@@ -30,9 +30,13 @@
     <div class="form-row">
       <label>{{ t('vehicle.field.fuel_type') }}
         <select name="fuel_type">
-          {% for ft in FuelType %}
+          {% for ft in fuel_types %}
           <option value="{{ ft.value }}" {{ 'selected' if vehicle and vehicle.fuel_type == ft else '' }}>{{ t('fuel.type.' + ft.value) }}</option>
           {% endfor %}
+          {# A retired fuel type (lpg/cng) stays selectable for the vehicle that already uses it. #}
+          {% if vehicle and vehicle.fuel_type not in fuel_types %}
+          <option value="{{ vehicle.fuel_type.value }}" selected>{{ t('fuel.type.' + vehicle.fuel_type.value) }}</option>
+          {% endif %}
         </select>
       </label>
       <label>{{ t('vehicle.field.usage_unit') }}

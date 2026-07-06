@@ -149,7 +149,9 @@ cost chart on the statistics page.
 `accessory`, `cleaning`, `other`
 
 ## FuelType values
-`petrol`, `diesel`, `electric`, `lpg`, `cng`, `hybrid`, `other`
+`petrol`, `diesel`, `electric`, `hybrid`, `other` — plus the retired values
+`lpg` and `cng`, which are no longer offered in the vehicle form but remain
+valid so existing vehicles and old backups keep loading.
 
 ## UsageUnit values
 `km` (distance), `h` (operating hours). Drives every reading's label and the
