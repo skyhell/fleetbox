@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.13.0-beta.3] - 2026-07-07
+
 ### Added
 - **Quick entry on the dashboard**: every vehicle offers "+ Service" and
   "+ Tanken" directly on the overview page.
