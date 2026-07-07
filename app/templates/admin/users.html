@@ -2,6 +2,7 @@
 {% block title %}{{ t('admin.title') }}{% endblock %}
 {% block content %}
 <h1>{{ t('admin.title') }}</h1>
+<p><a class="btn" href="/admin/audit">{{ t('audit.title') }}</a></p>
 {% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
 
 <section class="card">

@@ -54,7 +54,10 @@ def test_password_change_flow(client):
         data={"current_password": "nope", "new_password": "NewSecret456",
               "new_password_repeat": "NewSecret456", "csrf_token": token},
     )
-    assert "aktuelle Passwort ist falsch" in resp.text or "current password is incorrect" in resp.text
+    assert (
+        "aktuelle Passwort ist falsch" in resp.text
+        or "current password is incorrect" in resp.text
+    )
 
     # Mismatching repetition is rejected.
     token = _csrf(client, "/account/security")

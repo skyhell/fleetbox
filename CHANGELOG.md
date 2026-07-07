@@ -15,6 +15,28 @@ All notable changes to FleetBox are documented here. The format is based on
   mismatches server-side.
 - **Show/hide password**: password fields have an eye toggle to reveal what was
   typed (progressive enhancement — injected only when JavaScript is available).
+- **Audit log**: security-relevant events (logins and failed attempts, logouts,
+  registrations, password and 2FA changes, admin user management) are recorded
+  and visible to administrators under *User management → Audit log*.
+
+### Changed
+- **Registration is rate-limited** per client IP, like login and 2FA.
+- **Uploads are validated by content**: the file's leading bytes must match its
+  declared type (JPEG/PNG/GIF/WebP/PDF) — a mislabelled file is rejected with
+  415. The same check applies to files restored from a ZIP backup.
+- **Attachment downloads are sandboxed**: uploaded files are served with
+  `Content-Security-Policy: sandbox`, so even a crafted file cannot run
+  scripts against the app when opened directly.
+- **Password changes end other sessions**: changing your password (or an admin
+  resetting it) invalidates every other session of that account; the session
+  that made the change stays logged in.
+- **Weekly CVE sweep in CI**: the pipeline now also runs on a Monday schedule,
+  where `pip-audit` fails hard on known vulnerabilities (on pushes/PRs it stays
+  advisory so unrelated work is not blocked).
+
+### Fixed
+- Bumped the minimum `pydantic-settings` to 2.14.2 (GHSA-4xgf-cpjx-pc3j),
+  found by `pip-audit`.
 
 ## [0.13.0-beta.1] - 2026-07-07
 

@@ -25,6 +25,24 @@ router = APIRouter(prefix="/vehicles/{vehicle_id}", tags=["attachments"])
 # buffering the whole thing in memory.
 _CHUNK = 64 * 1024
 
+# Leading file signatures ("magic bytes") per allowed content type. Checked in
+# addition to the client-supplied content type, so a mislabelled file (e.g.
+# HTML posing as an image) is rejected before it is stored.
+_SIGNATURES: dict[str, tuple[bytes, ...]] = {
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "image/gif": (b"GIF87a", b"GIF89a"),
+    "application/pdf": (b"%PDF-",),
+}
+
+
+def signature_ok(content_type: str, head: bytes) -> bool:
+    """True when ``head`` (the file's first bytes) matches ``content_type``."""
+    if content_type == "image/webp":  # RIFF container: RIFF....WEBP
+        return head[:4] == b"RIFF" and head[8:12] == b"WEBP"
+    signatures = _SIGNATURES.get(content_type)
+    return signatures is not None and head.startswith(signatures)
+
 
 def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
     vehicle = db.get(Vehicle, vehicle_id)
@@ -65,6 +83,11 @@ async def save_attachment(
     try:
         with target.open("wb") as out:
             while chunk := await file.read(_CHUNK):
+                if size == 0 and not signature_ok(file.content_type or "", chunk):
+                    raise HTTPException(
+                        status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                        detail="File content does not match its declared type",
+                    )
                 size += len(chunk)
                 if size > settings.max_upload_bytes:
                     raise HTTPException(
@@ -72,6 +95,11 @@ async def save_attachment(
                         detail="File too large",
                     )
                 out.write(chunk)
+        if size == 0:  # empty upload can't match any signature
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail="Empty file",
+            )
     except Exception:
         target.unlink(missing_ok=True)
         raise
@@ -140,12 +168,17 @@ def download_attachment(
 
     # Images render inline; everything else (PDFs) is offered as a download.
     disposition = "inline" if attachment.is_image else "attachment"
-    return FileResponse(
+    response = FileResponse(
         path,
         media_type=attachment.content_type,
         filename=attachment.filename,
         content_disposition_type=disposition,
     )
+    # Serve user-uploaded content in an origin-less sandbox: even if a crafted
+    # file slipped through validation, it cannot run scripts or reach the app's
+    # origin when opened directly.
+    response.headers["Content-Security-Policy"] = "sandbox"
+    return response
 
 
 @router.post("/attachments/{attachment_id}/delete")

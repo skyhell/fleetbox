@@ -88,7 +88,7 @@ def test_edit_vehicle_replaces_photo(client, tmp_path, monkeypatch):
     resp = client.post(
         "/vehicles/new",
         data={"name": "Traktor", "csrf_token": token},
-        files={"photo": ("old.png", b"\x89PNG old", "image/png")},
+        files={"photo": ("old.png", b"\x89PNG\r\n\x1a\n old", "image/png")},
         follow_redirects=False,
     )
     vehicle_url = resp.headers["location"]
@@ -102,7 +102,7 @@ def test_edit_vehicle_replaces_photo(client, tmp_path, monkeypatch):
     resp = client.post(
         f"{vehicle_url}/edit",
         data={"name": "Traktor", "csrf_token": token},
-        files={"photo": ("new.png", b"\x89PNG new", "image/png")},
+        files={"photo": ("new.png", b"\x89PNG\r\n\x1a\n new", "image/png")},
         follow_redirects=False,
     )
     assert resp.status_code == 303
@@ -112,7 +112,7 @@ def test_edit_vehicle_replaces_photo(client, tmp_path, monkeypatch):
         rf'class="vehicle-hero" src="({vehicle_url}/attachments/\d+)"', detail
     ).group(1)
     assert new_hero != old_hero
-    assert client.get(new_hero).content == b"\x89PNG new"
+    assert client.get(new_hero).content == b"\x89PNG\r\n\x1a\n new"
     # The previous photo is gone — row deleted, download 404s.
     assert client.get(old_hero).status_code == 404
 
@@ -125,7 +125,7 @@ def test_edit_form_shows_current_photo(client, tmp_path, monkeypatch):
     resp = client.post(
         "/vehicles/new",
         data={"name": "Vespa", "csrf_token": token},
-        files={"photo": ("vespa.png", b"\x89PNG vespa", "image/png")},
+        files={"photo": ("vespa.png", b"\x89PNG\r\n\x1a\n vespa", "image/png")},
         follow_redirects=False,
     )
     vehicle_url = resp.headers["location"]

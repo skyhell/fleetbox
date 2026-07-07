@@ -56,7 +56,8 @@ def _add_column(conn: Connection, engine: Engine, table_name: str, column: Colum
         try:
             creator(conn, checkfirst=True)
         except Exception:  # noqa: BLE001 - best-effort; SQLite types have no real CREATE
-            pass
+            # Best effort: the ALTER below still fails loudly if the type is missing.
+            pass  # nosec B110
 
     col_type = column.type.compile(dialect=engine.dialect)
     ddl = f"ALTER TABLE {quote(table_name)} ADD COLUMN {quote(column.name)} {col_type}"

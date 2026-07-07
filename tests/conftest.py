@@ -51,9 +51,11 @@ def client(db_session):
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
-    """Clear the shared (module-level) login rate limiter between tests."""
+    """Clear the shared (module-level) rate limiters between tests."""
     from app.routers import auth
 
     auth._login_limiter.reset_all()
+    auth._register_limiter.reset_all()
     yield
     auth._login_limiter.reset_all()
+    auth._register_limiter.reset_all()

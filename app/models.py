@@ -106,6 +106,11 @@ class User(Base):
     totp_recovery_codes: Mapped[str | None] = mapped_column(Text)
     # Whether to send this user email reminders (due services, seasonal tyres).
     notify_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Bumped whenever the password changes; sessions remember the value they
+    # were established with, so older sessions stop resolving (see
+    # ``security.get_current_user``). Cookie sessions cannot be revoked
+    # server-side, hence this generation counter.
+    session_generation: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicles: Mapped[list[Vehicle]] = relationship(
@@ -429,3 +434,23 @@ class Expense(Base):
     def category_label_key(self) -> str:
         """i18n key for the category, e.g. ``expense.category.insurance``."""
         return f"expense.category.{self.category.value}"
+
+
+class AuditLog(Base):
+    """Security-relevant events: logins, password/2FA changes, admin actions.
+
+    ``username`` is a snapshot of the acting (or attempted) identity so entries
+    stay meaningful after a user is renamed or deleted.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    username: Mapped[str | None] = mapped_column(String(80))
+    event: Mapped[str] = mapped_column(String(50), nullable=False)
+    detail: Mapped[str | None] = mapped_column(String(255))
+    ip: Mapped[str | None] = mapped_column(String(45))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)

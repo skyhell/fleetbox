@@ -43,6 +43,7 @@ from app.models import (
     User,
     Vehicle,
 )
+from app.routers.attachments import signature_ok
 from app.security import require_user
 from app.templating import render
 
@@ -539,10 +540,16 @@ async def import_zip(
             try:
                 with zf.open(info) as src, target.open("wb") as out:
                     while chunk := src.read(_CHUNK):
+                        # Same magic-byte validation as direct uploads: skip
+                        # members whose content does not match their claimed type.
+                        if written == 0 and not signature_ok(content_type, chunk):
+                            raise ValueError("content does not match declared type")
                         written += len(chunk)
                         if written > settings.max_upload_bytes:
                             raise ValueError("member larger than declared")
                         out.write(chunk)
+                if written == 0:
+                    raise ValueError("empty member")
             except Exception:
                 target.unlink(missing_ok=True)
                 summary["skipped"] += 1

@@ -133,7 +133,7 @@ def _upload_attachment(client, vehicle_url: str, filename: str = "rechnung.png")
     resp = client.post(
         f"{vehicle_url}/attachments",
         data={"title": "Rechnung", "service_record_id": "", "csrf_token": token},
-        files={"file": (filename, b"\x89PNG fake image bytes", "image/png")},
+        files={"file": (filename, b"\x89PNG\r\n\x1a\n fake image bytes", "image/png")},
         follow_redirects=False,
     )
     assert resp.status_code == 303
@@ -199,7 +199,7 @@ def test_zip_round_trip_restores_data_and_files(client, tmp_path, monkeypatch):
     assert links
     download = client.get(links[0])
     assert download.status_code == 200
-    assert download.content == b"\x89PNG fake image bytes"
+    assert download.content == b"\x89PNG\r\n\x1a\n fake image bytes"
 
     # Re-importing the same archive duplicates neither vehicles nor files.
     token = _csrf(client, "/backup")

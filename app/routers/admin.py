@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.audit import audit
 from app.config import settings
 from app.database import get_db
-from app.models import User
+from app.models import AuditLog, User
 from app.security import hash_password, require_admin
 from app.templating import render
 
@@ -69,6 +70,7 @@ def create_user(
         locale=settings.default_locale,
     )
     db.add(user)
+    audit(db, request, "user.created", user=admin, detail=username)
     db.commit()
     return RedirectResponse("/admin/users", status_code=303)
 
@@ -136,12 +138,20 @@ def edit_user(
         target.is_admin = bool(is_admin)
     if password:
         target.hashed_password = hash_password(password)
+        # End all existing sessions of the reset account. When resetting your
+        # own password, the current session is re-stamped and survives.
+        target.session_generation = (target.session_generation or 0) + 1
+        if target.id == admin.id:
+            request.session["session_generation"] = target.session_generation
+        audit(db, request, "password.reset", user=admin, detail=username)
+    audit(db, request, "user.updated", user=admin, detail=username)
     db.commit()
     return RedirectResponse("/admin/users", status_code=303)
 
 
 @router.post("/users/{user_id}/toggle-active")
 def toggle_active(
+    request: Request,
     user_id: int,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
@@ -151,12 +161,15 @@ def toggle_active(
         raise HTTPException(status_code=404, detail="User not found")
     if user.id != admin.id:  # never lock yourself out
         user.is_active = not user.is_active
+        event = "user.activated" if user.is_active else "user.deactivated"
+        audit(db, request, event, user=admin, detail=user.username)
         db.commit()
     return RedirectResponse("/admin/users", status_code=303)
 
 
 @router.post("/users/{user_id}/delete")
 def delete_user(
+    request: Request,
     user_id: int,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
@@ -166,6 +179,18 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="You cannot delete yourself")
+    audit(db, request, "user.deleted", user=admin, detail=user.username)
     db.delete(user)
     db.commit()
     return RedirectResponse("/admin/users", status_code=303)
+
+
+@router.get("/audit")
+def audit_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """The most recent security events, newest first."""
+    entries = db.query(AuditLog).order_by(AuditLog.id.desc()).limit(200).all()
+    return render(request, "admin/audit.html", entries=entries)

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.audit import audit
 from app.config import settings
 from app.crypto import decrypt, encrypt
 from app.database import get_db
@@ -62,6 +63,11 @@ def change_password(
         return _security(request, error="account.password.mismatch")
 
     user.hashed_password = hash_password(new_password)
+    # Invalidate every other session of this account; the current one is
+    # re-stamped with the new generation and stays logged in.
+    user.session_generation = (user.session_generation or 0) + 1
+    request.session["session_generation"] = user.session_generation
+    audit(db, request, "password.changed", user=user)
     db.add(user)
     db.commit()
     return _security(request, user=user, message="account.password.changed")
@@ -125,6 +131,7 @@ def enable_2fa(
     user.totp_recovery_codes = json.dumps(
         [hash_recovery_code(c) for c in recovery_codes]
     )
+    audit(db, request, "twofa.enabled", user=user)
     db.add(user)
     db.commit()
     request.session.pop("pending_totp_secret", None)
@@ -153,6 +160,7 @@ def disable_2fa(
     user.totp_enabled = False
     user.totp_last_used = None
     user.totp_recovery_codes = None
+    audit(db, request, "twofa.disabled", user=user)
     db.add(user)
     db.commit()
     return _security(request, user=user, message="twofa.disabled")

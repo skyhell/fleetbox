@@ -10,9 +10,8 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import __version__
+from app import __version__, database
 from app.config import settings
-from app import database
 from app.csrf import csrf_protect
 from app.database import init_db
 from app.models import User
@@ -107,7 +106,12 @@ async def attach_user(request: Request, call_next):
         db = database.SessionLocal()
         try:
             user = db.get(User, user_id)
-            if user and user.is_active:
+            if (
+                user
+                and user.is_active
+                # Stale after a password change — same rule as get_current_user.
+                and request.session.get("session_generation", 0) == user.session_generation
+            ):
                 request.state.user = user
         finally:
             db.close()

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.audit import audit
 from app.config import settings
 from app.crypto import decrypt
 from app.database import get_db
@@ -21,6 +22,10 @@ router = APIRouter(tags=["auth"])
 
 # Shared limiter for password and 2FA attempts (per client IP).
 _login_limiter = RateLimiter(
+    settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
+)
+# Registration attempts (per client IP) — throttles mass account creation.
+_register_limiter = RateLimiter(
     settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
 )
 
@@ -39,6 +44,7 @@ def _establish_session(request: Request, user: User) -> None:
     request.session.clear()
     request.session.update(preserved)
     request.session["user_id"] = user.id
+    request.session["session_generation"] = user.session_generation
     request.session["lang"] = user.locale
 
 
@@ -63,6 +69,8 @@ def login(
     user = authenticate(db, identifier, password)
     if user is None:
         _login_limiter.record_failure(key)
+        audit(db, request, "login.failed", username=identifier)
+        db.commit()
         return render(request, "auth/login.html", error="auth.login.error")
 
     # Password is correct. If the account has 2FA enabled, defer the actual
@@ -73,6 +81,8 @@ def login(
 
     _login_limiter.reset(key)
     _establish_session(request, user)
+    audit(db, request, "login.success", user=user)
+    db.commit()
     return RedirectResponse("/dashboard", status_code=303)
 
 
@@ -121,8 +131,14 @@ def two_factor_verify(
 
     if not verified:
         _login_limiter.record_failure(key)
+        audit(
+            db, request, "login.failed",
+            username=user.username if user else None, detail="2fa",
+        )
+        db.commit()
         return render(request, "auth/twofactor.html", error="twofa.invalid")
 
+    audit(db, request, "login.success", user=user, detail="2fa")
     db.commit()
     _login_limiter.reset(key)
     _establish_session(request, user)
@@ -130,7 +146,11 @@ def two_factor_verify(
 
 
 @router.post("/logout")
-def logout(request: Request):
+def logout(request: Request, db: Session = Depends(get_db)):
+    user = getattr(request.state, "user", None)
+    if user is not None:
+        audit(db, request, "logout", user=user)
+        db.commit()
     request.session.clear()
     return RedirectResponse("/login", status_code=303)
 
@@ -160,6 +180,12 @@ def register(
 ):
     if not settings.allow_registration:
         return render(request, "auth/register.html", disabled=True)
+
+    # Throttle account creation per client IP; every attempt counts.
+    key = client_key(request)
+    if not _register_limiter.is_allowed(key):
+        return render(request, "auth/register.html", error="auth.too_many_attempts")
+    _register_limiter.record_failure(key)
 
     if len(password) < settings.min_password_length:
         return render(
@@ -191,6 +217,8 @@ def register(
         locale=settings.default_locale,
     )
     db.add(user)
+    db.flush()  # assign user.id for the audit entry
+    audit(db, request, "register", user=user)
     db.commit()
-    request.session["user_id"] = user.id
+    _establish_session(request, user)
     return RedirectResponse("/dashboard", status_code=303)

@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly CVE sweep: catches new advisories even when nothing is pushed.
+    - cron: "0 6 * * 1"
 
 jobs:
   test:
@@ -39,7 +42,7 @@ jobs:
       - name: Static security analysis (bandit)
         run: bandit -r app -c pyproject.toml
       - name: Dependency vulnerability audit (pip-audit)
-        # Reports known CVEs in dependencies. Non-blocking so a fresh advisory
-        # doesn't break unrelated PRs — review the output and bump as needed.
-        continue-on-error: true
+        # Non-blocking on pushes/PRs so a fresh advisory doesn't break
+        # unrelated work; the weekly scheduled run fails hard instead.
+        continue-on-error: ${{ github.event_name != 'schedule' }}
         run: pip-audit

@@ -46,6 +46,10 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | 
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         return None
+    # Sessions carry the generation they were established with; a password
+    # change bumps the user's counter, which invalidates every other session.
+    if request.session.get("session_generation", 0) != user.session_generation:
+        return None
     return user
 
 

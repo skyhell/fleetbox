@@ -136,7 +136,8 @@ def test_oversized_upload_rejected(client, monkeypatch):
     vehicle_url = _create_vehicle(client)
 
     monkeypatch.setattr(settings, "max_upload_bytes", 10)
-    resp = _upload(client, vehicle_url, content=b"x" * 50)
+    # Valid PNG signature so the magic-byte check passes and the size cap trips.
+    resp = _upload(client, vehicle_url, content=PNG_BYTES + b"x" * 50)
     assert resp.status_code == 413
     # Nothing was persisted.
     assert "Invoice" not in client.get(vehicle_url).text
