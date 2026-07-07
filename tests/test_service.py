@@ -92,7 +92,7 @@ def test_edit_foreign_record_rejected(client):
     _add_record(client, url, title="Service")
     record_id = _record_ids(client, url)[0]
 
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
     _register(client, "mallory", "mallory@example.com")
     edit_url = f"{url}/records/{record_id}/edit"
     assert client.get(edit_url).status_code == 404

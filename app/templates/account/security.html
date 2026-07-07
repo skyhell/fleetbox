@@ -3,7 +3,36 @@
 {% block content %}
 <h1>{{ t('account.security.title') }}</h1>
 {% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
-{% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
+{% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
+
+{% if recovery_codes %}
+<section class="card narrow">
+  <h2>{{ t('twofa.recovery.title') }}</h2>
+  <p class="muted">{{ t('twofa.recovery.hint') }}</p>
+  <ul class="recovery-codes">
+    {% for c in recovery_codes %}<li><code>{{ c }}</code></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="card narrow">
+  <h2>{{ t('account.password.title') }}</h2>
+  <form method="post" action="/account/password">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('account.password.current') }}
+      <input type="password" name="current_password" autocomplete="current-password" required>
+    </label>
+    <label>{{ t('account.password.new') }}
+      <input type="password" name="new_password" autocomplete="new-password"
+             minlength="{{ min_password_length|default(8) }}" required>
+    </label>
+    <label>{{ t('account.password.repeat') }}
+      <input type="password" name="new_password_repeat" autocomplete="new-password"
+             minlength="{{ min_password_length|default(8) }}" required>
+    </label>
+    <button class="btn btn-primary" type="submit">{{ t('account.password.submit') }}</button>
+  </form>
+</section>
 
 <section class="card narrow">
   <h2>{{ t('twofa.title') }}</h2>

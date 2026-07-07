@@ -11,9 +11,10 @@ PASSWORD = "Secret123"  # >= min_password_length
 
 def _csrf(client, url: str) -> str:
     """Fetch a page and extract its CSRF token (also primes the session cookie)."""
-    html = client.get(url).text
+    resp = client.get(url)
+    html = resp.text
     match = re.search(r'name="csrf_token" value="([^"]+)"', html)
-    assert match, f"no CSRF token found on {url}"
+    assert match, f"no CSRF token found on {url} (status {resp.status_code}): {html[:300]!r}"
     return match.group(1)
 
 
@@ -164,7 +165,7 @@ def test_two_factor_enrollment_and_login(client):
     finally:
         db.close()
 
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
 
     # Password alone now redirects to the 2FA challenge.
     token = _csrf(client, "/login")
@@ -197,7 +198,7 @@ def test_two_factor_enrollment_and_login(client):
 
 def test_login_logout(client):
     _register(client, "carol", "carol@example.com")
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
 
     resp = client.get("/dashboard", follow_redirects=False)
     assert resp.status_code in (302, 303)
@@ -221,7 +222,7 @@ def test_login_logout(client):
 
 def test_login_rate_limited_after_repeated_failures(client):
     _register(client, "rate", "rate@example.com")
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
 
     # Exhaust the allowed attempts with wrong passwords.
     for _ in range(settings.rate_limit_max_attempts):

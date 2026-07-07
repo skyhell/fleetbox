@@ -53,7 +53,10 @@
     </span>
     {% if user %}
       <a class="userchip" href="/account/security" title="{{ t('account.security.title') }}">{{ user.username }}</a>
-      <a class="btn btn-sm" href="/logout">{{ t('nav.logout') }}</a>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-sm" type="submit">{{ t('nav.logout') }}</button>
+      </form>
     {% else %}
       <a class="btn btn-sm" href="/login">{{ t('nav.login') }}</a>
     {% endif %}

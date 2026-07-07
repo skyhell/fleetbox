@@ -102,7 +102,7 @@ def test_quick_add_pages_enforce_ownership(client):
     _register(client, "owner", "owner@example.com")
     vehicle_url = _create_vehicle(client)
 
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
     _register(client, "intruder", "intruder@example.com")
     assert client.get(f"{vehicle_url}/records/new").status_code == 404
     assert client.get(f"{vehicle_url}/fuel/new").status_code == 404

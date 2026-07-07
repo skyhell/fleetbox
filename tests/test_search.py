@@ -69,7 +69,7 @@ def test_search_is_case_insensitive_and_handles_no_match(client):
 def test_search_respects_ownership(client):
     _register(client, "owner", "owner@example.com")
     _create_vehicle(client, name="SecretCar")
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
 
     _register(client, "intruder", "intruder@example.com")
     page = client.get("/search?q=SecretCar").text

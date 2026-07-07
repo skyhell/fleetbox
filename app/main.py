@@ -12,8 +12,9 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app import __version__
 from app.config import settings
+from app import database
 from app.csrf import csrf_protect
-from app.database import SessionLocal, init_db
+from app.database import init_db
 from app.models import User
 from app.routers import (
     account,
@@ -74,6 +75,13 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "no-referrer")
+    # FleetBox uses none of these browser features; deny them outright.
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    )
+    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+    response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
     response.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; img-src 'self' data:; object-src 'none'; "
@@ -93,7 +101,10 @@ async def attach_user(request: Request, call_next):
     request.state.user = None
     user_id = request.session.get("user_id")
     if user_id is not None:
-        db = SessionLocal()
+        # Resolve the session factory at request time (module attribute), so a
+        # re-bound factory — e.g. the per-test engine in the test suite — is
+        # honoured instead of the one captured at import time.
+        db = database.SessionLocal()
         try:
             user = db.get(User, user_id)
             if user and user.is_active:

@@ -5,6 +5,34 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.13.0-beta.1] - 2026-07-07
+
+### Added
+- **Change password**: users can now rotate their own password on the Account
+  security page (requires the current password).
+- **2FA recovery codes**: enabling two-factor authentication now issues eight
+  one-time recovery codes (shown exactly once, stored only as hashes). A
+  recovery code stands in for an authenticator code at login and is consumed
+  on use.
+
+### Changed
+- **TOTP replay protection**: an authenticator code is accepted only once —
+  a sniffed code can no longer be reused within its 30-second window (applies
+  to login, enabling and disabling 2FA).
+- **Logging out is POST-only**: the logout control is now a form with a CSRF
+  token; a plain GET (link prefetching, old bookmarks) no longer ends the
+  session.
+- **Fresh session on login**: completing a login clears any pre-login session
+  state and rotates the CSRF token; theme and skin preferences are kept.
+- **More hardening headers**: `Permissions-Policy` (camera, microphone,
+  geolocation, payment, USB all denied), `Cross-Origin-Opener-Policy` and
+  `Cross-Origin-Resource-Policy` are now sent on every response.
+
+### Fixed
+- The current-user middleware resolves the database session factory at request
+  time instead of import time (visible only in test setups with swapped
+  engines).
+
 ## [0.12.0] - 2026-07-07
 
 ### Added

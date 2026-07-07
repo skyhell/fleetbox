@@ -151,6 +151,6 @@ def test_attachment_ownership_enforced(client):
     attachment_id = re.search(rf"{vehicle_url}/attachments/(\d+)", page).group(1)
 
     # A different user must not reach another user's vehicle or attachment.
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
     _register(client, "intruder", "intruder@example.com")
     assert client.get(f"{vehicle_url}/attachments/{attachment_id}").status_code == 404

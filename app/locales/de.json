@@ -231,6 +231,15 @@
 
   "account.security.title": "Kontosicherheit",
 
+  "account.password.title": "Passwort ändern",
+  "account.password.current": "Aktuelles Passwort",
+  "account.password.new": "Neues Passwort",
+  "account.password.repeat": "Neues Passwort wiederholen",
+  "account.password.submit": "Passwort ändern",
+  "account.password.wrong_current": "Das aktuelle Passwort ist falsch.",
+  "account.password.mismatch": "Die Passwörter stimmen nicht überein.",
+  "account.password.changed": "Das Passwort wurde geändert.",
+
   "notify.title": "Benachrichtigungen",
   "notify.hint": "Erhalte E-Mail-Erinnerungen für fällige Services und den saisonalen Reifenwechsel.",
   "notify.email_label": "E-Mail-Erinnerungen erhalten",
@@ -249,7 +258,9 @@
   "twofa.enabled": "Die Zwei-Faktor-Authentifizierung ist jetzt aktiviert.",
   "twofa.disabled": "Die Zwei-Faktor-Authentifizierung wurde deaktiviert.",
   "twofa.challenge.title": "Zwei-Faktor-Authentifizierung",
-  "twofa.challenge.hint": "Gib den aktuellen Code aus deiner Authenticator-App ein.",
+  "twofa.challenge.hint": "Gib den aktuellen Code aus deiner Authenticator-App ein — oder einen deiner Wiederherstellungscodes.",
+  "twofa.recovery.title": "Wiederherstellungscodes",
+  "twofa.recovery.hint": "Bewahre diese Einmal-Codes sicher auf — sie werden nur jetzt angezeigt. Jeder Code ersetzt genau einmal einen Authenticator-Code, falls du keinen Zugriff auf deine App hast.",
   "twofa.setup.title": "Zwei-Faktor-Authentifizierung einrichten",
   "twofa.setup.step_scan": "Scanne diesen QR-Code mit deiner Authenticator-App.",
   "twofa.setup.manual": "Kannst du nicht scannen? Gib dieses Geheimnis manuell ein:",

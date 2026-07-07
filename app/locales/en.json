@@ -231,6 +231,15 @@
 
   "account.security.title": "Account security",
 
+  "account.password.title": "Change password",
+  "account.password.current": "Current password",
+  "account.password.new": "New password",
+  "account.password.repeat": "Repeat new password",
+  "account.password.submit": "Change password",
+  "account.password.wrong_current": "The current password is incorrect.",
+  "account.password.mismatch": "The passwords do not match.",
+  "account.password.changed": "Your password has been changed.",
+
   "notify.title": "Notifications",
   "notify.hint": "Receive email reminders for due services and seasonal tyre changes.",
   "notify.email_label": "Receive email reminders",
@@ -249,7 +258,9 @@
   "twofa.enabled": "Two-factor authentication is now enabled.",
   "twofa.disabled": "Two-factor authentication has been disabled.",
   "twofa.challenge.title": "Two-factor authentication",
-  "twofa.challenge.hint": "Enter the current code from your authenticator app.",
+  "twofa.challenge.hint": "Enter the current code from your authenticator app — or one of your recovery codes.",
+  "twofa.recovery.title": "Recovery codes",
+  "twofa.recovery.hint": "Store these one-time codes somewhere safe — they are shown only now. Each code stands in for an authenticator code exactly once if you lose access to your app.",
   "twofa.setup.title": "Set up two-factor authentication",
   "twofa.setup.step_scan": "Scan this QR code with your authenticator app.",
   "twofa.setup.manual": "Can't scan? Enter this secret manually:",

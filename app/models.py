@@ -98,6 +98,12 @@ class User(Base):
     locale: Mapped[str] = mapped_column(String(5), default="de", nullable=False)
     totp_secret: Mapped[str | None] = mapped_column(String(64))
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Replay protection: the last accepted TOTP time step (Unix time // 30).
+    # A code is only accepted for a step newer than this.
+    totp_last_used: Mapped[int | None] = mapped_column(Integer)
+    # One-time 2FA recovery codes, stored as a JSON list of SHA-256 hex
+    # digests; each code is removed after use.
+    totp_recovery_codes: Mapped[str | None] = mapped_column(Text)
     # Whether to send this user email reminders (due services, seasonal tyres).
     notify_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)

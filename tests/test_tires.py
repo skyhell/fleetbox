@@ -105,7 +105,7 @@ def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")
     _add_tire(client, url, season="winter")
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
 
     _register(client, "intruder", "intruder@example.com")
     # The intruder cannot add a tyre set to someone else's vehicle.

@@ -71,7 +71,7 @@ def test_round_trip_into_fresh_account(client):
     records_csv = client.get("/backup/export/service_records.csv").content
 
     # Fresh account imports both files.
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
     _register(client, "bob", "bob@example.com")
     assert "Golf" not in client.get("/vehicles").text
 
@@ -176,7 +176,7 @@ def test_zip_round_trip_restores_data_and_files(client, tmp_path, monkeypatch):
     archive = client.get("/backup/export/fleetbox-backup.zip").content
 
     # Fresh account restores everything from the single archive.
-    client.get("/logout")
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
     _register(client, "bob", "bob@example.com")
     token = _csrf(client, "/backup")
     resp = client.post(
