@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.13.0-beta.2] - 2026-07-07
+
 ### Added
 - **Edit users in the admin area**: user management now has an Edit button per
   user — administrators can change username, email and the administrator role,
