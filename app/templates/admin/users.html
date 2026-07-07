@@ -23,6 +23,7 @@
         <td>{{ t('common.yes') if u.is_admin else t('common.no') }}</td>
         <td>{{ t('common.yes') if u.is_active else t('common.no') }}</td>
         <td class="row-actions">
+          <a class="btn btn-sm" href="/admin/users/{{ u.id }}/edit">{{ t('common.edit') }}</a>
           {% if u.id != user.id %}
           <form method="post" action="/admin/users/{{ u.id }}/toggle-active">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -47,7 +48,8 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>{{ t('admin.field.username') }} <span class="req">*</span><input type="text" name="username" required></label>
     <label>{{ t('admin.field.email') }} <span class="req">*</span><input type="email" name="email" required></label>
-    <label>{{ t('admin.field.password') }} <span class="req">*</span><input type="password" name="password" required></label>
+    <label>{{ t('admin.field.password') }} <span class="req">*</span><input type="password" name="password" autocomplete="new-password" required></label>
+    <label>{{ t('password.repeat') }} <span class="req">*</span><input type="password" name="password_repeat" autocomplete="new-password" required></label>
     <label class="checkbox"><input type="checkbox" name="is_admin" value="1"> {{ t('admin.field.is_admin') }}</label>
     <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
   </form>

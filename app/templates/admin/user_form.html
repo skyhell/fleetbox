@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.edit.title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('admin.edit.title') }}</h1>
+{% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
+
+<section class="card narrow">
+  <form method="post" action="/admin/users/{{ target.id }}/edit">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('admin.field.username') }} <span class="req">*</span>
+      <input type="text" name="username" value="{{ target.username }}" required>
+    </label>
+    <label>{{ t('admin.field.email') }} <span class="req">*</span>
+      <input type="email" name="email" value="{{ target.email }}" required>
+    </label>
+    <label>{{ t('admin.field.new_password') }}
+      <input type="password" name="password" autocomplete="new-password">
+    </label>
+    <label>{{ t('password.repeat') }}
+      <input type="password" name="password_repeat" autocomplete="new-password">
+    </label>
+    <p class="muted">{{ t('admin.edit.password_hint') }}</p>
+    {% if target.id == user.id %}
+    <label class="checkbox">
+      <input type="checkbox" name="is_admin" value="1" checked disabled>
+      {{ t('admin.field.is_admin') }}
+    </label>
+    <p class="muted">{{ t('admin.edit.self_admin_hint') }}</p>
+    {% else %}
+    <label class="checkbox">
+      <input type="checkbox" name="is_admin" value="1" {{ 'checked' if target.is_admin else '' }}>
+      {{ t('admin.field.is_admin') }}
+    </label>
+    {% endif %}
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="/admin/users">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -391,6 +391,26 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface);
   box-shadow: var(--ring);
 }
+/* Password fields: show/hide toggle (wrapper + button injected by app.js) */
+.pw-field { position: relative; display: block; margin-top: 0.4rem; }
+.pw-field input { margin-top: 0; padding-right: 2.7rem; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.pw-toggle:hover { color: var(--text); }
+.pw-toggle:focus-visible { outline: none; box-shadow: var(--ring); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
 .form-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .inline-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-strong); }

@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="{{ t('app.name') }}">
   <script src="/static/js/app.js" defer></script>
 </head>
-<body>
+<body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}">
 <header class="topbar">
   <a class="brand" href="/dashboard">🚗 {{ t('app.name') }}</a>
   <nav class="mainnav">

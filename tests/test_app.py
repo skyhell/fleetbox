@@ -71,6 +71,40 @@ def test_register_rejects_short_password(client):
     assert resp.status_code == 200  # re-rendered with an error, not logged in
 
 
+def test_register_rejects_password_mismatch(client):
+    token = _csrf(client, "/register")
+    resp = client.post(
+        "/register",
+        data={
+            "username": "typo",
+            "email": "typo@example.com",
+            "password": PASSWORD,
+            "password_repeat": PASSWORD + "x",
+            "csrf_token": token,
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 200  # re-rendered with an error, not logged in
+    assert "alert-error" in resp.text
+
+
+def test_register_accepts_matching_password_repeat(client):
+    token = _csrf(client, "/register")
+    resp = client.post(
+        "/register",
+        data={
+            "username": "careful",
+            "email": "careful@example.com",
+            "password": PASSWORD,
+            "password_repeat": PASSWORD,
+            "csrf_token": token,
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard"
+
+
 def test_post_without_csrf_token_is_forbidden(client):
     resp = client.post(
         "/register",

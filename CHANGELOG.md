@@ -5,6 +5,17 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Edit users in the admin area**: user management now has an Edit button per
+  user — administrators can change username, email and the administrator role,
+  and reset a user's password (left empty, the password is kept). Admins cannot
+  remove their own administrator role.
+- **Password confirmation**: every form that sets a new password (registration,
+  admin user creation and editing) now asks for the password twice and rejects
+  mismatches server-side.
+- **Show/hide password**: password fields have an eye toggle to reveal what was
+  typed (progressive enhancement — injected only when JavaScript is available).
+
 ## [0.13.0-beta.1] - 2026-07-07
 
 ### Added

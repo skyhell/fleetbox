@@ -155,6 +155,7 @@ def register(
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    password_repeat: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     if not settings.allow_registration:
@@ -167,6 +168,10 @@ def register(
             error="auth.password.too_short",
             min_password_length=settings.min_password_length,
         )
+    # The confirmation field is validated when the form sends it (the UI always
+    # does); direct POSTs without it stay compatible.
+    if password_repeat is not None and password != password_repeat:
+        return render(request, "auth/register.html", error="account.password.mismatch")
 
     exists = (
         db.query(User)

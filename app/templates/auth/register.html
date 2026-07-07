@@ -19,6 +19,9 @@
       <label>{{ t('auth.register.password') }}
         <input type="password" name="password" autocomplete="new-password" required>
       </label>
+      <label>{{ t('password.repeat') }}
+        <input type="password" name="password_repeat" autocomplete="new-password" required>
+      </label>
       <button class="btn btn-primary" type="submit">{{ t('auth.register.submit') }}</button>
     </form>
     <p class="muted"><a href="/login">{{ t('nav.login') }}</a></p>

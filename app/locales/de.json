@@ -214,6 +214,14 @@
   "admin.field.is_admin": "Administrator",
   "admin.field.is_active": "Aktiv",
   "admin.delete.confirm": "Diesen Benutzer und alle seine Fahrzeuge wirklich löschen?",
+  "admin.edit.title": "Benutzer bearbeiten",
+  "admin.field.new_password": "Neues Passwort",
+  "admin.edit.password_hint": "Leer lassen, um das Passwort nicht zu ändern.",
+  "admin.edit.self_admin_hint": "Du kannst dir selbst die Administratorrechte nicht entziehen.",
+
+  "password.repeat": "Passwort wiederholen",
+  "password.show": "Passwort anzeigen",
+  "password.hide": "Passwort verbergen",
 
   "backup.title": "Sicherung & Migration",
   "backup.intro": "Sichere alles mit einem Klick als Komplett-Backup (ZIP) oder exportiere und importiere einzelne CSV-Dateien — auch zur Migration in eine andere FleetBox-Instanz.",
