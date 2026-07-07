@@ -12,7 +12,7 @@
       {{ vehicle.make or '' }} {{ vehicle.model or '' }}
       {% if vehicle.year %}· {{ vehicle.year }}{% endif %}
       {% if vehicle.license_plate %}· <span class="plate">{{ vehicle.license_plate }}</span>{% endif %}
-      · {{ vehicle.mileage|num }} {{ vehicle.usage_unit_label }} · {{ t('fuel.type.' + vehicle.fuel_type.value) }}
+      · {{ vehicle.mileage|lnum }} {{ vehicle.usage_unit_label }} · {{ t('fuel.type.' + vehicle.fuel_type.value) }}
     </p>
     {% if vehicle.vin %}<p class="muted small">VIN: {{ vehicle.vin }}</p>{% endif %}
     {% if vehicle.inspection_due %}
@@ -27,10 +27,10 @@
     {% if vehicle.notes %}<p>{{ vehicle.notes }}</p>{% endif %}
   </div>
   <div class="head-actions">
-    <a class="btn btn-primary" href="/vehicles/{{ vehicle.id }}/records/new"
-       title="{{ t('service.add_record') }}">+ {{ t('vehicle.quick.service') }}</a>
-    <a class="btn btn-primary" href="/vehicles/{{ vehicle.id }}/fuel/new"
-       title="{{ t('fuel.add') }}">+ {{ t('vehicle.quick.fuel') }}</a>
+    <a class="btn btn-primary" id="quick-service" href="/vehicles/{{ vehicle.id }}/records/new"
+       title="{{ t('service.add_record') }} [n]">+ {{ t('vehicle.quick.service') }}</a>
+    <a class="btn btn-primary" id="quick-fuel" href="/vehicles/{{ vehicle.id }}/fuel/new"
+       title="{{ t('fuel.add') }} [t]">+ {{ t('vehicle.quick.fuel') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/stats">{{ t('stats.title') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/edit">{{ t('common.edit') }}</a>
     <form method="post" action="/vehicles/{{ vehicle.id }}/delete"
@@ -62,7 +62,7 @@
         <td>{{ iv.name }}</td>
         <td>{{ t('service.type.' + iv.service_type.value) }}</td>
         <td>
-          {% if iv.due_mileage() %}{{ iv.due_mileage()|num }} {{ vehicle.usage_unit_label }}{% endif %}
+          {% if iv.due_mileage() %}{{ iv.due_mileage()|lnum }} {{ vehicle.usage_unit_label }}{% endif %}
           {% if iv.due_date() %}{% if iv.due_mileage() %}<br>{% endif %}{{ iv.due_date() }}{% endif %}
           {% if not iv.due_mileage() and not iv.due_date() %}{{ t('common.none') }}{% endif %}
         </td>
@@ -111,7 +111,7 @@
 <section class="card">
   <h2>{{ t('service.records') }}</h2>
   {% if records %}
-  <table class="table">
+  <table class="table" data-enhance>
     <thead>
       <tr>
         <th>{{ t('service.field.date') }}</th>
@@ -128,10 +128,12 @@
         <td>{{ r.performed_on }}</td>
         <td>{{ t('service.type.' + r.service_type.value) }}</td>
         <td>{{ r.title }}{% if r.workshop %}<br><span class="muted small">{{ r.workshop }}</span>{% endif %}</td>
-        <td>{% if r.mileage %}{{ r.mileage|num }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{% if r.cost is not none %}{{ '%.2f'|format(r.cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if r.mileage %}{{ r.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if r.cost is not none %}{{ r.cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>
           <div class="row-actions">
+            <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/records/new?from_record={{ r.id }}"
+               title="{{ t('service.repeat') }}">↻</a>
             <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/records/{{ r.id }}/edit">{{ t('common.edit') }}</a>
             <form method="post" action="/vehicles/{{ vehicle.id }}/records/{{ r.id }}/delete"
                   data-confirm="{{ t('common.delete') }}?">
@@ -259,7 +261,7 @@
         <td>
           {% if ts.is_mounted %}
             <span class="badge badge-ok">{{ t('tire.mounted') }}</span>
-            {% if ts.mounted_on %}<br><span class="muted small">{{ ts.mounted_on }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|num }} {{ vehicle.usage_unit_label }}{% endif %}</span>{% endif %}
+            {% if ts.mounted_on %}<br><span class="muted small">{{ ts.mounted_on }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}</span>{% endif %}
           {% else %}
             <span class="muted small">{{ t('tire.stored') }}</span>
           {% endif %}
@@ -323,12 +325,12 @@
   <h2>{{ t('fuel.log') }}</h2>
   {% if fuel_logs %}
   <p class="muted small">
-    {{ t('fuel.summary.quantity') }}: {{ '%.2f'|format(fuel.total_quantity) }}
-    · {{ t('fuel.summary.cost') }}: {{ '%.2f'|format(fuel.total_cost) }}
-    {% if fuel.avg_consumption is not none %}· {{ t('fuel.consumption') }}: {{ '%.2f'|format(fuel.avg_consumption) }} {{ fuel.consumption_unit }}{% endif %}
-    {% if fuel.avg_price is not none %}· {{ t('fuel.summary.avg_price') }}: {{ '%.3f'|format(fuel.avg_price) }}{% endif %}
+    {{ t('fuel.summary.quantity') }}: {{ fuel.total_quantity|money }}
+    · {{ t('fuel.summary.cost') }}: {{ fuel.total_cost|money }}
+    {% if fuel.avg_consumption is not none %}· {{ t('fuel.consumption') }}: {{ fuel.avg_consumption|money }} {{ fuel.consumption_unit }}{% endif %}
+    {% if fuel.avg_price is not none %}· {{ t('fuel.summary.avg_price') }}: {{ fuel.avg_price|money(3) }}{% endif %}
   </p>
-  <table class="table">
+  <table class="table" data-enhance>
     <thead>
       <tr>
         <th>{{ t('fuel.field.date') }}</th>
@@ -344,11 +346,11 @@
       {% for f in fuel_logs %}
       <tr>
         <td>{{ f.filled_on }}{% if not f.full_tank %} <span class="muted small">({{ t('fuel.partial') }})</span>{% endif %}</td>
-        <td>{% if f.mileage %}{{ f.mileage|num }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{{ '%.2f'|format(f.quantity) }}</td>
-        <td>{% if f.price_per_unit is not none %}{{ '%.3f'|format(f.price_per_unit) }}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{% if f.total_cost is not none %}{{ '%.2f'|format(f.total_cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{% if f.id in fuel.per_fill %}{{ '%.2f'|format(fuel.per_fill[f.id]) }} {{ fuel.consumption_unit }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if f.mileage %}{{ f.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{{ f.quantity|money }}</td>
+        <td>{% if f.price_per_unit is not none %}{{ f.price_per_unit|money(3) }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if f.total_cost is not none %}{{ f.total_cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if f.id in fuel.per_fill %}{{ fuel.per_fill[f.id]|money }} {{ fuel.consumption_unit }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>
           <div class="row-actions">
             <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/fuel/{{ f.id }}/edit">{{ t('common.edit') }}</a>
@@ -397,9 +399,9 @@
   <h2>{{ t('expense.title') }}</h2>
   {% if expenses %}
   <p class="muted small">
-    {{ t('expense.summary.total') }}: {{ '%.2f'|format(expenses | sum(attribute='amount')) }}
+    {{ t('expense.summary.total') }}: {{ expenses | sum(attribute='amount') | money }}
   </p>
-  <table class="table">
+  <table class="table" data-enhance>
     <thead>
       <tr>
         <th>{{ t('expense.field.date') }}</th>
@@ -415,7 +417,7 @@
         <td>{{ e.spent_on }}</td>
         <td>{{ t(e.category_label_key) }}</td>
         <td>{{ e.title }}{% if e.notes %}<br><span class="muted small">{{ e.notes }}</span>{% endif %}</td>
-        <td>{{ '%.2f'|format(e.amount) }}</td>
+        <td>{{ e.amount|money }}</td>
         <td>
           <div class="row-actions">
             <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/expenses/{{ e.id }}/edit">{{ t('common.edit') }}</a>

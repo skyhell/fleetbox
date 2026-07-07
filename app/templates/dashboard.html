@@ -9,10 +9,27 @@
     <span class="stat-label">{{ t('dashboard.vehicles') }}</span>
   </div>
   <div class="card stat">
-    <span class="stat-value">{{ '%.2f'|format(total_spent) }}</span>
+    <span class="stat-value">{{ total_spent|money }}</span>
     <span class="stat-label">{{ t('dashboard.total_spent') }}</span>
   </div>
 </section>
+
+{% if vehicles %}
+<section class="card">
+  <h2>{{ t('dashboard.quick.title') }}</h2>
+  <ul class="quick-list">
+    {% for v in vehicles %}
+    <li>
+      <a class="quick-vehicle" href="/vehicles/{{ v.id }}">{{ v.display_name }}</a>
+      <span class="row-actions">
+        <a class="btn btn-sm" href="/vehicles/{{ v.id }}/records/new">+ {{ t('vehicle.quick.service') }}</a>
+        <a class="btn btn-sm" href="/vehicles/{{ v.id }}/fuel/new">+ {{ t('vehicle.quick.fuel') }}</a>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 
 <section class="card">
   <h2>{{ t('dashboard.due_services') }}</h2>
@@ -32,7 +49,7 @@
           <td><a href="/vehicles/{{ item.vehicle.id }}">{{ item.vehicle.display_name }}</a></td>
           <td>{{ item.interval.name }}</td>
           <td>
-            {% if item.due_mileage %}{{ item.due_mileage|num }} {{ item.vehicle.usage_unit_label }}{% endif %}
+            {% if item.due_mileage %}{{ item.due_mileage|lnum }} {{ item.vehicle.usage_unit_label }}{% endif %}
             {% if item.due_date %}{% if item.due_mileage %} · {% endif %}{{ item.due_date }}{% endif %}
           </td>
           <td><span class="badge badge-{{ item.status }}">{{ t('service.status.' + item.status) }}</span></td>
@@ -100,8 +117,8 @@
         <tr>
           <td>{{ f.filled_on }}</td>
           <td><a href="/vehicles/{{ f.vehicle_id }}">{{ f.vehicle.display_name }}</a></td>
-          <td>{{ '%.2f'|format(f.quantity) }}</td>
-          <td>{% if f.total_cost is not none %}{{ '%.2f'|format(f.total_cost) }}{% else %}{{ t('common.none') }}{% endif %}</td>
+          <td>{{ f.quantity|money }}</td>
+          <td>{% if f.total_cost is not none %}{{ f.total_cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

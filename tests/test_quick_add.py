@@ -49,7 +49,7 @@ def test_quick_service_form_is_prefilled(client):
     html = client.get(f"{vehicle_url}/records/new").text
     # Date defaults to today, the reading to the vehicle's current one.
     assert f'value="{date.today().isoformat()}"' in html
-    assert 'name="mileage" min="0" step="0.01" value="12345"' in html
+    assert 'name="mileage" min="0" step="0.01" inputmode="decimal" value="12345"' in html
     # The form posts to the existing create endpoint.
     assert f'action="{vehicle_url}/records"' in html
 
@@ -93,9 +93,9 @@ def test_quick_add_round_trip(client):
 
     page = client.get(vehicle_url).text
     assert "Kette geölt" in page
-    assert "42.50" in page
+    assert "42,50" in page
     # The vehicle reading followed the newest entry.
-    assert "1020" in page
+    assert "1.020" in page
 
 
 def test_quick_add_pages_enforce_ownership(client):

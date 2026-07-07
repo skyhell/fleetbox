@@ -245,6 +245,14 @@
   "audit.event.user.activated": "User activated",
   "audit.event.user.deactivated": "User deactivated",
 
+  "dashboard.quick.title": "Quick entry",
+  "service.repeat": "Repeat entry",
+  "date.today": "Today",
+  "date.yesterday": "Yesterday",
+  "table.filter": "Filter …",
+  "vehicle.switch": "Switch vehicle",
+  "nav.account": "Account",
+
   "backup.title": "Backup & migration",
   "backup.intro": "Back everything up with one click as a full backup (ZIP), or export and import individual CSV files — also for migrating to another FleetBox instance.",
   "backup.export.title": "Export",

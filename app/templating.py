@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
 
 from app import __version__
 from app.config import settings
@@ -26,14 +27,46 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 def _format_number(value) -> str:
-    """Format a reading: whole numbers without decimals, otherwise up to 2."""
+    """Format a reading: whole numbers without decimals, otherwise up to 2.
+
+    Machine format (dot decimal, no grouping) — safe for ``<input>`` values.
+    """
     if value is None:
         return ""
     text = f"{float(value):.2f}".rstrip("0").rstrip(".")
     return text or "0"
 
 
+def _localize(text: str, locale: str) -> str:
+    """Swap separators for locales that group with '.' and use ',' decimals."""
+    if locale == "de":
+        return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
+    return text
+
+
+@pass_context
+def _format_number_display(ctx, value) -> str:
+    """Locale-aware reading for display: grouped, up to 2 trimmed decimals."""
+    if value is None:
+        return ""
+    text = f"{float(value):,.2f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return _localize(text or "0", ctx.get("locale", settings.default_locale))
+
+
+@pass_context
+def _format_money(ctx, value, decimals: int = 2) -> str:
+    """Locale-aware amount for display: grouped, fixed decimals."""
+    if value is None:
+        return ""
+    text = f"{float(value):,.{decimals}f}"
+    return _localize(text, ctx.get("locale", settings.default_locale))
+
+
 templates.env.filters["num"] = _format_number
+templates.env.filters["lnum"] = _format_number_display
+templates.env.filters["money"] = _format_money
 
 
 def get_locale(request: Request) -> str:
@@ -102,6 +135,7 @@ def render(request: Request, template: str, **context):
         "skins": SKINS,
         "supported_locales": settings.supported_locales,
         "user": getattr(request.state, "user", None),
+        "nav_vehicles": getattr(request.state, "nav_vehicles", []),
         "app_version": __version__,
         "docs_url": settings.docs_url,
         "ServiceType": ServiceType,

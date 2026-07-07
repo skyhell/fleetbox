@@ -65,7 +65,7 @@ def test_edit_service_record(client):
     page = client.get(url).text
     assert "Brake repair" in page
     assert "2026-03-03" in page
-    assert "350.00" in page
+    assert "350,00" in page
     assert "Bosch" in page
 
 
@@ -83,7 +83,7 @@ def test_edit_record_updates_vehicle_mileage(client):
               "performed_on": "2026-02-02", "mileage": "5000", "csrf_token": token},
         follow_redirects=False,
     )
-    assert "5000" in client.get(url).text
+    assert "5.000" in client.get(url).text
 
 
 def test_edit_foreign_record_rejected(client):

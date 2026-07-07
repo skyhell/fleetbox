@@ -18,22 +18,22 @@
 <section class="grid">
   <div class="card stat">
     <span class="stat-value">
-      {% if stats.avg_consumption is not none %}{{ '%.1f'|format(stats.avg_consumption) }}{% else %}—{% endif %}
+      {% if stats.avg_consumption is not none %}{{ stats.avg_consumption|money(1) }}{% else %}—{% endif %}
     </span>
     <span class="stat-label">{{ t('stats.avg_consumption') }} ({{ stats.consumption_unit }})</span>
   </div>
   <div class="card stat">
-    <span class="stat-value">{{ '%.2f'|format(stats.total_cost) }}</span>
+    <span class="stat-value">{{ stats.total_cost|money }}</span>
     <span class="stat-label">{{ t('stats.total_cost') }}</span>
   </div>
   <div class="card stat">
     <span class="stat-value">
-      {% if stats.cost_per_unit is not none %}{{ '%.3f'|format(stats.cost_per_unit) }}{% else %}—{% endif %}
+      {% if stats.cost_per_unit is not none %}{{ stats.cost_per_unit|money(3) }}{% else %}—{% endif %}
     </span>
     <span class="stat-label">{{ t('stats.cost_per') }} {{ vehicle.usage_unit_label }}</span>
   </div>
   <div class="card stat">
-    <span class="stat-value">{% if stats.distance_tracked %}{{ stats.distance_tracked|num }}{% else %}—{% endif %}</span>
+    <span class="stat-value">{% if stats.distance_tracked %}{{ stats.distance_tracked|lnum }}{% else %}—{% endif %}</span>
     <span class="stat-label">{{ t('stats.distance') }} ({{ vehicle.usage_unit_label }})</span>
   </div>
 </section>
@@ -42,10 +42,10 @@
   <h2>{{ t('stats.cost_breakdown') }}</h2>
   <table class="table">
     <tbody>
-      <tr><td>{{ t('stats.fuel_cost') }}</td><td>{{ '%.2f'|format(stats.total_fuel_cost) }}</td></tr>
-      <tr><td>{{ t('stats.service_cost') }}</td><td>{{ '%.2f'|format(stats.total_service_cost) }}</td></tr>
-      <tr><td>{{ t('stats.other_cost') }}</td><td>{{ '%.2f'|format(stats.total_other_cost) }}</td></tr>
-      <tr><td>{{ t('fuel.log') }}</td><td>{{ stats.fillup_count }} · {{ '%.1f'|format(stats.total_quantity) }}</td></tr>
+      <tr><td>{{ t('stats.fuel_cost') }}</td><td>{{ stats.total_fuel_cost|money }}</td></tr>
+      <tr><td>{{ t('stats.service_cost') }}</td><td>{{ stats.total_service_cost|money }}</td></tr>
+      <tr><td>{{ t('stats.other_cost') }}</td><td>{{ stats.total_other_cost|money }}</td></tr>
+      <tr><td>{{ t('fuel.log') }}</td><td>{{ stats.fillup_count }} · {{ stats.total_quantity|money(1) }}</td></tr>
       <tr><td>{{ t('service.records') }}</td><td>{{ stats.service_count }}</td></tr>
       <tr><td>{{ t('expense.title') }}</td><td>{{ stats.expense_count }}</td></tr>
     </tbody>

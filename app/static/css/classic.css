@@ -516,3 +516,114 @@ input[type="search"]:focus { outline: none; border-color: var(--primary); box-sh
 }
 .skinswitch a:hover { text-decoration: none; color: var(--text); }
 .skinswitch a.active { color: #fff; background: var(--primary); }
+
+/* Vehicle quick switcher (topbar dropdown) */
+.vehnav { position: relative; }
+.vehnav > summary { list-style: none; cursor: pointer; color: var(--muted); padding: 0.2rem 0.35rem; border-radius: var(--radius-sm); }
+.vehnav > summary::-webkit-details-marker { display: none; }
+.vehnav > summary:hover { color: var(--text); }
+.vehnav[open] > summary { color: var(--text); }
+.vehnav-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+  padding: 0.3rem;
+  z-index: 60;
+}
+.vehnav-menu a { padding: 0.5rem 0.75rem; border-radius: 6px; white-space: nowrap; }
+.vehnav-menu a:hover { background: var(--primary-soft); }
+
+/* Date quick-pick buttons (injected by app.js) */
+.date-quick { display: inline-flex; gap: 0.35rem; margin-top: 0.35rem; }
+.date-quick button {
+  border: 1px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-family: inherit;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.date-quick button:hover { color: var(--text); border-color: var(--primary); }
+
+/* Sortable tables + filter box (enhanced by app.js) */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable::after { content: "↕"; opacity: 0.3; margin-left: 0.3rem; font-size: 0.85em; }
+th.sortable.sort-asc::after { content: "↑"; opacity: 1; }
+th.sortable.sort-desc::after { content: "↓"; opacity: 1; }
+.table-filter {
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.table-filter:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
+
+/* Confirm dialog (replaces window.confirm) */
+.confirm-dialog {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  padding: 1.3rem 1.5rem;
+  max-width: 26rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.confirm-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+.confirm-dialog p { margin: 0 0 1rem; }
+
+/* Quick entry list on the dashboard */
+.quick-list { list-style: none; margin: 0; padding: 0; }
+.quick-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-strong);
+}
+.quick-list li:last-child { border-bottom: 0; }
+.quick-vehicle { font-weight: 500; }
+
+/* Bottom navigation — thumb-reachable tabs on small screens */
+.bottomnav { display: none; }
+@media (max-width: 640px) {
+  .bottomnav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    justify-content: space-around;
+    background: var(--surface);
+    border-top: 1px solid var(--border-strong);
+    padding: 0.3rem 0.4rem calc(0.3rem + env(safe-area-inset-bottom));
+  }
+  .bottomnav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.66rem;
+    color: var(--muted);
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius-sm);
+  }
+  .bottomnav a:hover, .bottomnav a:focus-visible { color: var(--primary); }
+  body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+}

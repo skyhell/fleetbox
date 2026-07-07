@@ -14,7 +14,7 @@ from app import __version__, database
 from app.config import settings
 from app.csrf import csrf_protect
 from app.database import init_db
-from app.models import User
+from app.models import User, Vehicle
 from app.routers import (
     account,
     admin,
@@ -98,6 +98,7 @@ async def security_headers(request: Request, call_next):
 async def attach_user(request: Request, call_next):
     """Attach the current user (if any) to ``request.state`` for templates."""
     request.state.user = None
+    request.state.nav_vehicles = []
     user_id = request.session.get("user_id")
     if user_id is not None:
         # Resolve the session factory at request time (module attribute), so a
@@ -113,6 +114,13 @@ async def attach_user(request: Request, call_next):
                 and request.session.get("session_generation", 0) == user.session_generation
             ):
                 request.state.user = user
+                # (id, name) pairs for the vehicle quick switcher in the topbar.
+                request.state.nav_vehicles = (
+                    db.query(Vehicle.id, Vehicle.name)
+                    .filter(Vehicle.owner_id == user.id)
+                    .order_by(Vehicle.name)
+                    .all()
+                )
         finally:
             db.close()
     return await call_next(request)

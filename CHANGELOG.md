@@ -5,6 +5,32 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Quick entry on the dashboard**: every vehicle offers "+ Service" and
+  "+ Tanken" directly on the overview page.
+- **Repeat entry**: service records have a repeat button (↻) that opens the
+  quick-add form prefilled with type, title, cost, workshop and notes — date
+  and reading stay current. Ideal for recurring jobs like chain maintenance.
+- **Vehicle quick switcher**: with more than one vehicle, the top navigation
+  gets a dropdown to jump straight to any vehicle.
+- **Date quick-pick**: entry forms offer "Today" / "Yesterday" buttons next to
+  the date field.
+- **Sortable, filterable tables**: service records, fuel log, expenses and the
+  audit log sort by column on header click; longer tables get a filter box.
+- **Bottom navigation on phones**: a fixed, thumb-reachable tab bar (overview,
+  vehicles, search, account) replaces stretching for the top bar.
+- **Keyboard shortcuts**: `/` focuses the search; on a vehicle page `n` opens
+  the service quick-add and `t` the fuel quick-add.
+
+### Changed
+- **Localized number display**: readings and amounts render with locale-aware
+  grouping and decimal separators (German: `1.234,56`); form inputs keep the
+  machine format.
+- **Styled confirm dialogs**: deletions ask via a proper in-app dialog instead
+  of the browser's `window.confirm`.
+- **Better mobile keyboards**: numeric fields open the matching numeric or
+  decimal keypad; auth fields carry proper `autocomplete` hints.
+
 ## [0.13.0-beta.2] - 2026-07-07
 
 ### Added

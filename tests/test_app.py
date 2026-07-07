@@ -172,10 +172,10 @@ def test_vehicle_with_operating_hours(client):
 
     # The reading is labelled in hours, not km.
     page = client.get(detail).text
-    assert "3500 h" in page
+    assert "3.500 h" in page
     assert "3500 km" not in page
     # The list view reflects the unit too.
-    assert "3500 h" in client.get("/vehicles").text
+    assert "3.500 h" in client.get("/vehicles").text
 
 
 def test_two_factor_enrollment_and_login(client):

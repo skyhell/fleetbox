@@ -34,15 +34,15 @@ def test_vehicle_accepts_decimal_hours(client):
     _register(client, "alice", "alice@example.com")
     url = _create_vehicle(client, usage_unit="h", mileage="1234.56")
     page = client.get(url).text
-    assert "1234.56" in page
+    assert "1.234,56" in page
 
 
 def test_whole_reading_shows_without_decimals(client):
     _register(client, "bob", "bob@example.com")
     url = _create_vehicle(client, mileage="1000")
     page = client.get(url).text
-    assert "1000 " in page  # not "1000.0"
-    assert "1000.0" not in page
+    assert "1.000 " in page  # grouped, no decimals
+    assert "1.000,0" not in page
 
 
 def test_fuel_reading_accepts_decimals(client):
@@ -55,12 +55,12 @@ def test_fuel_reading_accepts_decimals(client):
               "csrf_token": token},
         follow_redirects=False,
     )
-    assert "150.25" in client.get(url).text
+    assert "150,25" in client.get(url).text
 
 
 def test_trailing_zero_decimal_is_trimmed(client):
     _register(client, "dave", "dave@example.com")
     url = _create_vehicle(client, mileage="2500.50")
     page = client.get(url).text
-    assert "2500.5" in page
-    assert "2500.50" not in page
+    assert "2.500,5" in page
+    assert "2.500,50" not in page

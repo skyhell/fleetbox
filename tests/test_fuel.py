@@ -47,7 +47,7 @@ def test_total_cost_derived_from_price(client):
     url = _create_vehicle(client)
     _add_fuel(client, url, quantity="40", price_per_unit="1.50")
     page = client.get(url).text
-    assert "60.00" in page  # 40 * 1.50
+    assert "60,00" in page  # 40 * 1.50, German display format
 
 
 def test_price_derived_from_total(client):
@@ -56,7 +56,7 @@ def test_price_derived_from_total(client):
     # Receipt case: only total + quantity entered, unit price implied.
     _add_fuel(client, url, quantity="50", total_cost="75")
     page = client.get(url).text
-    assert "1.500" in page  # 75 / 50
+    assert "1,500" in page  # 75 / 50, German display format
 
 
 def test_edit_fuel_entry(client):
@@ -75,4 +75,4 @@ def test_edit_fuel_entry(client):
     )
     page = client.get(url).text
     assert "2026-03-03" in page
-    assert "70.00" in page
+    assert "70,00" in page

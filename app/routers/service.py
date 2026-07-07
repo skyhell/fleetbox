@@ -51,14 +51,26 @@ def _date(v: str | None) -> date | None:
 def new_record_form(
     request: Request,
     vehicle_id: int,
+    from_record: int | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
-    """Quick-add page: date and reading are prefilled for fast entry."""
+    """Quick-add page: date and reading are prefilled for fast entry.
+
+    With ``?from_record=<id>`` an existing record of the same vehicle serves as
+    a template ("repeat entry"): type, title, cost, workshop and notes are
+    prefilled; date and reading stay current.
+    """
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    prefill = None
+    if from_record is not None:
+        prefill = db.get(ServiceRecord, from_record)
+        if prefill is None or prefill.vehicle_id != vehicle.id:
+            raise HTTPException(status_code=404, detail="Service record not found")
     return render(
         request, "service/form.html",
-        vehicle=vehicle, record=None, today=date.today().isoformat(),
+        vehicle=vehicle, record=None, prefill=prefill,
+        today=date.today().isoformat(),
     )
 
 

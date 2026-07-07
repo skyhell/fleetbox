@@ -49,7 +49,7 @@ def test_add_and_list_expense(client):
     _add_expense(client, url, title="Autobahnvignette", amount="96,40")
     page = client.get(url).text
     assert "Autobahnvignette" in page
-    assert "96.40" in page  # comma normalised to dot
+    assert "96,40" in page  # comma normalised to dot
 
 
 def test_edit_expense(client):
@@ -68,7 +68,7 @@ def test_edit_expense(client):
     )
     page = client.get(url).text
     assert "Parkhaus Zentrum" in page
-    assert "4.50" in page
+    assert "4,50" in page
 
 
 def test_delete_expense(client):

@@ -16,13 +16,24 @@
   <meta name="apple-mobile-web-app-title" content="{{ t('app.name') }}">
   <script src="/static/js/app.js" defer></script>
 </head>
-<body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}">
+<body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}"
+      data-date-today="{{ t('date.today') }}" data-date-yesterday="{{ t('date.yesterday') }}"
+      data-table-filter="{{ t('table.filter') }}"
+      data-confirm-ok="{{ t('common.delete') }}" data-confirm-cancel="{{ t('common.cancel') }}">
 <header class="topbar">
   <a class="brand" href="/dashboard">🚗 {{ t('app.name') }}</a>
   <nav class="mainnav">
     {% if user %}
       <a href="/dashboard">{{ t('nav.dashboard') }}</a>
       <a href="/vehicles">{{ t('nav.vehicles') }}</a>
+      {% if nav_vehicles|length > 1 %}
+      <details class="vehnav">
+        <summary title="{{ t('vehicle.switch') }}">▾</summary>
+        <nav class="vehnav-menu">
+          {% for v in nav_vehicles %}<a href="/vehicles/{{ v.id }}">{{ v.name }}</a>{% endfor %}
+        </nav>
+      </details>
+      {% endif %}
       <a href="/backup">{{ t('nav.backup') }}</a>
       {% if user.is_admin %}<a href="/admin/users">{{ t('nav.admin') }}</a>{% endif %}
     {% endif %}
@@ -71,5 +82,27 @@
   <span>{{ t('app.name') }} v{{ app_version }} · {{ t('app.tagline') }}</span>
   {% if docs_url %}· <a href="{{ docs_url }}" target="_blank" rel="noopener">{{ t('nav.docs') }}</a>{% endif %}
 </footer>
+
+{% if user %}
+{# Thumb-reachable tab bar, shown on small screens only (see CSS). #}
+<nav class="bottomnav">
+  <a href="/dashboard">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+    <span>{{ t('nav.dashboard') }}</span>
+  </a>
+  <a href="/vehicles">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16"/><rect x="4" y="16" width="16" height="4" rx="1"/><circle cx="7.5" cy="20" r="1"/><circle cx="16.5" cy="20" r="1"/></svg>
+    <span>{{ t('nav.vehicles') }}</span>
+  </a>
+  <a href="/search">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    <span>{{ t('search.title') }}</span>
+  </a>
+  <a href="/account/security">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+    <span>{{ t('nav.account') }}</span>
+  </a>
+</nav>
+{% endif %}
 </body>
 </html>
