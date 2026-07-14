@@ -5,9 +5,30 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
-## [0.13.0-beta.3] - 2026-07-07
+## [0.13.0] - 2026-07-14
+
+This release rolls up the three 0.13.0 beta previews (security packs 1 & 2 plus
+the usability pack) into one stable release.
 
 ### Added
+- **Change password**: users can now rotate their own password on the Account
+  security page (requires the current password).
+- **2FA recovery codes**: enabling two-factor authentication now issues eight
+  one-time recovery codes (shown exactly once, stored only as hashes). A
+  recovery code stands in for an authenticator code at login and is consumed
+  on use.
+- **Edit users in the admin area**: user management now has an Edit button per
+  user — administrators can change username, email and the administrator role,
+  and reset a user's password (left empty, the password is kept). Admins cannot
+  remove their own administrator role.
+- **Password confirmation**: every form that sets a new password (registration,
+  admin user creation and editing) now asks for the password twice and rejects
+  mismatches server-side.
+- **Show/hide password**: password fields have an eye toggle to reveal what was
+  typed (progressive enhancement — injected only when JavaScript is available).
+- **Audit log**: security-relevant events (logins and failed attempts, logouts,
+  registrations, password and 2FA changes, admin user management) are recorded
+  and visible to administrators under *User management → Audit log*.
 - **Quick entry on the dashboard**: every vehicle offers "+ Service" and
   "+ Tanken" directly on the overview page.
 - **Repeat entry**: service records have a repeat button (↻) that opens the
@@ -25,31 +46,17 @@ All notable changes to FleetBox are documented here. The format is based on
   the service quick-add and `t` the fuel quick-add.
 
 ### Changed
-- **Localized number display**: readings and amounts render with locale-aware
-  grouping and decimal separators (German: `1.234,56`); form inputs keep the
-  machine format.
-- **Styled confirm dialogs**: deletions ask via a proper in-app dialog instead
-  of the browser's `window.confirm`.
-- **Better mobile keyboards**: numeric fields open the matching numeric or
-  decimal keypad; auth fields carry proper `autocomplete` hints.
-
-## [0.13.0-beta.2] - 2026-07-07
-
-### Added
-- **Edit users in the admin area**: user management now has an Edit button per
-  user — administrators can change username, email and the administrator role,
-  and reset a user's password (left empty, the password is kept). Admins cannot
-  remove their own administrator role.
-- **Password confirmation**: every form that sets a new password (registration,
-  admin user creation and editing) now asks for the password twice and rejects
-  mismatches server-side.
-- **Show/hide password**: password fields have an eye toggle to reveal what was
-  typed (progressive enhancement — injected only when JavaScript is available).
-- **Audit log**: security-relevant events (logins and failed attempts, logouts,
-  registrations, password and 2FA changes, admin user management) are recorded
-  and visible to administrators under *User management → Audit log*.
-
-### Changed
+- **TOTP replay protection**: an authenticator code is accepted only once —
+  a sniffed code can no longer be reused within its 30-second window (applies
+  to login, enabling and disabling 2FA).
+- **Logging out is POST-only**: the logout control is now a form with a CSRF
+  token; a plain GET (link prefetching, old bookmarks) no longer ends the
+  session.
+- **Fresh session on login**: completing a login clears any pre-login session
+  state and rotates the CSRF token; theme and skin preferences are kept.
+- **More hardening headers**: `Permissions-Policy` (camera, microphone,
+  geolocation, payment, USB all denied), `Cross-Origin-Opener-Policy` and
+  `Cross-Origin-Resource-Policy` are now sent on every response.
 - **Registration is rate-limited** per client IP, like login and 2FA.
 - **Uploads are validated by content**: the file's leading bytes must match its
   declared type (JPEG/PNG/GIF/WebP/PDF) — a mislabelled file is rejected with
@@ -63,35 +70,17 @@ All notable changes to FleetBox are documented here. The format is based on
 - **Weekly CVE sweep in CI**: the pipeline now also runs on a Monday schedule,
   where `pip-audit` fails hard on known vulnerabilities (on pushes/PRs it stays
   advisory so unrelated work is not blocked).
+- **Localized number display**: readings and amounts render with locale-aware
+  grouping and decimal separators (German: `1.234,56`); form inputs keep the
+  machine format.
+- **Styled confirm dialogs**: deletions ask via a proper in-app dialog instead
+  of the browser's `window.confirm`.
+- **Better mobile keyboards**: numeric fields open the matching numeric or
+  decimal keypad; auth fields carry proper `autocomplete` hints.
 
 ### Fixed
 - Bumped the minimum `pydantic-settings` to 2.14.2 (GHSA-4xgf-cpjx-pc3j),
   found by `pip-audit`.
-
-## [0.13.0-beta.1] - 2026-07-07
-
-### Added
-- **Change password**: users can now rotate their own password on the Account
-  security page (requires the current password).
-- **2FA recovery codes**: enabling two-factor authentication now issues eight
-  one-time recovery codes (shown exactly once, stored only as hashes). A
-  recovery code stands in for an authenticator code at login and is consumed
-  on use.
-
-### Changed
-- **TOTP replay protection**: an authenticator code is accepted only once —
-  a sniffed code can no longer be reused within its 30-second window (applies
-  to login, enabling and disabling 2FA).
-- **Logging out is POST-only**: the logout control is now a form with a CSRF
-  token; a plain GET (link prefetching, old bookmarks) no longer ends the
-  session.
-- **Fresh session on login**: completing a login clears any pre-login session
-  state and rotates the CSRF token; theme and skin preferences are kept.
-- **More hardening headers**: `Permissions-Policy` (camera, microphone,
-  geolocation, payment, USB all denied), `Cross-Origin-Opener-Policy` and
-  `Cross-Origin-Resource-Policy` are now sent on every response.
-
-### Fixed
 - The current-user middleware resolves the database session factory at request
   time instead of import time (visible only in test setups with swapped
   engines).
