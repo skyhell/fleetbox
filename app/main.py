@@ -25,6 +25,7 @@ from app.routers import (
     expenses,
     fuel,
     pwa,
+    reports,
     search,
     service,
     stats,
@@ -152,6 +153,7 @@ app.include_router(tires.router, dependencies=_csrf)
 app.include_router(attachments.router, dependencies=_csrf)
 app.include_router(fuel.router, dependencies=_csrf)
 app.include_router(expenses.router, dependencies=_csrf)
+app.include_router(reports.router, dependencies=_csrf)
 app.include_router(backup.router, dependencies=_csrf)
 app.include_router(admin.router, dependencies=_csrf)
 

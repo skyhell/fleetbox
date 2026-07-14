@@ -1,0 +1,55 @@
+/* Print styles, applied on every page when printing (media="print").
+ * Strips the app chrome so a printed page — most usefully the vehicle record
+ * (Fahrzeugakte) — comes out as a clean black-on-white document. Skin-neutral,
+ * so it works with both the Apple and Classic stylesheets. */
+@media print {
+  .topbar,
+  .bottomnav,
+  .footer,
+  .no-print,
+  .table-filter,
+  .adder,
+  .row-actions,
+  .head-actions {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main.container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #bbb !important;
+    background: #fff !important;
+    break-inside: avoid;
+    margin-bottom: 12px;
+  }
+
+  h1,
+  h2 {
+    color: #000 !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none;
+  }
+
+  .table th,
+  .table td {
+    border-color: #ccc !important;
+  }
+
+  .chart {
+    max-width: 100%;
+  }
+}

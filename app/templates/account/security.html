@@ -35,6 +35,15 @@
 </section>
 
 <section class="card narrow">
+  <h2>{{ t('account.sessions.title') }}</h2>
+  <p class="muted">{{ t('account.sessions.hint') }}</p>
+  <form method="post" action="/account/logout-others">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn" type="submit">{{ t('account.sessions.submit') }}</button>
+  </form>
+</section>
+
+<section class="card narrow">
   <h2>{{ t('twofa.title') }}</h2>
   {% if user.totp_enabled %}
     <p><span class="badge badge-ok">{{ t('twofa.status.enabled') }}</span></p>

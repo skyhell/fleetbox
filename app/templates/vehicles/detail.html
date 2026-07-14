@@ -32,6 +32,7 @@
     <a class="btn btn-primary" id="quick-fuel" href="/vehicles/{{ vehicle.id }}/fuel/new"
        title="{{ t('fuel.add') }} [t]">+ {{ t('vehicle.quick.fuel') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/stats">{{ t('stats.title') }}</a>
+    <a class="btn" href="/vehicles/{{ vehicle.id }}/report">{{ t('report.vehicle.open') }}</a>
     <a class="btn" href="/vehicles/{{ vehicle.id }}/edit">{{ t('common.edit') }}</a>
     <form method="post" action="/vehicles/{{ vehicle.id }}/delete"
           data-confirm="{{ t('vehicle.delete.confirm') }}">

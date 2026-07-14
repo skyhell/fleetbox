@@ -5,6 +5,27 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Cost report**: a new *Reports* page aggregates every vehicle into per-year
+  totals — fuel, service and other expenses, plus the distance covered that
+  year and the resulting cost per kilometre — with grand totals and a
+  cost-per-year chart. Reachable from the top navigation.
+- **Printable vehicle record (Fahrzeugakte)**: every vehicle offers a
+  print-friendly one-page summary (master data, cost breakdown, service
+  history, intervals, fuel, expenses and tyres) with a print button. A
+  dedicated print stylesheet strips the app chrome so it comes out clean on
+  paper or as a PDF. Linked from the vehicle page.
+- **Sign out everywhere else**: the Account security page can now end every
+  other session of your account in one click (the current session stays logged
+  in). Uses the existing session-generation mechanism; the action is recorded
+  in the audit log.
+
+### Changed
+- **Long tables load in pages**: enhanced tables (service records, fuel log,
+  expenses, audit log) now show the first 20 rows with a "Show more" button
+  instead of rendering an endless list. Sorting and the filter box still work
+  across all rows.
+
 ## [0.13.0] - 2026-07-14
 
 This release rolls up the three 0.13.0 beta previews (security packs 1 & 2 plus

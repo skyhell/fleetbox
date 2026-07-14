@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ t('app.name') }}{% endblock %} · {{ t('app.name') }}</title>
   <link rel="stylesheet" href="/static/css/{{ 'classic' if skin == 'classic' else 'style' }}.css">
+  <link rel="stylesheet" href="/static/css/print.css" media="print">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
@@ -18,7 +19,7 @@
 </head>
 <body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}"
       data-date-today="{{ t('date.today') }}" data-date-yesterday="{{ t('date.yesterday') }}"
-      data-table-filter="{{ t('table.filter') }}"
+      data-table-filter="{{ t('table.filter') }}" data-table-more="{{ t('table.more') }}"
       data-confirm-ok="{{ t('common.delete') }}" data-confirm-cancel="{{ t('common.cancel') }}">
 <header class="topbar">
   <a class="brand" href="/dashboard">🚗 {{ t('app.name') }}</a>
@@ -34,6 +35,7 @@
         </nav>
       </details>
       {% endif %}
+      <a href="/reports">{{ t('nav.reports') }}</a>
       <a href="/backup">{{ t('nav.backup') }}</a>
       {% if user.is_admin %}<a href="/admin/users">{{ t('nav.admin') }}</a>{% endif %}
     {% endif %}

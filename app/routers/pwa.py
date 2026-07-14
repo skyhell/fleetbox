@@ -26,6 +26,7 @@ router = APIRouter()
 _PRECACHE = [
     "/static/css/style.css",
     "/static/css/classic.css",
+    "/static/css/print.css",
     "/static/js/app.js",
     "/static/offline.html",
     "/static/icons/icon.svg",

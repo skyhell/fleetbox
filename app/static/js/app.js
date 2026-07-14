@@ -131,11 +131,24 @@ window.addEventListener("DOMContentLoaded", function () {
       input.insertAdjacentElement("afterend", holder);
     });
 
-  // Tables marked data-enhance become sortable (click a header) and, when they
-  // hold more than five rows, get a text filter box.
+  // Print buttons: elements marked .js-print open the browser print dialog.
+  document.querySelectorAll(".js-print").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      window.print();
+    });
+  });
+
+  // Tables marked data-enhance become sortable (click a header), get a text
+  // filter when they hold more than five rows, and collapse long lists to a
+  // page of PAGE rows with a "show more" button.
+  var PAGE = 20;
   document.querySelectorAll("table[data-enhance]").forEach(function (table) {
     var tbody = table.tBodies[0];
     if (!tbody || !table.tHead) return;
+
+    var query = "";
+    var shown = PAGE;
+    var moreBtn = null;
 
     function cellValue(row, index) {
       var cell = row.cells[index];
@@ -151,6 +164,24 @@ window.addEventListener("DOMContentLoaded", function () {
         normalized = normalized.replace(/,/g, "");
       }
       return parseFloat(normalized);
+    }
+
+    // Show matching rows only; when no filter is active, cap at `shown` (paging).
+    // A filter searches across every row, so it temporarily overrides paging.
+    function refresh() {
+      var rows = Array.prototype.slice.call(tbody.rows);
+      var visible = 0;
+      rows.forEach(function (row) {
+        var matches = query === "" || row.textContent.toLowerCase().indexOf(query) >= 0;
+        var show = matches && (query !== "" || visible < shown);
+        row.hidden = !show;
+        if (show) visible++;
+      });
+      if (moreBtn) {
+        // Inline display beats the .btn class rule (a plain [hidden] attribute
+        // would be overridden by it), so the button truly disappears.
+        moreBtn.style.display = query === "" && shown < rows.length ? "" : "none";
+      }
     }
 
     Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th, index) {
@@ -178,6 +209,7 @@ window.addEventListener("DOMContentLoaded", function () {
           return ascending ? result : -result;
         });
         rows.forEach(function (row) { tbody.appendChild(row); });
+        refresh();
       });
     });
 
@@ -188,13 +220,25 @@ window.addEventListener("DOMContentLoaded", function () {
       filter.placeholder = body.dataset.tableFilter || "Filter…";
       filter.setAttribute("aria-label", filter.placeholder);
       filter.addEventListener("input", function () {
-        var query = filter.value.trim().toLowerCase();
-        Array.prototype.forEach.call(tbody.rows, function (row) {
-          row.hidden = query !== "" && row.textContent.toLowerCase().indexOf(query) < 0;
-        });
+        query = filter.value.trim().toLowerCase();
+        refresh();
       });
       table.parentNode.insertBefore(filter, table);
     }
+
+    if (tbody.rows.length > PAGE) {
+      moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "btn btn-sm show-more";
+      moreBtn.textContent = body.dataset.tableMore || "Show more";
+      moreBtn.addEventListener("click", function () {
+        shown += PAGE;
+        refresh();
+      });
+      table.parentNode.insertBefore(moreBtn, table.nextSibling);
+    }
+
+    refresh();
   });
 });
 

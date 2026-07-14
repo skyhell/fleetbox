@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ t('report.costs.title') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ t('report.costs.title') }}</h1>
+    <p class="muted">{{ t('report.costs.intro') }}</p>
+  </div>
+</div>
+
+{% if not report.has_data %}
+<section class="card"><p class="muted">{{ t('report.costs.no_data') }}</p></section>
+{% else %}
+
+<section class="grid">
+  <div class="card stat">
+    <span class="stat-value">{{ report.total_cost|money }}</span>
+    <span class="stat-label">{{ t('report.costs.grand_total') }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">{% if report.total_distance %}{{ report.total_distance|lnum }}{% else %}—{% endif %}</span>
+    <span class="stat-label">{{ t('report.costs.distance') }} (km)</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-value">{% if report.cost_per_distance is not none %}{{ report.cost_per_distance|money(3) }}{% else %}—{% endif %}</span>
+    <span class="stat-label">{{ t('report.costs.per_km') }}</span>
+  </div>
+</section>
+
+<section class="card">
+  <h2>{{ t('report.costs.by_year') }}</h2>
+  <table class="table" data-enhance>
+    <thead>
+      <tr>
+        <th>{{ t('report.costs.year') }}</th>
+        <th>{{ t('stats.fuel_cost') }}</th>
+        <th>{{ t('stats.service_cost') }}</th>
+        <th>{{ t('stats.other_cost') }}</th>
+        <th>{{ t('report.costs.total') }}</th>
+        <th>{{ t('report.costs.distance') }} (km)</th>
+        <th>{{ t('report.costs.per_km') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for y in report.years %}
+      <tr>
+        <td>{{ y.year }}</td>
+        <td>{{ y.fuel_cost|money }}</td>
+        <td>{{ y.service_cost|money }}</td>
+        <td>{{ y.other_cost|money }}</td>
+        <td>{{ y.total_cost|money }}</td>
+        <td>{% if y.distance %}{{ y.distance|lnum }}{% else %}—{% endif %}</td>
+        <td>{% if y.cost_per_distance is not none %}{{ y.cost_per_distance|money(3) }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>{{ t('report.costs.chart_title') }}</h2>
+  {% if chart %}{{ chart|safe }}{% else %}<p class="muted">{{ t('report.costs.no_data') }}</p>{% endif %}
+</section>
+
+{% endif %}
+{% endblock %}

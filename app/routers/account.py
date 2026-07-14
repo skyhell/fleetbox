@@ -73,6 +73,27 @@ def change_password(
     return _security(request, user=user, message="account.password.changed")
 
 
+@router.post("/logout-others")
+def logout_others(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """End every other session of this account.
+
+    Bumps the user's session generation — which invalidates every session that
+    still carries the old value — and re-stamps the current session so the one
+    that clicked the button stays logged in. This is the same mechanism a
+    password change uses; cookie sessions cannot be revoked individually.
+    """
+    user.session_generation = (user.session_generation or 0) + 1
+    request.session["session_generation"] = user.session_generation
+    audit(db, request, "sessions.revoked_others", user=user)
+    db.add(user)
+    db.commit()
+    return _security(request, user=user, message="account.sessions.done")
+
+
 @router.post("/notifications")
 def update_notifications(
     request: Request,

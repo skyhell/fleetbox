@@ -12,7 +12,7 @@ from app.database import get_db
 from app.models import FuelType, UsageUnit, User, Vehicle
 from app.routers.attachments import save_attachment
 from app.security import require_user
-from app.stats import fuel_summary
+from app.stats import compute_stats, fuel_summary
 from app.templating import render
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
@@ -153,6 +153,38 @@ def vehicle_detail(
         attachments=attachments,
         tire_sets=tire_sets,
         expenses=expenses,
+    )
+
+
+@router.get("/{vehicle_id}/report")
+def vehicle_report(
+    request: Request,
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """A print-friendly, self-contained "vehicle record" (Fahrzeugakte)."""
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    intervals = [
+        {"interval": iv, "status": iv.status(vehicle.mileage)}
+        for iv in vehicle.service_intervals
+    ]
+    records = sorted(vehicle.service_records, key=lambda r: r.performed_on, reverse=True)
+    expenses = sorted(vehicle.expenses, key=lambda e: e.spent_on, reverse=True)
+    tire_sets = sorted(
+        vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
+    )
+    return render(
+        request,
+        "vehicles/report.html",
+        vehicle=vehicle,
+        stats=compute_stats(vehicle),
+        fuel=fuel_summary(vehicle),
+        intervals=intervals,
+        records=records,
+        expenses=expenses,
+        tire_sets=tire_sets,
+        generated_on=date.today(),
     )
 
 

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ t('report.vehicle.title') }} · {{ vehicle.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ t('report.vehicle.title') }}</h1>
+    <p class="muted">{{ vehicle.display_name }} · {{ t('report.vehicle.generated') }} {{ generated_on }}</p>
+  </div>
+  <div class="head-actions no-print">
+    <button class="btn btn-primary js-print" type="button">{{ t('report.vehicle.print') }}</button>
+    <a class="btn" href="/vehicles/{{ vehicle.id }}">← {{ t('common.back') }}</a>
+  </div>
+</div>
+
+{# ---- Master data ---- #}
+<section class="card">
+  <h2>{{ t('report.vehicle.master') }}</h2>
+  <table class="table">
+    <tbody>
+      <tr><td>{{ t('vehicle.field.name') }}</td><td>{{ vehicle.name }}</td></tr>
+      {% if vehicle.make %}<tr><td>{{ t('vehicle.field.make') }}</td><td>{{ vehicle.make }}</td></tr>{% endif %}
+      {% if vehicle.model %}<tr><td>{{ t('vehicle.field.model') }}</td><td>{{ vehicle.model }}</td></tr>{% endif %}
+      {% if vehicle.year %}<tr><td>{{ t('vehicle.field.year') }}</td><td>{{ vehicle.year }}</td></tr>{% endif %}
+      {% if vehicle.license_plate %}<tr><td>{{ t('vehicle.field.license_plate') }}</td><td>{{ vehicle.license_plate }}</td></tr>{% endif %}
+      {% if vehicle.vin %}<tr><td>{{ t('vehicle.field.vin') }}</td><td>{{ vehicle.vin }}</td></tr>{% endif %}
+      <tr><td>{{ t('vehicle.field.fuel_type') }}</td><td>{{ t('fuel.type.' + vehicle.fuel_type.value) }}</td></tr>
+      <tr><td>{{ t(vehicle.reading_label_key) }}</td><td>{{ vehicle.mileage|lnum }} {{ vehicle.usage_unit_label }}</td></tr>
+      {% if vehicle.inspection_due %}<tr><td>{{ t('inspection.title') }}</td><td>{{ vehicle.inspection_due }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</section>
+
+{# ---- Cost & usage summary ---- #}
+<section class="card">
+  <h2>{{ t('stats.cost_breakdown') }}</h2>
+  <table class="table">
+    <tbody>
+      <tr><td>{{ t('stats.fuel_cost') }}</td><td>{{ stats.total_fuel_cost|money }}</td></tr>
+      <tr><td>{{ t('stats.service_cost') }}</td><td>{{ stats.total_service_cost|money }}</td></tr>
+      <tr><td>{{ t('stats.other_cost') }}</td><td>{{ stats.total_other_cost|money }}</td></tr>
+      <tr><td><strong>{{ t('stats.total_cost') }}</strong></td><td><strong>{{ stats.total_cost|money }}</strong></td></tr>
+      {% if stats.distance_tracked %}<tr><td>{{ t('stats.distance') }} ({{ vehicle.usage_unit_label }})</td><td>{{ stats.distance_tracked|lnum }}</td></tr>{% endif %}
+      {% if stats.cost_per_unit is not none %}<tr><td>{{ t('stats.cost_per') }} {{ vehicle.usage_unit_label }}</td><td>{{ stats.cost_per_unit|money(3) }}</td></tr>{% endif %}
+      {% if stats.avg_consumption is not none %}<tr><td>{{ t('stats.avg_consumption') }} ({{ stats.consumption_unit }})</td><td>{{ stats.avg_consumption|money(1) }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</section>
+
+{# ---- Service intervals ---- #}
+{% if intervals %}
+<section class="card">
+  <h2>{{ t('service.intervals') }}</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('service.field.name') }}</th>
+        <th>{{ t('service.field.type') }}</th>
+        <th>{{ t('service.due.next') }}</th>
+        <th>{{ t('service.status.ok') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in intervals %}
+      {% set iv = item.interval %}
+      <tr>
+        <td>{{ iv.name }}</td>
+        <td>{{ t('service.type.' + iv.service_type.value) }}</td>
+        <td>
+          {% if iv.due_mileage() %}{{ iv.due_mileage()|lnum }} {{ vehicle.usage_unit_label }}{% endif %}
+          {% if iv.due_date() %}{% if iv.due_mileage() %} · {% endif %}{{ iv.due_date() }}{% endif %}
+          {% if not iv.due_mileage() and not iv.due_date() %}{{ t('common.none') }}{% endif %}
+        </td>
+        <td>{{ t('service.status.' + item.status) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{# ---- Service records ---- #}
+<section class="card">
+  <h2>{{ t('service.records') }}</h2>
+  {% if records %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('service.field.date') }}</th>
+        <th>{{ t('service.field.type') }}</th>
+        <th>{{ t('service.field.title') }}</th>
+        <th>{{ t(vehicle.reading_label_key) }}</th>
+        <th>{{ t('service.field.cost') }}</th>
+        <th>{{ t('service.field.workshop') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.performed_on }}</td>
+        <td>{{ t('service.type.' + r.service_type.value) }}</td>
+        <td>{{ r.title }}</td>
+        <td>{% if r.mileage %}{{ r.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if r.cost is not none %}{{ r.cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{{ r.workshop or t('common.none') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+</section>
+
+{# ---- Fuel summary ---- #}
+<section class="card">
+  <h2>{{ t('fuel.log') }}</h2>
+  <table class="table">
+    <tbody>
+      <tr><td>{{ t('fuel.summary.quantity') }}</td><td>{{ fuel.total_quantity|money }}</td></tr>
+      <tr><td>{{ t('fuel.summary.cost') }}</td><td>{{ fuel.total_cost|money }}</td></tr>
+      {% if fuel.avg_consumption is not none %}<tr><td>{{ t('fuel.consumption') }}</td><td>{{ fuel.avg_consumption|money }} {{ fuel.consumption_unit }}</td></tr>{% endif %}
+      {% if fuel.avg_price is not none %}<tr><td>{{ t('fuel.summary.avg_price') }}</td><td>{{ fuel.avg_price|money(3) }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</section>
+
+{# ---- Other expenses ---- #}
+{% if expenses %}
+<section class="card">
+  <h2>{{ t('expense.title') }}</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('expense.field.date') }}</th>
+        <th>{{ t('expense.field.category') }}</th>
+        <th>{{ t('expense.field.title') }}</th>
+        <th>{{ t('expense.field.amount') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in expenses %}
+      <tr>
+        <td>{{ e.spent_on }}</td>
+        <td>{{ t(e.category_label_key) }}</td>
+        <td>{{ e.title }}</td>
+        <td>{{ e.amount|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{# ---- Tyres ---- #}
+{% if tire_sets %}
+<section class="card">
+  <h2>{{ t('tire.title') }}</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('tire.field.season') }}</th>
+        <th>{{ t('tire.field.label') }}</th>
+        <th>{{ t('tire.field.dimension') }}</th>
+        <th>{{ t('tire.field.storage') }}</th>
+        <th>{{ t('tire.field.tread') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ts in tire_sets %}
+      <tr>
+        <td>{{ t(ts.season_label_key) }}</td>
+        <td>{{ ts.label or t('common.none') }}</td>
+        <td>{{ ts.dimension or t('common.none') }}</td>
+        <td>{{ ts.storage_location or t('common.none') }}</td>
+        <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{{ t('tire.mounted') if ts.is_mounted else t('tire.stored') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endblock %}

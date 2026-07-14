@@ -24,6 +24,8 @@ a **Proxmox** host with a single script.
 - 🔔 **Reminders** — email digests for due services, inspections and seasonal tyre changes (opt-in per user)
 - 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
+- 🧾 **Cost report** — fleet-wide yearly costs (fuel, service, other) with distance and cost per km
+- 🖨️ **Printable vehicle record** — a one-page "Fahrzeugakte" summary, print- or PDF-ready
 - 📎 **Documents & photos** — attach invoices, receipts and pictures; the vehicle photo is set right on the vehicle form
 - 💾 **Backup & migration** — one-click full backup (ZIP with all data **and** uploaded documents) plus per-entity CSV export/import
 - 👥 **Multi-user** — each user manages their own vehicles; an admin manages users
