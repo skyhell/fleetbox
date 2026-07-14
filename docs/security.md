@@ -8,13 +8,16 @@ deployment.
 | Control | What it does |
 |---|---|
 | **bcrypt password hashing** | No plaintext passwords are stored. |
-| **Signed session cookies** | `starlette.SessionMiddleware`, `SameSite=Lax`, optional `Secure`. |
+| **Signed session cookies** | `starlette.SessionMiddleware`, `SameSite=Lax`, optional `Secure`; a fresh session + new CSRF token are issued on login. |
 | **CSRF tokens** | Every state-changing form carries a per-session token, validated in constant time. |
-| **Login rate limiting** | Per-IP throttling of failed login and 2FA attempts (brute-force defence). |
-| **TOTP 2FA** | Optional per user; the seed is encrypted at rest. |
-| **Security headers** | CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and HSTS over HTTPS. |
+| **Rate limiting** | Per-IP throttling of failed login, 2FA and registration attempts (brute-force / mass-signup defence). |
+| **TOTP 2FA** | Optional per user; the seed is encrypted at rest, codes are single-use (replay-protected), with one-time recovery codes. |
+| **Session invalidation** | Changing a password ends all other sessions; users can also "sign out everywhere else". |
+| **Audit log** | Security-relevant events are recorded and visible to administrators. |
+| **Upload validation** | Uploaded files are checked by content (magic bytes) and served sandboxed. |
+| **Security headers** | CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP, CORP, and HSTS over HTTPS. |
 | **Ownership checks** | A user can only access their own vehicles/records; admin actions are gated separately. |
-| **Password policy** | Minimum length enforced on registration / user creation. |
+| **Password policy** | Minimum length enforced on registration / user creation; new passwords require confirmation. |
 | **Secret-key guard** | The app refuses to start in HTTPS mode with the default `SECRET_KEY`. |
 | **Least privilege** | systemd service runs as a dedicated non-root user with sandboxing. |
 
@@ -36,18 +39,34 @@ without inline scripts.
 
 ## Rate limiting
 
-Failed login and 2FA attempts are throttled per client IP
+Failed login, 2FA and registration attempts are throttled per client IP
 (`FLEETBOX_RATE_LIMIT_MAX_ATTEMPTS` per `FLEETBOX_RATE_LIMIT_WINDOW_SECONDS`).
 This is an in-memory limiter suited to a single-process deployment; for
 multi-process/multi-host setups, add per-IP limits at your reverse proxy or back
 the limiter with Redis.
 
+> **Note:** the limiter is **per IP only** — there is no per-account lockout yet,
+> so an attacker spread across many IPs is not slowed per target account.
+
 ## Security headers
 
-A middleware sets `Content-Security-Policy` (`default-src 'self'`),
-`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and
-`Referrer-Policy: no-referrer` on every response. When `FLEETBOX_SECURE_COOKIES`
-is enabled (HTTPS), `Strict-Transport-Security` is added too.
+A middleware sets these on every response:
+
+- **`Content-Security-Policy`**: `default-src 'self'; img-src 'self' data:;
+  object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`
+  — no inline scripts/styles, so all JS lives in `/static/js/app.js` and charts
+  are server-rendered SVG.
+- **`X-Frame-Options: DENY`** and **`X-Content-Type-Options: nosniff`**.
+- **`Referrer-Policy: no-referrer`**.
+- **`Permissions-Policy`**: camera, microphone, geolocation, payment and USB are
+  all denied (FleetBox uses none of them).
+- **`Cross-Origin-Opener-Policy: same-origin`** and
+  **`Cross-Origin-Resource-Policy: same-origin`**.
+- **`Strict-Transport-Security`** is added when `FLEETBOX_SECURE_COOKIES` is
+  enabled (HTTPS).
+
+Uploaded files are additionally served with `Content-Security-Policy: sandbox`,
+so even a crafted file cannot run scripts against the app when opened directly.
 
 ## Two-factor authentication (2FA)
 
@@ -65,8 +84,18 @@ Each user can enable **time-based one-time password (TOTP, RFC 6238)** 2FA from
 ### Logging in with 2FA
 
 After entering a correct username/password, users with 2FA enabled are sent to a
-second step (`/login/2fa`) and must enter the current 6-digit code. Codes are
-accepted within a ±1 time-step window (≈30 s) to tolerate clock drift.
+second step (`/login/2fa`) and must enter the current 6-digit code — or a
+recovery code (see below). Codes are accepted within a ±1 time-step window
+(≈30 s) to tolerate clock drift, and each accepted code is **single-use**: a
+sniffed code cannot be replayed within its window.
+
+### Recovery codes
+
+Enabling 2FA issues **eight one-time recovery codes**, shown exactly once and
+stored only as SHA-256 hashes. At the 2FA login step a recovery code can be
+entered in place of an authenticator code; it is consumed on use. Keep them
+somewhere safe — they are the self-service way back in if the authenticator app
+is lost.
 
 The TOTP seed is **encrypted at rest** (Fernet, key derived from
 `FLEETBOX_SECRET_KEY`). Rotating the secret key therefore invalidates existing
@@ -78,8 +107,9 @@ From **Account security**, enter a current code and click **Disable 2FA**.
 
 ### Account recovery (lost authenticator)
 
-If a user loses access to their authenticator app, an administrator with shell
-access to the host can disable 2FA from the CLI:
+The first line of recovery is one of the user's own **recovery codes** (above),
+entered at the 2FA login step. If those are also lost, an administrator with
+shell access to the host can disable 2FA from the CLI:
 
 ```bash
 python -m app.cli disable-2fa --username alice
@@ -92,6 +122,43 @@ On a Proxmox install this runs inside the container:
 ```bash
 pct exec <CTID> -- /opt/fleetbox/.venv/bin/python -m app.cli disable-2fa --username alice
 ```
+
+## Passwords & sessions
+
+- **Change your own password** from **Account security** (requires the current
+  password; the new one must be entered twice).
+- **Fresh session on login**: completing a login clears any pre-login session
+  state and rotates the CSRF token (session-fixation hygiene); theme/skin
+  preferences are kept.
+- **Session invalidation**: sessions are stateless signed cookies, so they
+  cannot be deleted server-side individually. Instead each user carries a
+  `session_generation` counter that sessions remember. Changing a password (or
+  an admin resetting it) **bumps the counter, invalidating every other session**
+  of that account; the session that made the change is re-stamped and stays
+  logged in.
+- **Sign out everywhere else**: the same mechanism is exposed as a button on
+  **Account security** — one click ends all of the account's other sessions.
+- **Logout is POST-only** with a CSRF token, so link prefetching or an old
+  bookmark cannot end a session.
+
+## Audit log
+
+Security-relevant events are recorded to an append-only audit trail and shown to
+administrators under **Users → Audit log** (`/admin/audit`, newest first): logins
+and failed attempts, logouts, registrations, password and 2FA changes, admin
+user management, and "sign out everywhere". Each entry keeps a snapshot of the
+acting/attempted username, the client IP and a UTC timestamp, so it stays
+meaningful even after the user is renamed or deleted.
+
+## File uploads
+
+Uploaded documents and photos are validated by **content, not just the declared
+type**: the file's leading bytes must match a supported format (JPEG, PNG, GIF,
+WebP or PDF), so a mislabelled or empty file is rejected with `415`. The same
+check runs on files restored from a ZIP backup. Files are stored under
+`FLEETBOX_UPLOAD_DIR` with opaque, server-generated names (never the client's
+path — zip-slip safe) and are capped at `FLEETBOX_MAX_UPLOAD_BYTES`. Downloads
+are served with `Content-Security-Policy: sandbox` (see *Security headers*).
 
 ## Service isolation
 

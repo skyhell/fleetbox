@@ -7,6 +7,7 @@ User 1───* Vehicle 1───* ServiceRecord 0───* Attachment
                    1───* Attachment
                    1───* TireSet
                    1───* Expense
+User 0───* AuditLog          (user_id set NULL when the user is deleted)
 ```
 
 ## User
@@ -21,9 +22,13 @@ Account with login credentials. `is_admin` users can manage other users.
 | `is_admin`       | bool     | first registered user becomes admin     |
 | `is_active`      | bool     | inactive users cannot log in            |
 | `locale`         | str      | `de` / `en`                             |
-| `totp_secret`    | str/null | base32 TOTP secret (set when 2FA on)    |
+| `totp_secret`    | str/null | base32 TOTP secret, encrypted at rest (set when 2FA on) |
 | `totp_enabled`   | bool     | whether 2FA is required at login        |
+| `totp_last_used` | int/null | last accepted TOTP time-step — replay protection |
+| `totp_recovery_codes` | text/null | JSON list of SHA-256 hashes of one-time 2FA recovery codes |
 | `notify_email`   | bool     | receive email reminders (default on)    |
+| `session_generation` | int  | bumped on password change / "sign out everywhere" to invalidate other sessions |
+| `created_at`     | datetime | account creation time                   |
 
 ## Vehicle
 A vehicle owned by exactly one user.
@@ -136,6 +141,22 @@ cost chart on the statistics page.
 | `amount`     | float  | cost in the instance's currency        |
 | `spent_on`   | date   |                                        |
 | `notes`      | text   | optional                               |
+
+## AuditLog
+Security-relevant events: logins and failed attempts, logouts, registrations,
+password and 2FA changes, admin user management, and "sign out everywhere".
+Visible to administrators under **Users → Audit log**. `username` is a snapshot
+so entries stay meaningful after a user is renamed or deleted; entries are not
+tied to any single vehicle.
+
+| Field        | Type     | Notes                                              |
+|--------------|----------|----------------------------------------------------|
+| `user_id`    | int/null | acting user; `SET NULL` if that user is deleted    |
+| `username`   | str/null | snapshot of the acting / attempted identity        |
+| `event`      | str      | event key, e.g. `login.success`, `password.changed`, `sessions.revoked_others` |
+| `detail`     | str/null | extra context (e.g. the affected username)         |
+| `ip`         | str/null | client IP address                                  |
+| `created_at` | datetime | event time (UTC)                                   |
 
 ## ServiceType values
 `oil_change`, `brake_replacement`, `wear_part`, `inspection`, `tyre_change`,

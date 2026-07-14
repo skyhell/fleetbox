@@ -38,12 +38,15 @@ fleetbox/
 │   ├── i18n.py            # JSON translation lookup + locale resolution
 │   ├── templating.py      # Jinja2 setup + render() helper
 │   ├── stats.py           # Per-vehicle statistics computation
+│   ├── reports.py         # Fleet-wide yearly cost report aggregation
 │   ├── charts.py          # Dependency-free SVG chart rendering
+│   ├── audit.py           # Audit-log helper (records security events)
 │   ├── reminders.py       # Due-service, inspection & seasonal-tyre reminder collection
 │   ├── mailer.py          # Minimal stdlib SMTP sender
 │   ├── cli.py             # init-db / create-admin / disable-2fa / send-reminders / serve
 │   ├── routers/           # auth, account, dashboard, vehicles, service, fuel,
-│   │                      #   expenses, stats, tires, attachments, backup, admin, pwa
+│   │                      #   expenses, reports, stats, tires, attachments,
+│   │                      #   search, backup, admin, pwa
 │   ├── templates/         # Jinja2 HTML templates
 │   ├── locales/           # de.json, en.json translation catalogs
 │   └── static/            # CSS / JS / app icons / offline.html
