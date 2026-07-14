@@ -89,6 +89,21 @@ python scripts/make_icons.py
 pytest
 ```
 
+### Browser end-to-end smoke test
+
+The unit suite never runs JavaScript, so a small Playwright script exercises the
+JS-driven behaviour (table pagination, the print button, the report pages)
+against a live server. It seeds a throwaway database, starts uvicorn and drives
+Chromium, then tears everything down:
+
+```bash
+pip install -r requirements-dev.txt
+python -m playwright install chromium   # one-time browser download
+python scripts/verify_e2e.py
+```
+
+It exits non-zero if any check fails. CI runs the same script in the `e2e` job.
+
 ## Linting & formatting
 
 ```bash

@@ -27,7 +27,16 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.2"]
-dev = ["pytest>=8.3", "pytest-asyncio>=0.25", "httpx>=0.28", "ruff>=0.9", "mypy>=1.14"]
+# httpx2 (not httpx): Starlette's TestClient prefers it and warns on plain httpx.
+# playwright drives the browser end-to-end smoke test (scripts/verify_e2e.py).
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "httpx2>=2.6",
+    "playwright>=1.49",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
 
 [project.scripts]
 fleetbox = "app.cli:main"

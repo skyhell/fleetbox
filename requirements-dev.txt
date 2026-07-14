@@ -2,7 +2,8 @@
 
 pytest>=8.3
 pytest-asyncio>=0.25
-httpx>=0.28
+httpx2>=2.6         # Starlette's TestClient prefers httpx2; plain httpx warns
+playwright>=1.49    # browser end-to-end smoke test (scripts/verify_e2e.py)
 ruff>=0.9
 mypy>=1.14
 bandit>=1.9.4
