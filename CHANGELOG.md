@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-14
+
 ### Added
 - **Cost report**: a new *Reports* page aggregates every vehicle into per-year
   totals — fuel, service and other expenses, plus the distance covered that
