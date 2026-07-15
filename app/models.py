@@ -111,6 +111,15 @@ class User(Base):
     # ``security.get_current_user``). Cookie sessions cannot be revoked
     # server-side, hence this generation counter.
     session_generation: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Per-account brute-force lockout (independent of the per-IP rate limiter):
+    # consecutive failed logins, and — once the threshold is hit — the naive-UTC
+    # time until which further attempts are rejected. Both reset on success.
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime)
+    # Password-reset token: SHA-256 hash of the emailed token and its naive-UTC
+    # expiry. Cleared when the reset completes or a new token is issued.
+    reset_token_hash: Mapped[str | None] = mapped_column(String(64))
+    reset_token_expires: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicles: Mapped[list[Vehicle]] = relationship(

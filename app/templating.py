@@ -145,6 +145,7 @@ def render(request: Request, template: str, **context):
         "TireSeason": TireSeason,
         "ExpenseCategory": ExpenseCategory,
         "allow_registration": settings.allow_registration,
+        "require_admin_2fa": settings.require_admin_2fa,
     }
     base_context.update(context)
     return templates.TemplateResponse(request=request, name=template, context=base_context)

@@ -8,13 +8,14 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import joinedload
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import __version__, database
 from app.config import settings
 from app.csrf import csrf_protect
 from app.database import init_db
-from app.models import User, Vehicle
+from app.models import User
 from app.routers import (
     account,
     admin,
@@ -95,11 +96,22 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+# Paths that never render a user context (static assets, PWA endpoints, health
+# check, favicon). Skipping them avoids a database round-trip on every asset,
+# manifest and service-worker request.
+_NO_USER_PATHS = frozenset({"/sw.js", "/manifest.webmanifest", "/healthz", "/favicon.ico"})
+
+
 @app.middleware("http")
 async def attach_user(request: Request, call_next):
     """Attach the current user (if any) to ``request.state`` for templates."""
     request.state.user = None
     request.state.nav_vehicles = []
+
+    path = request.url.path
+    if path.startswith("/static/") or path in _NO_USER_PATHS:
+        return await call_next(request)
+
     user_id = request.session.get("user_id")
     if user_id is not None:
         # Resolve the session factory at request time (module attribute), so a
@@ -107,7 +119,14 @@ async def attach_user(request: Request, call_next):
         # honoured instead of the one captured at import time.
         db = database.SessionLocal()
         try:
-            user = db.get(User, user_id)
+            # One round-trip for the user and their vehicles (for the topbar
+            # switcher), instead of two separate queries.
+            user = (
+                db.query(User)
+                .options(joinedload(User.vehicles))
+                .filter(User.id == user_id)
+                .first()
+            )
             if (
                 user
                 and user.is_active
@@ -115,12 +134,8 @@ async def attach_user(request: Request, call_next):
                 and request.session.get("session_generation", 0) == user.session_generation
             ):
                 request.state.user = user
-                # (id, name) pairs for the vehicle quick switcher in the topbar.
-                request.state.nav_vehicles = (
-                    db.query(Vehicle.id, Vehicle.name)
-                    .filter(Vehicle.owner_id == user.id)
-                    .order_by(Vehicle.name)
-                    .all()
+                request.state.nav_vehicles = sorted(
+                    user.vehicles, key=lambda v: v.name
                 )
         finally:
             db.close()
@@ -177,3 +192,10 @@ def healthz():
 @app.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
     return RedirectResponse("/login", status_code=303)
+
+
+@app.exception_handler(428)
+async def admin_2fa_required_handler(request: Request, exc):
+    """An admin hit an admin route while the require-admin-2FA policy is on but
+    they have no 2FA — send them to Account security to enable it."""
+    return RedirectResponse("/account/security", status_code=303)

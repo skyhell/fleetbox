@@ -5,6 +5,31 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Account lockout**: after too many consecutive failed logins, an account is
+  temporarily locked — even with the correct password — independent of the
+  per-IP rate limit, so a distributed brute-force attack is slowed per account.
+  Configurable via `FLEETBOX_ACCOUNT_LOCKOUT_MAX_ATTEMPTS` and
+  `FLEETBOX_ACCOUNT_LOCKOUT_MINUTES`; a successful login clears it.
+- **Forgot-password flow**: a "Forgot password?" link on the login page lets
+  users request an emailed reset link (valid for `FLEETBOX_RESET_TOKEN_MINUTES`).
+  The response is identical whether or not the account exists (no enumeration);
+  completing a reset invalidates all of that account's other sessions. Requires
+  SMTP and `FLEETBOX_BASE_URL` to be configured.
+- **Require 2FA for administrators**: with `FLEETBOX_REQUIRE_ADMIN_2FA=true`, an
+  admin without two-factor authentication is redirected to Account security and
+  cannot use the admin area until they enable it.
+
+### Changed
+- **Slimmer request middleware**: the per-request user lookup is skipped
+  entirely for static assets, the PWA manifest/service worker and the health
+  check, and folded into a single query (user + vehicles) for app requests.
+
+### Security
+- Failed two-factor attempts now also count towards the account lockout, and
+  security events `account.locked`, `login.blocked`, `password.reset_requested`
+  and `password.reset_self` are written to the audit log.
+
 ## [0.14.0] - 2026-07-14
 
 ### Added

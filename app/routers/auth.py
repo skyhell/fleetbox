@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -12,11 +13,25 @@ from app.audit import audit
 from app.config import settings
 from app.crypto import decrypt
 from app.database import get_db
+from app.i18n import translate
+from app.mailer import send_email
 from app.models import User
 from app.ratelimit import RateLimiter, client_key
-from app.security import authenticate, hash_password
+from app.security import (
+    account_is_locked,
+    clear_reset_token,
+    consume_reset_token,
+    find_by_identifier,
+    hash_password,
+    issue_reset_token,
+    note_failed_login,
+    reset_failed_logins,
+    verify_password,
+)
 from app.templating import render
 from app.totp import hash_recovery_code, verify_code_step
+
+logger = logging.getLogger("fleetbox")
 
 router = APIRouter(tags=["auth"])
 
@@ -26,6 +41,10 @@ _login_limiter = RateLimiter(
 )
 # Registration attempts (per client IP) — throttles mass account creation.
 _register_limiter = RateLimiter(
+    settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
+)
+# Password-reset requests (per client IP) — throttles email spam / probing.
+_reset_limiter = RateLimiter(
     settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
 )
 
@@ -66,9 +85,19 @@ def login(
     if not _login_limiter.is_allowed(key):
         return render(request, "auth/login.html", error="auth.too_many_attempts")
 
-    user = authenticate(db, identifier, password)
-    if user is None:
+    user = find_by_identifier(db, identifier)
+
+    # Per-account lockout: reject even a correct password while the account is
+    # locked, so a distributed (multi-IP) attack is still slowed per account.
+    if user is not None and account_is_locked(user):
+        audit(db, request, "login.blocked", user=user, detail="locked")
+        db.commit()
+        return render(request, "auth/login.html", error="auth.account_locked")
+
+    if user is None or not user.is_active or not verify_password(password, user.hashed_password):
         _login_limiter.record_failure(key)
+        if user is not None and note_failed_login(user):
+            audit(db, request, "account.locked", user=user)
         audit(db, request, "login.failed", username=identifier)
         db.commit()
         return render(request, "auth/login.html", error="auth.login.error")
@@ -80,6 +109,7 @@ def login(
         return RedirectResponse("/login/2fa", status_code=303)
 
     _login_limiter.reset(key)
+    reset_failed_logins(user)
     _establish_session(request, user)
     audit(db, request, "login.success", user=user)
     db.commit()
@@ -110,6 +140,12 @@ def two_factor_verify(
         return render(request, "auth/twofactor.html", error="auth.too_many_attempts")
 
     user = db.get(User, pending_id)
+    if user is not None and account_is_locked(user):
+        request.session.pop("pending_2fa_user_id", None)
+        audit(db, request, "login.blocked", user=user, detail="locked")
+        db.commit()
+        return render(request, "auth/login.html", error="auth.account_locked")
+
     verified = False
     if user is not None and user.totp_enabled:
         # Regular authenticator code — accepted once per time step (replay
@@ -131,6 +167,8 @@ def two_factor_verify(
 
     if not verified:
         _login_limiter.record_failure(key)
+        if user is not None and note_failed_login(user):
+            audit(db, request, "account.locked", user=user)
         audit(
             db, request, "login.failed",
             username=user.username if user else None, detail="2fa",
@@ -138,6 +176,7 @@ def two_factor_verify(
         db.commit()
         return render(request, "auth/twofactor.html", error="twofa.invalid")
 
+    reset_failed_logins(user)
     audit(db, request, "login.success", user=user, detail="2fa")
     db.commit()
     _login_limiter.reset(key)
@@ -222,3 +261,92 @@ def register(
     db.commit()
     _establish_session(request, user)
     return RedirectResponse("/dashboard", status_code=303)
+
+
+def _send_reset_email(user: User, token: str) -> None:
+    """Best-effort: email a password-reset link. Never raises to the caller."""
+    if not settings.smtp_configured or not settings.base_url:
+        logger.warning(
+            "Password reset requested for %s but SMTP/base_url is not configured; "
+            "no email sent.",
+            user.username,
+        )
+        return
+    link = settings.base_url.rstrip("/") + f"/reset?token={token}"
+    subject = translate("auth.reset.email_subject", user.locale)
+    body = translate("auth.reset.email_body", user.locale, url=link)
+    try:
+        send_email(user.email, subject, body)
+    except Exception:  # noqa: BLE001 - email is best-effort; don't leak/break the flow
+        logger.exception("Failed to send password-reset email")
+
+
+@router.get("/forgot")
+def forgot_form(request: Request):
+    if request.state.user is not None:
+        return RedirectResponse("/dashboard", status_code=303)
+    return render(request, "auth/forgot.html", smtp=settings.smtp_configured)
+
+
+@router.post("/forgot")
+def forgot(
+    request: Request,
+    identifier: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    key = client_key(request)
+    if not _reset_limiter.is_allowed(key):
+        return render(
+            request, "auth/forgot.html",
+            error="auth.too_many_attempts", smtp=settings.smtp_configured,
+        )
+    _reset_limiter.record_failure(key)
+
+    user = find_by_identifier(db, identifier)
+    if user is not None and user.is_active:
+        token = issue_reset_token(user)
+        audit(db, request, "password.reset_requested", user=user)
+        db.commit()
+        _send_reset_email(user, token)
+
+    # Always the same response, whether or not the account exists (no enumeration).
+    return render(request, "auth/forgot.html", message="auth.reset.sent")
+
+
+@router.get("/reset")
+def reset_form(request: Request, token: str = "", db: Session = Depends(get_db)):  # nosec B107
+    if consume_reset_token(db, token) is None:
+        return render(request, "auth/reset.html", error="auth.reset.invalid", invalid=True)
+    return render(request, "auth/reset.html", token=token)
+
+
+@router.post("/reset")
+def reset(
+    request: Request,
+    token: str = Form(...),
+    new_password: str = Form(...),
+    new_password_repeat: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = consume_reset_token(db, token)
+    if user is None:
+        return render(request, "auth/reset.html", error="auth.reset.invalid", invalid=True)
+    if len(new_password) < settings.min_password_length:
+        return render(
+            request, "auth/reset.html", token=token,
+            error="auth.password.too_short",
+            min_password_length=settings.min_password_length,
+        )
+    if new_password != new_password_repeat:
+        return render(
+            request, "auth/reset.html", token=token, error="account.password.mismatch"
+        )
+
+    user.hashed_password = hash_password(new_password)
+    clear_reset_token(user)
+    # A reset ends every existing session of the account and clears any lockout.
+    user.session_generation = (user.session_generation or 0) + 1
+    reset_failed_logins(user)
+    audit(db, request, "password.reset_self", user=user)
+    db.commit()
+    return render(request, "auth/login.html", message="auth.reset.done")

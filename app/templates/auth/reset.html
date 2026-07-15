@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ t('auth.reset.title') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('auth.reset.title') }}</h1>
+  {% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
+  {% if invalid %}
+  <p class="muted">{{ t('auth.reset.invalid_hint') }}</p>
+  <p class="muted"><a href="/forgot">{{ t('auth.forgot.link') }}</a></p>
+  {% else %}
+  <form method="post" action="/reset">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <label>{{ t('account.password.new') }}
+      <input type="password" name="new_password" autocomplete="new-password"
+             minlength="{{ min_password_length|default(8) }}" required autofocus>
+    </label>
+    <label>{{ t('account.password.repeat') }}
+      <input type="password" name="new_password_repeat" autocomplete="new-password"
+             minlength="{{ min_password_length|default(8) }}" required>
+    </label>
+    <button class="btn btn-primary" type="submit">{{ t('auth.reset.submit') }}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

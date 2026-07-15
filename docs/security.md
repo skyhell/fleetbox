@@ -11,6 +11,7 @@ deployment.
 | **Signed session cookies** | `starlette.SessionMiddleware`, `SameSite=Lax`, optional `Secure`; a fresh session + new CSRF token are issued on login. |
 | **CSRF tokens** | Every state-changing form carries a per-session token, validated in constant time. |
 | **Rate limiting** | Per-IP throttling of failed login, 2FA and registration attempts (brute-force / mass-signup defence). |
+| **Account lockout** | Per-account lock after repeated failed logins, independent of IP; optional forced 2FA for admins. |
 | **TOTP 2FA** | Optional per user; the seed is encrypted at rest, codes are single-use (replay-protected), with one-time recovery codes. |
 | **Session invalidation** | Changing a password ends all other sessions; users can also "sign out everywhere else". |
 | **Audit log** | Security-relevant events are recorded and visible to administrators. |
@@ -45,8 +46,29 @@ This is an in-memory limiter suited to a single-process deployment; for
 multi-process/multi-host setups, add per-IP limits at your reverse proxy or back
 the limiter with Redis.
 
-> **Note:** the limiter is **per IP only** — there is no per-account lockout yet,
-> so an attacker spread across many IPs is not slowed per target account.
+## Account lockout
+
+In addition to the per-IP limiter, each account has a **per-account lockout**:
+after `FLEETBOX_ACCOUNT_LOCKOUT_MAX_ATTEMPTS` consecutive failed logins (password
+*or* 2FA) the account is locked for `FLEETBOX_ACCOUNT_LOCKOUT_MINUTES` minutes.
+While locked, even the correct password is rejected, so an attacker spread across
+many IPs is still slowed per target account. The counter and lock are stored on
+the user row (persisting across restarts) and cleared on the next successful
+login. Lockouts are recorded in the audit log (`account.locked`, `login.blocked`).
+
+## Password reset (forgot password)
+
+The login page offers a **"Forgot password?"** link. A user enters their email or
+username; if a matching active account exists, FleetBox emails a one-time reset
+link (a random token whose SHA-256 hash and expiry are stored on the user row,
+valid for `FLEETBOX_RESET_TOKEN_MINUTES`). The confirmation page is **identical
+whether or not the account exists**, so the form does not reveal which addresses
+are registered. Completing a reset sets the new password, consumes the token,
+clears any lockout and **invalidates every other session** of that account.
+
+This feature needs SMTP **and** `FLEETBOX_BASE_URL` configured (see
+[configuration.md](configuration.md)); without them the request is accepted but
+no email can be sent (a warning is logged).
 
 ## Security headers
 
@@ -122,6 +144,13 @@ On a Proxmox install this runs inside the container:
 ```bash
 pct exec <CTID> -- /opt/fleetbox/.venv/bin/python -m app.cli disable-2fa --username alice
 ```
+
+### Requiring 2FA for administrators
+
+Set `FLEETBOX_REQUIRE_ADMIN_2FA=true` to make two-factor authentication
+mandatory for admin accounts. An administrator without 2FA is then redirected to
+**Account security** (which stays reachable so they can enable it) and cannot use
+the admin area until they do. Non-admin users are unaffected.
 
 ## Passwords & sessions
 

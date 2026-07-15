@@ -66,6 +66,20 @@ class Settings(BaseSettings):
     rate_limit_max_attempts: int = 10
     rate_limit_window_seconds: int = 300
 
+    # Per-account lockout (independent of the per-IP limiter above): after this
+    # many consecutive failed logins the account is locked for this many minutes.
+    account_lockout_max_attempts: int = 10
+    account_lockout_minutes: int = 15
+
+    # Validity of a password-reset link (minutes). Reset emails need SMTP and
+    # FLEETBOX_BASE_URL to be configured.
+    reset_token_minutes: int = 60
+
+    # Require administrators to have 2FA enabled: when true, an admin without 2FA
+    # is redirected to Account security and cannot reach the admin area until it
+    # is on.
+    require_admin_2fa: bool = False
+
     # Document/photo uploads: where files are stored and the per-file size cap.
     upload_dir: str = "./data/uploads"
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MiB

@@ -3,6 +3,7 @@
 {% block content %}
 <div class="card narrow">
   <h1>{{ t('auth.login.title') }}</h1>
+  {% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
   {% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
   <form method="post" action="/login">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -14,6 +15,7 @@
     </label>
     <button class="btn btn-primary" type="submit">{{ t('auth.login.submit') }}</button>
   </form>
+  <p class="muted"><a href="/forgot">{{ t('auth.forgot.link') }}</a></p>
   {% if allow_registration %}
     <p class="muted">
       <a href="/register">{{ t('nav.register') }}</a>

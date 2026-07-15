@@ -4,6 +4,9 @@
 <h1>{{ t('account.security.title') }}</h1>
 {% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
 {% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
+{% if require_admin_2fa and user.is_admin and not user.totp_enabled %}
+<p class="alert alert-error">{{ t('twofa.admin_required') }}</p>
+{% endif %}
 
 {% if recovery_codes %}
 <section class="card narrow">

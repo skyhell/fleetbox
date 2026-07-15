@@ -28,6 +28,10 @@ Account with login credentials. `is_admin` users can manage other users.
 | `totp_recovery_codes` | text/null | JSON list of SHA-256 hashes of one-time 2FA recovery codes |
 | `notify_email`   | bool     | receive email reminders (default on)    |
 | `session_generation` | int  | bumped on password change / "sign out everywhere" to invalidate other sessions |
+| `failed_login_count` | int  | consecutive failed logins (per-account lockout); reset on success |
+| `locked_until`   | datetime/null | account locked until this time after too many failures |
+| `reset_token_hash` | str/null | SHA-256 hash of the current password-reset token |
+| `reset_token_expires` | datetime/null | expiry of the password-reset token |
 | `created_at`     | datetime | account creation time                   |
 
 ## Vehicle

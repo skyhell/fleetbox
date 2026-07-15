@@ -56,6 +56,8 @@ def _reset_rate_limiter():
 
     auth._login_limiter.reset_all()
     auth._register_limiter.reset_all()
+    auth._reset_limiter.reset_all()
     yield
     auth._login_limiter.reset_all()
     auth._register_limiter.reset_all()
+    auth._reset_limiter.reset_all()

@@ -18,6 +18,10 @@ FleetBox is configured through environment variables (optionally loaded from a
 | `FLEETBOX_MIN_PASSWORD_LENGTH`| `8`                             | Minimum password length on registration / user creation.                                        |
 | `FLEETBOX_RATE_LIMIT_MAX_ATTEMPTS`| `10`                        | Failed login/2FA attempts allowed per client IP within the window.                              |
 | `FLEETBOX_RATE_LIMIT_WINDOW_SECONDS`| `300`                     | Rate-limit window in seconds.                                                                   |
+| `FLEETBOX_ACCOUNT_LOCKOUT_MAX_ATTEMPTS`| `10`                   | Consecutive failed logins before an account is locked (per account, not per IP).                |
+| `FLEETBOX_ACCOUNT_LOCKOUT_MINUTES`| `15`                       | How long an account stays locked after hitting the attempt limit.                               |
+| `FLEETBOX_RESET_TOKEN_MINUTES`| `60`                            | Validity of a password-reset link. Needs SMTP + `FLEETBOX_BASE_URL` to send the email.          |
+| `FLEETBOX_REQUIRE_ADMIN_2FA` | `false`                          | Require administrators to have 2FA enabled before using the admin area.                          |
 | `FLEETBOX_UPLOAD_DIR`        | `./data/uploads`                 | Where uploaded documents/photos are stored. Relative paths resolve against the project root.    |
 | `FLEETBOX_MAX_UPLOAD_BYTES`  | `10485760` (10 MiB)              | Maximum size per uploaded file, in bytes.                                                       |
 | `FLEETBOX_DOCS_URL`          | project docs on GitHub           | Target of the "Documentation" link in the UI footer. Set empty to hide it.                      |

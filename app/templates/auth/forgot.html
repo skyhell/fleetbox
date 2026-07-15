@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('auth.forgot.title') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('auth.forgot.title') }}</h1>
+  {% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
+  {% if error %}<p class="alert alert-error">{{ t(error) }}</p>{% endif %}
+  <p class="muted">{{ t('auth.forgot.hint') }}</p>
+  {% if smtp is defined and not smtp %}
+  <p class="alert alert-error">{{ t('auth.forgot.no_smtp') }}</p>
+  {% endif %}
+  <form method="post" action="/forgot">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('auth.login.identifier') }}
+      <input type="text" name="identifier" autocomplete="username" required autofocus>
+    </label>
+    <button class="btn btn-primary" type="submit">{{ t('auth.forgot.submit') }}</button>
+  </form>
+  <p class="muted"><a href="/login">← {{ t('auth.login.title') }}</a></p>
+</div>
+{% endblock %}
