@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-07-15
+
 ### Added
 - **Account lockout**: after too many consecutive failed logins, an account is
   temporarily locked — even with the correct password — independent of the
