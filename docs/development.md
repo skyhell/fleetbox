@@ -92,6 +92,39 @@ python scripts/make_icons.py
 pytest
 ```
 
+### How the suite is wired
+
+`tests/conftest.py` gives every test an isolated **in-memory SQLite database**
+(`sqlite://` on a `StaticPool`, so all connections share one database) and points
+the app's session factory at it, so routes and assertions see the same data. Two
+fixtures cover the two levels tests are written at:
+
+- **`client`** — boots the real FastAPI app through Starlette's `TestClient`.
+  Exercises the full HTTP path: session cookies, CSRF, ownership checks,
+  rendered templates. Use it for anything a browser would hit.
+- **`db_session`** — a plain SQLAlchemy session, no web layer. Use it for
+  computation (`stats.py`, `reports.py`, `reminders.py`, `models.py`).
+
+An autouse fixture resets the rate limiters in `app/routers/auth.py` around every
+test. They are module-level (process-wide) state, so without the reset a test
+that exhausts the login limit would lock out unrelated tests that log in later.
+
+### What the suite covers
+
+| Area | Files | What is asserted |
+| --- | --- | --- |
+| Security | `test_app`, `test_security_pack`, `test_security_pack2`, `test_security_pack3`, `test_admin_edit` | Security headers, CSRF rejection, registration rules, 2FA enrollment + TOTP replay, recovery codes, per-IP rate limits and per-account lockout, forgot/reset password, upload magic-byte sniffing, session invalidation after a password change, audit log, admin-2FA policy, admin user editing incl. the self-demotion guard |
+| Domain logic | `test_stats`, `test_reminders`, `test_reports_pack`, `test_models` | Full-to-full and partial-fill consumption, electric and hour-based vehicles, yearly cost aggregation, service-interval status, §57a inspection thresholds, seasonal tyre logic, reminder email rendering |
+| CRUD & flows | `test_vehicle_photo`, `test_service`, `test_fuel`, `test_fuel_types`, `test_expenses`, `test_tires`, `test_attachments`, `test_quick_add`, `test_search`, `test_readings`, `test_usability` | Create/edit/delete per entity, ownership enforcement on every vehicle-scoped route, upload validation, decimal readings, repeat-entry prefill |
+| Backup | `test_backup` | CSV and ZIP export/import round-trips, no duplicate vehicles on re-import, invalid archives rejected |
+| Presentation & infra | `test_pwa`, `test_theme`, `test_skin`, `test_i18n`, `test_migrations` | Manifest and service worker, theme/skin switching, translation lookup and locale resolution, additive auto-migration |
+
+Ownership is the cross-cutting concern: every vehicle-scoped feature has a test
+that registers a second user and asserts they get a **404, not a 403** — the app
+does not confirm that a foreign id exists. Search is the exception, since it is a
+query rather than an id lookup: `test_search_respects_ownership` asserts the
+foreign vehicle is simply absent from the results.
+
 ### Browser end-to-end smoke test
 
 The unit suite never runs JavaScript, so a small Playwright script exercises the
@@ -113,6 +146,23 @@ It exits non-zero if any check fails. CI runs the same script in the `e2e` job.
 ruff check app tests
 ruff format app tests
 ```
+
+## What CI runs
+
+`.github/workflows/ci.yml` runs on every push to `main`, on every pull request,
+and on a weekly schedule (Mondays 06:00 UTC) so new advisories surface even when
+nothing is pushed. Three jobs:
+
+| Job | Steps |
+| --- | --- |
+| `test` | `ruff check app tests`, then `pytest` — on Python 3.11 **and** 3.12 |
+| `e2e` | Installs Chromium, runs `python scripts/verify_e2e.py` |
+| `security` | `bandit -r app -c pyproject.toml`, then `pip-audit` |
+
+`pip-audit` is `continue-on-error` on pushes and PRs, so a freshly published
+advisory does not block unrelated work; the weekly scheduled run fails hard
+instead. Bandit's config lives in `pyproject.toml` (`[tool.bandit]`), which skips
+B104 — binding to `0.0.0.0` is intentional behind a reverse proxy.
 
 ## Adding a database column
 
