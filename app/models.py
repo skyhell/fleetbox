@@ -125,6 +125,9 @@ class User(Base):
     vehicles: Mapped[list[Vehicle]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
     )
+    webauthn_credentials: Mapped[list[WebAuthnCredential]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Vehicle(Base):
@@ -463,3 +466,37 @@ class AuditLog(Base):
     detail: Mapped[str | None] = mapped_column(String(255))
     ip: Mapped[str | None] = mapped_column(String(45))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+
+
+class WebAuthnCredential(Base):
+    """A passkey registered by a user (WebAuthn public-key credential).
+
+    Only *public* material is stored — unlike ``users.totp_secret``, nothing here
+    is encrypted at rest, because nothing here is a secret: the private key never
+    leaves the authenticator. ``sign_count`` is the authenticator's own counter
+    and is checked for regressions on every login (a counter that goes backwards
+    is the classic signal of a cloned credential).
+    """
+
+    __tablename__ = "webauthn_credentials"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    # base64url, as the browser reports it — the natural lookup key at login.
+    credential_id: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
+    # base64url-encoded COSE public key.
+    public_key: Mapped[str] = mapped_column(Text, nullable=False)
+    sign_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # JSON list of transports ("usb", "internal", "hybrid", …), used as a hint.
+    transports: Mapped[str | None] = mapped_column(String(120))
+    aaguid: Mapped[str | None] = mapped_column(String(36))
+    # User-given label so several passkeys stay tellable apart.
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    user: Mapped[User] = relationship(back_populates="webauthn_credentials")

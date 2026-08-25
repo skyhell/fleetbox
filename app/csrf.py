@@ -15,6 +15,11 @@ from fastapi import HTTPException, Request, status
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 SESSION_KEY = "csrf_token"
 FORM_FIELD = "csrf_token"
+# JSON requests (fetch) cannot carry a form field, so they echo the same token
+# in this header instead. No weaker: the token is a secret held in the signed
+# session — a cross-origin page can neither read it nor set a custom header
+# without a CORS preflight FleetBox never answers.
+HEADER_FIELD = "X-CSRF-Token"
 
 
 def get_csrf_token(request: Request) -> str:
@@ -32,8 +37,10 @@ async def csrf_protect(request: Request) -> None:
         return
 
     session_token = request.session.get(SESSION_KEY)
-    form = await request.form()
-    sent_token = form.get(FORM_FIELD)
+    sent_token = request.headers.get(HEADER_FIELD)
+    if not sent_token:
+        form = await request.form()
+        sent_token = form.get(FORM_FIELD)
 
     if (
         not session_token

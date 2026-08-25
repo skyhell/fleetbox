@@ -30,6 +30,7 @@ a **Proxmox** host with a single script.
 - 💾 **Backup & migration** — one-click full backup (ZIP with all data **and** uploaded documents) plus per-entity CSV export/import
 - 👥 **Multi-user** — each user manages their own vehicles; an admin manages users
 - 🔐 **Two-factor authentication** — optional TOTP 2FA per user (Aegis, Google Authenticator, 1Password, …)
+- 🔑 **Passkeys** — optional passwordless sign-in with fingerprint, face or device PIN (WebAuthn); the password keeps working as a fallback
 - 🛡️ **Hardened by default** — CSRF tokens, login rate limiting, security headers, encrypted 2FA seeds, non-root systemd sandbox ([details](docs/security.md))
 - 🔔 **At-a-glance status** — a badge on the dashboard link counts everything overdue or due soon, from any page
 - 🌍 **Internationalization** — full UI in German (`de`) and English (`en`)

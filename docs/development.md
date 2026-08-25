@@ -32,6 +32,7 @@ fleetbox/
 │   ├── models.py          # SQLAlchemy ORM models
 │   ├── security.py        # Password hashing, auth dependencies
 │   ├── totp.py            # TOTP 2FA helpers (pyotp + QR code)
+│   ├── webauthn.py        # Passkey ceremonies (py_webauthn wrapper)
 │   ├── crypto.py          # Fernet encryption for secrets at rest
 │   ├── csrf.py            # CSRF token generation + validation
 │   ├── flash.py           # One-shot flash messages (toasts) across a redirect
@@ -117,7 +118,7 @@ that exhausts the login limit would lock out unrelated tests that log in later.
 
 | Area | Files | What is asserted |
 | --- | --- | --- |
-| Security | `test_app`, `test_security_pack`, `test_security_pack2`, `test_security_pack3`, `test_admin_edit` | Security headers, CSRF rejection, registration rules, 2FA enrollment + TOTP replay, recovery codes, per-IP rate limits and per-account lockout, forgot/reset password, upload magic-byte sniffing, session invalidation after a password change, audit log, admin-2FA policy, admin user editing incl. the self-demotion guard |
+| Security | `test_app`, `test_security_pack`, `test_security_pack2`, `test_security_pack3`, `test_admin_edit`, `test_webauthn` | Security headers, CSRF rejection, registration rules, 2FA enrollment + TOTP replay, recovery codes, per-IP rate limits and per-account lockout, forgot/reset password, upload magic-byte sniffing, session invalidation after a password change, audit log, admin-2FA policy, admin user editing incl. the self-demotion guard, passkey enrollment/login incl. single-use challenges, sign-count regression and the CSRF header |
 | Domain logic | `test_stats`, `test_reminders`, `test_reports_pack`, `test_models` | Full-to-full and partial-fill consumption, electric and hour-based vehicles, yearly cost aggregation, service-interval status, §57a inspection thresholds, seasonal tyre logic, reminder email rendering |
 | CRUD & flows | `test_vehicle_photo`, `test_service`, `test_fuel`, `test_fuel_types`, `test_expenses`, `test_tires`, `test_attachments`, `test_quick_add`, `test_search`, `test_readings`, `test_usability` | Create/edit/delete per entity, ownership enforcement on every vehicle-scoped route, upload validation, decimal readings, repeat-entry prefill |
 | Backup | `test_backup` | CSV and ZIP export/import round-trips, no duplicate vehicles on re-import, invalid archives rejected |
@@ -136,9 +137,10 @@ from the results.
 ### Browser end-to-end smoke test
 
 The unit suite never runs JavaScript, so a small Playwright script exercises the
-JS-driven behaviour (table pagination, the print button, the report pages, and
-the toasts — that one shows up, fades on its own and does not come back on
-reload) against a live server. It seeds a throwaway database, starts uvicorn and drives
+JS-driven behaviour (table pagination, the print button, the report pages, the
+toasts — that one shows up, fades on its own and does not come back on reload —
+and the passkey flow, enrolled and replayed for real through Chromium's virtual
+authenticator) against a live server. It seeds a throwaway database, starts uvicorn and drives
 Chromium, then tears everything down:
 
 ```bash

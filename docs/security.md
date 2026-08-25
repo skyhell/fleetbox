@@ -13,6 +13,7 @@ deployment.
 | **Rate limiting** | Per-IP throttling of failed login, 2FA and registration attempts (brute-force / mass-signup defence). |
 | **Account lockout** | Per-account lock after repeated failed logins, independent of IP; optional forced 2FA for admins. |
 | **TOTP 2FA** | Optional per user; the seed is encrypted at rest, codes are single-use (replay-protected), with one-time recovery codes. |
+| **Passkeys (WebAuthn)** | Optional passwordless login. Only the public key is stored; user verification is required and the signature counter is checked for regressions. |
 | **Session invalidation** | Changing a password ends all other sessions; users can also "sign out everywhere else". |
 | **Audit log** | Security-relevant events are recorded and visible to administrators. |
 | **Upload validation** | Uploaded files are checked by content (magic bytes) and served sandboxed. |
@@ -33,7 +34,10 @@ key is still the built-in default, the app **refuses to start**.
 ## CSRF protection
 
 All unsafe requests (POST and friends) must include a `csrf_token` that matches
-the per-session token; otherwise they are rejected with `403`. The token is
+the per-session token; otherwise they are rejected with `403`. JSON requests —
+the passkey ceremonies are the only ones — echo the same token in an
+`X-CSRF-Token` header instead, which a cross-origin page can neither read nor
+set. The token is
 injected into every form automatically. Confirm dialogs use a small static JS
 file (`/static/js/app.js`) so a strict Content-Security-Policy can be enforced
 without inline scripts.
@@ -147,10 +151,49 @@ pct exec <CTID> -- /opt/fleetbox/.venv/bin/python -m app.cli disable-2fa --usern
 
 ### Requiring 2FA for administrators
 
-Set `FLEETBOX_REQUIRE_ADMIN_2FA=true` to make two-factor authentication
-mandatory for admin accounts. An administrator without 2FA is then redirected to
-**Account security** (which stays reachable so they can enable it) and cannot use
-the admin area until they do. Non-admin users are unaffected.
+Set `FLEETBOX_REQUIRE_ADMIN_2FA=true` to make a second factor mandatory for
+admin accounts. An administrator with neither TOTP nor a passkey is then
+redirected to **Account security** (which stays reachable so they can set one
+up) and cannot use the admin area until they do. A registered passkey satisfies
+the policy on its own. Non-admin users are unaffected.
+
+## Passkeys (WebAuthn)
+
+A passkey signs in without username or password: the authenticator (phone,
+laptop, security key) verifies the human with a fingerprint, face or device PIN
+and signs a server challenge. Add one under **Account security → Passkeys**; the
+login page then offers *Sign in with a passkey*.
+
+What FleetBox stores per passkey is a **public** key, the credential id, a label
+and the signature counter. Nothing here is a secret — the private key never
+leaves the authenticator, which is why (unlike the TOTP seed) it is not
+encrypted at rest.
+
+Properties worth knowing:
+
+- **User verification is required** on every ceremony. A passkey therefore
+  bundles possession and verification, and satisfies
+  `FLEETBOX_REQUIRE_ADMIN_2FA` on its own — an admin with a passkey is not also
+  forced to set up TOTP.
+- **Credentials are discoverable**, which is what makes the login usernameless.
+  The server is never told who is logging in beforehand, so the endpoint cannot
+  be probed for which accounts exist.
+- **The password stays active.** A passkey is an additional way in, never a
+  replacement, so a lost device can never lock an account out — password and
+  the forgot-password flow keep working.
+- A passkey login is held to exactly the same rules as a password login:
+  per-IP rate limit, per-account lockout, audit entries (`login.success` /
+  `login.failed` with detail `passkey`), and a fresh session on success.
+- **Signature-counter regression** is treated as a failed login: an
+  authenticator whose counter fails to advance is the classic signal of a
+  cloned credential. Authenticators that never count (they report `0` forever)
+  are exempt, as the spec intends.
+
+Browsers only expose WebAuthn in a **secure context** — HTTPS, or `localhost`.
+Over plain `http://<ip>` the passkey controls hide themselves and the password
+form is unaffected. An IP-address deployment cannot use passkeys at all, because
+an IP is not a valid relying-party id; see `FLEETBOX_WEBAUTHN_RP_ID` in
+[configuration.md](configuration.md).
 
 ## Passwords & sessions
 

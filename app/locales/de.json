@@ -399,5 +399,25 @@
   "vehicle.empty.tires": "Noch keine Radsätze.",
   "vehicle.empty.attachments": "Noch keine Dokumente oder Fotos.",
   "report.costs.empty.body": "Sobald Tankfüllungen, Serviceeinträge oder Ausgaben erfasst sind, erscheint hier die Jahresauswertung.",
-  "search.empty.hint": "Durchsucht Fahrzeuge, Serviceeinträge, Ausgaben und Notizen."
+  "search.empty.hint": "Durchsucht Fahrzeuge, Serviceeinträge, Ausgaben und Notizen.",
+
+  "passkey.title": "Passkeys",
+  "passkey.hint": "Ein Passkey ersetzt Benutzername und Passwort: die Anmeldung passiert mit Fingerabdruck, Gesicht oder Geräte-PIN. Das Passwort bleibt weiterhin gültig.",
+  "passkey.add": "Passkey hinzufügen",
+  "passkey.login": "Mit Passkey anmelden",
+  "passkey.or": "oder",
+  "passkey.default_name": "Passkey",
+  "passkey.status.none": "Kein Passkey eingerichtet",
+  "passkey.field.name": "Bezeichnung",
+  "passkey.field.created": "Erstellt",
+  "passkey.field.last_used": "Zuletzt verwendet",
+  "passkey.delete.confirm": "Diesen Passkey wirklich entfernen?",
+  "passkey.unsupported": "Dieser Browser bietet keine Passkeys an. Sie brauchen eine HTTPS-Verbindung (oder localhost) und einen aktuellen Browser.",
+  "passkey.error.failed": "Die Anmeldung mit Passkey hat nicht geklappt.",
+  "passkey.error.expired": "Der Vorgang ist abgelaufen. Bitte noch einmal versuchen.",
+  "passkey.error.duplicate": "Dieser Passkey ist bereits registriert.",
+  "flash.passkey.added": "Passkey hinzugefügt.",
+  "flash.passkey.removed": "Passkey entfernt.",
+  "audit.event.webauthn.registered": "Passkey hinzugefügt",
+  "audit.event.webauthn.removed": "Passkey entfernt"
 }

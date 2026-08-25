@@ -710,3 +710,8 @@ th.sortable.sort-desc::after { content: "↓"; opacity: 1; }
     width: auto;
   }
 }
+
+/* --- Passkeys ------------------------------------------------------------ */
+.passkey-or { text-align: center; margin: 1.2rem 0 0.6rem; font-size: 0.85rem; }
+[data-passkey-login-box] { display: flex; flex-direction: column; align-items: stretch; }
+[data-passkey-add] { margin-top: 0.6rem; }

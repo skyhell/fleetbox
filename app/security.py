@@ -115,6 +115,25 @@ def clear_reset_token(user: User) -> None:
     user.reset_token_expires = None
 
 
+def establish_session(request: Request, user: User) -> None:
+    """Start a fresh session for a completed login.
+
+    Clearing first drops any pre-login state (session-fixation hygiene, stale
+    2FA or passkey challenges) and rotates the CSRF token; UI preferences
+    survive. Shared by every login path — password, 2FA and passkey.
+    """
+    preserved = {
+        key: value
+        for key in ("theme", "skin")
+        if (value := request.session.get(key)) is not None
+    }
+    request.session.clear()
+    request.session.update(preserved)
+    request.session["user_id"] = user.id
+    request.session["session_generation"] = user.session_generation
+    request.session["lang"] = user.locale
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
     """Return the logged-in user from the session, or ``None``."""
     user_id = request.session.get("user_id")
@@ -147,10 +166,12 @@ def require_user(
 def require_admin(user: User = Depends(require_user)) -> User:
     if not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
-    # Optional policy: administrators must have 2FA enabled to use the admin
+    # Optional policy: administrators must have a second factor to use the admin
     # area. Redirect (via a dedicated status handled in main) to Account
-    # security, which stays reachable so they can enable it.
-    if settings.require_admin_2fa and not user.totp_enabled:
+    # security, which stays reachable so they can enable one. A passkey counts:
+    # it requires user verification, so possession and verification are already
+    # bundled — demanding TOTP on top of it would only confuse.
+    if settings.require_admin_2fa and not user.totp_enabled and not user.webauthn_credentials:
         raise HTTPException(
             status_code=status.HTTP_428_PRECONDITION_REQUIRED,
             detail="Administrators must enable two-factor authentication",

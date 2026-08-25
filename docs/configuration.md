@@ -26,6 +26,8 @@ FleetBox is configured through environment variables (optionally loaded from a
 | `FLEETBOX_MAX_UPLOAD_BYTES`  | `10485760` (10 MiB)              | Maximum size per uploaded file, in bytes.                                                       |
 | `FLEETBOX_DOCS_URL`          | project docs on GitHub           | Target of the "Documentation" link in the UI footer. Set empty to hide it.                      |
 | `FLEETBOX_BASE_URL`          | *(empty)*                        | Public URL used for links in reminder emails. Empty omits the link.                             |
+| `FLEETBOX_WEBAUTHN_RP_ID`    | *(from `BASE_URL`/request)*      | Passkey relying-party id: the bare domain, no scheme or port. Needs a secure context (HTTPS or localhost); an IP address is not a valid value. |
+| `FLEETBOX_WEBAUTHN_ORIGIN`   | *(from `BASE_URL`/request)*      | Origin passkeys are checked against, e.g. `https://fleetbox.example.com`.                        |
 | `FLEETBOX_SMTP_HOST`         | *(empty)*                        | SMTP server for reminder emails. Reminders are only sent when this is set.                       |
 | `FLEETBOX_SMTP_PORT`         | `587`                            | SMTP port.                                                                                       |
 | `FLEETBOX_SMTP_USER`         | *(empty)*                        | SMTP username (login). Leave empty for an unauthenticated relay.                                 |

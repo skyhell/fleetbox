@@ -399,5 +399,25 @@
   "vehicle.empty.tires": "No tyre sets yet.",
   "vehicle.empty.attachments": "No documents or photos yet.",
   "report.costs.empty.body": "Once refuellings, service records or expenses exist, the yearly breakdown appears here.",
-  "search.empty.hint": "Searches vehicles, service records, expenses and notes."
+  "search.empty.hint": "Searches vehicles, service records, expenses and notes.",
+
+  "passkey.title": "Passkeys",
+  "passkey.hint": "A passkey replaces username and password: you sign in with a fingerprint, your face or the device PIN. Your password keeps working as before.",
+  "passkey.add": "Add passkey",
+  "passkey.login": "Sign in with a passkey",
+  "passkey.or": "or",
+  "passkey.default_name": "Passkey",
+  "passkey.status.none": "No passkey set up",
+  "passkey.field.name": "Label",
+  "passkey.field.created": "Created",
+  "passkey.field.last_used": "Last used",
+  "passkey.delete.confirm": "Really remove this passkey?",
+  "passkey.unsupported": "This browser does not offer passkeys. They need an HTTPS connection (or localhost) and an up-to-date browser.",
+  "passkey.error.failed": "Signing in with a passkey did not work.",
+  "passkey.error.expired": "The request expired. Please try again.",
+  "passkey.error.duplicate": "This passkey is already registered.",
+  "flash.passkey.added": "Passkey added.",
+  "flash.passkey.removed": "Passkey removed.",
+  "audit.event.webauthn.registered": "Passkey added",
+  "audit.event.webauthn.removed": "Passkey removed"
 }

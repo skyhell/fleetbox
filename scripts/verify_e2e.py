@@ -206,6 +206,42 @@ def _run_browser(base: str, vehicle_id: int) -> None:
             check("search empty state rendered",
                   page.query_selector(".empty-inline") is not None)
 
+            # --- S4: passkeys, driven by Chromium's virtual authenticator ---
+            cdp = page.context.new_cdp_session(page)
+            cdp.send("WebAuthn.enable", {})
+            cdp.send("WebAuthn.addVirtualAuthenticator", {
+                "options": {
+                    "protocol": "ctap2",
+                    "transport": "internal",
+                    "hasResidentKey": True,       # discoverable -> usernameless login
+                    "hasUserVerification": True,
+                    "isUserVerified": True,       # "the human is present and verified"
+                    "automaticPresenceSimulation": True,
+                }
+            })
+
+            page.goto(f"{base}/account/security")
+            page.wait_for_timeout(400)
+            check(
+                "passkey enrollment offered on a secure context",
+                page.eval_on_selector("[data-passkey-add]", "el => !el.hidden"),
+            )
+            page.fill("[data-passkey-name]", "E2E key")
+            page.click("[data-passkey-register]")
+            page.wait_for_timeout(2000)  # ceremony + reload
+            check("passkey registered", "E2E key" in page.content())
+
+            page.click('form[action="/logout"] button[type="submit"]')
+            page.wait_for_url(f"{base}/login")
+            page.wait_for_timeout(400)
+            check(
+                "passkey login offered",
+                page.eval_on_selector("[data-passkey-login-box]", "el => !el.hidden"),
+            )
+            page.click("[data-passkey-login]")
+            page.wait_for_url(f"{base}/dashboard", timeout=15000)
+            check("passwordless login succeeded", page.url.rstrip("/").endswith("/dashboard"))
+
             # --- A1: sign out everywhere else ---
             page.goto(f"{base}/account/security")
             page.wait_for_timeout(200)
@@ -221,7 +257,10 @@ def main() -> int:
     tmp = tempfile.mkdtemp(prefix="fleetbox-e2e-")
     db_path = os.path.join(tmp, "e2e.db")
     port = _free_port()
-    base = f"http://127.0.0.1:{port}"
+    # "localhost" rather than the bare IP: browsers treat both as secure
+    # contexts, but a WebAuthn relying-party id must be a domain, and an IP
+    # address is not one — the passkey checks below would fail on 127.0.0.1.
+    base = f"http://localhost:{port}"
 
     vehicle_id = _seed(db_path)
 

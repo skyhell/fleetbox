@@ -27,22 +27,23 @@ from app.totp import (
 router = APIRouter(prefix="/account", tags=["account"])
 
 
-def _security(request: Request, user: User | None = None, **context):
-    """Render the security page.
+def _security(request: Request, user: User, **context):
+    """Render the security page for the request-scoped ``user``.
 
-    Handlers that just changed the user pass it along: the template's ``user``
-    normally comes from ``request.state.user``, which the middleware loaded
-    *before* this request's commit and would render stale toggles.
+    The template's ``user`` normally comes from ``request.state.user``, which
+    the middleware loaded on a session it has since closed — stale after this
+    request's commit, and detached, so the page could not read the passkey list
+    off it at all. Every handler here therefore passes the live user it already
+    depends on.
     """
-    if user is not None:
-        request.state.user = user
+    request.state.user = user
     context.setdefault("min_password_length", settings.min_password_length)
     return render(request, "account/security.html", **context)
 
 
 @router.get("/security")
 def security_page(request: Request, user: User = Depends(require_user)):
-    return _security(request)
+    return _security(request, user)
 
 
 @router.post("/password")
@@ -56,11 +57,11 @@ def change_password(
 ):
     """Let the user rotate their own password (requires the current one)."""
     if not verify_password(current_password, user.hashed_password):
-        return _security(request, error="account.password.wrong_current")
+        return _security(request, user, error="account.password.wrong_current")
     if len(new_password) < settings.min_password_length:
-        return _security(request, error="auth.password.too_short")
+        return _security(request, user, error="auth.password.too_short")
     if new_password != new_password_repeat:
-        return _security(request, error="account.password.mismatch")
+        return _security(request, user, error="account.password.mismatch")
 
     user.hashed_password = hash_password(new_password)
     # Invalidate every other session of this account; the current one is
@@ -70,7 +71,7 @@ def change_password(
     audit(db, request, "password.changed", user=user)
     db.add(user)
     db.commit()
-    return _security(request, user=user, message="account.password.changed")
+    return _security(request, user, message="account.password.changed")
 
 
 @router.post("/logout-others")
@@ -91,7 +92,7 @@ def logout_others(
     audit(db, request, "sessions.revoked_others", user=user)
     db.add(user)
     db.commit()
-    return _security(request, user=user, message="account.sessions.done")
+    return _security(request, user, message="account.sessions.done")
 
 
 @router.post("/notifications")
@@ -105,7 +106,7 @@ def update_notifications(
     user.notify_email = bool(notify_email)
     db.add(user)
     db.commit()
-    return _security(request, user=user, message="notify.saved")
+    return _security(request, user, message="notify.saved")
 
 
 @router.post("/2fa/begin")
@@ -157,7 +158,7 @@ def enable_2fa(
     db.commit()
     request.session.pop("pending_totp_secret", None)
     return _security(
-        request, user=user, message="twofa.enabled", recovery_codes=recovery_codes
+        request, user, message="twofa.enabled", recovery_codes=recovery_codes
     )
 
 
@@ -175,7 +176,7 @@ def disable_2fa(
         else None
     )
     if step is None:
-        return _security(request, error="twofa.invalid")
+        return _security(request, user, error="twofa.invalid")
 
     user.totp_secret = None
     user.totp_enabled = False
@@ -184,4 +185,4 @@ def disable_2fa(
     audit(db, request, "twofa.disabled", user=user)
     db.add(user)
     db.commit()
-    return _security(request, user=user, message="twofa.disabled")
+    return _security(request, user, message="twofa.disabled")

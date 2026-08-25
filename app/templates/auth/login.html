@@ -15,6 +15,13 @@
     </label>
     <button class="btn btn-primary" type="submit">{{ t('auth.login.submit') }}</button>
   </form>
+  {# Revealed by app.js only where the browser supports passkeys. #}
+  <div data-passkey-login-box hidden>
+    <p class="muted passkey-or">{{ t('passkey.or') }}</p>
+    <button class="btn" type="button" data-passkey-login>{{ t('passkey.login') }}</button>
+  </div>
+  <p class="alert alert-error" data-passkey-error hidden></p>
+
   <p class="muted"><a href="/forgot">{{ t('auth.forgot.link') }}</a></p>
   {% if allow_registration %}
     <p class="muted">

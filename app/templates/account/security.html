@@ -4,7 +4,7 @@
 <h1>{{ t('account.security.title') }}</h1>
 {% if message %}<p class="alert alert-success">{{ t(message) }}</p>{% endif %}
 {% if error %}<p class="alert alert-error">{{ t(error, min=min_password_length|default(0)) }}</p>{% endif %}
-{% if require_admin_2fa and user.is_admin and not user.totp_enabled %}
+{% if require_admin_2fa and user.is_admin and not user.totp_enabled and not user.webauthn_credentials %}
 <p class="alert alert-error">{{ t('twofa.admin_required') }}</p>
 {% endif %}
 
@@ -67,6 +67,55 @@
       <button class="btn btn-primary" type="submit">{{ t('twofa.enable') }}</button>
     </form>
   {% endif %}
+</section>
+
+<section class="card narrow">
+  <h2>{{ t('passkey.title') }}</h2>
+  <p class="muted">{{ t('passkey.hint') }}</p>
+  {% if user.webauthn_credentials %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('passkey.field.name') }}</th>
+        <th>{{ t('passkey.field.created') }}</th>
+        <th>{{ t('passkey.field.last_used') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in user.webauthn_credentials %}
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.created_at.date() }}</td>
+        <td>{% if c.last_used_at %}{{ c.last_used_at.date() }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>
+          <form method="post" action="/webauthn/{{ c.id }}/delete"
+                data-confirm="{{ t('passkey.delete.confirm') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm btn-danger" type="submit">{{ t('common.delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p><span class="badge badge-unknown">{{ t('passkey.status.none') }}</span></p>
+  {% endif %}
+
+  {# Exactly one of these is revealed by app.js, depending on whether the
+     browser exposes WebAuthn at all (it does not over plain HTTP). #}
+  <div data-passkey-add hidden>
+    <label>{{ t('passkey.field.name') }}
+      <input type="text" data-passkey-name maxlength="80"
+             placeholder="{{ t('passkey.default_name') }}">
+    </label>
+    <button class="btn btn-primary" type="button" data-passkey-register>
+      {{ t('passkey.add') }}
+    </button>
+  </div>
+  <p class="muted" data-passkey-unsupported hidden>{{ t('passkey.unsupported') }}</p>
+  <p class="alert alert-error" data-passkey-error hidden></p>
 </section>
 
 <section class="card narrow">

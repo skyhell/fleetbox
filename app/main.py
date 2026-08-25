@@ -33,6 +33,7 @@ from app.routers import (
     stats,
     tires,
     vehicles,
+    webauthn,
 )
 from app.templating import TEMPLATES_DIR
 
@@ -175,6 +176,9 @@ app.include_router(expenses.router, dependencies=_csrf)
 app.include_router(reports.router, dependencies=_csrf)
 app.include_router(backup.router, dependencies=_csrf)
 app.include_router(admin.router, dependencies=_csrf)
+# Passkeys. The JSON endpoints echo the CSRF token in a header instead of a
+# form field (see app/csrf.py), so they stay behind the same dependency.
+app.include_router(webauthn.router, dependencies=_csrf)
 
 # Public PWA endpoints (manifest + service worker). No auth/CSRF: they serve no
 # user data and must be reachable before login so the app is installable.

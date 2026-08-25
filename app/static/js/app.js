@@ -307,6 +307,165 @@ document.addEventListener("keydown", function (event) {
   });
 })();
 
+// --- Passkeys (WebAuthn) ------------------------------------------------------
+// The only fetch()-driven flow in FleetBox. Everything is progressive: without
+// WebAuthn (or without JavaScript) the passkey controls never appear and the
+// password form is untouched.
+(function () {
+  function supported() {
+    return (
+      typeof window.PublicKeyCredential !== "undefined" &&
+      !!(navigator.credentials && navigator.credentials.create)
+    );
+  }
+
+  // The server speaks base64url; the WebAuthn API speaks ArrayBuffer.
+  function toBuffer(value) {
+    var padded = value.replace(/-/g, "+").replace(/_/g, "/");
+    padded += "=".repeat((4 - (padded.length % 4)) % 4);
+    var binary = window.atob(padded);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  function toBase64url(buffer) {
+    var bytes = new Uint8Array(buffer);
+    var binary = "";
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function post(url, body) {
+    var token = document.querySelector('input[name="csrf_token"]');
+    return fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        // Form field equivalent for a JSON body; see app/csrf.py.
+        "X-CSRF-Token": token ? token.value : "",
+      },
+      body: JSON.stringify(body || {}),
+    }).then(function (response) {
+      return response
+        .json()
+        .catch(function () {
+          return {};
+        })
+        .then(function (data) {
+          if (!response.ok) throw new Error(data.error || "");
+          return data;
+        });
+    });
+  }
+
+  function showError(error) {
+    var box = document.querySelector("[data-passkey-error]");
+    if (!box) return;
+    // A cancelled or timed-out ceremony carries no useful message of its own.
+    var fallback = document.body.dataset.passkeyError || "";
+    box.textContent = (error && error.message) || fallback;
+    box.hidden = false;
+  }
+
+  function serializeRegistration(credential) {
+    var response = credential.response;
+    return {
+      id: credential.id,
+      rawId: toBase64url(credential.rawId),
+      type: credential.type,
+      response: {
+        clientDataJSON: toBase64url(response.clientDataJSON),
+        attestationObject: toBase64url(response.attestationObject),
+        transports: response.getTransports ? response.getTransports() : [],
+      },
+    };
+  }
+
+  function serializeAuthentication(credential) {
+    var response = credential.response;
+    return {
+      id: credential.id,
+      rawId: toBase64url(credential.rawId),
+      type: credential.type,
+      response: {
+        clientDataJSON: toBase64url(response.clientDataJSON),
+        authenticatorData: toBase64url(response.authenticatorData),
+        signature: toBase64url(response.signature),
+        userHandle: response.userHandle ? toBase64url(response.userHandle) : null,
+      },
+    };
+  }
+
+  function register() {
+    var field = document.querySelector("[data-passkey-name]");
+    var name = field ? field.value.trim() : "";
+    post("/webauthn/register/begin")
+      .then(function (options) {
+        options.challenge = toBuffer(options.challenge);
+        options.user.id = toBuffer(options.user.id);
+        (options.excludeCredentials || []).forEach(function (credential) {
+          credential.id = toBuffer(credential.id);
+        });
+        return navigator.credentials.create({ publicKey: options });
+      })
+      .then(function (credential) {
+        return post("/webauthn/register/finish", {
+          name: name,
+          credential: serializeRegistration(credential),
+        });
+      })
+      .then(function () {
+        // Reload so the new passkey is listed and its toast is shown.
+        window.location.reload();
+      })
+      .catch(showError);
+  }
+
+  function login() {
+    post("/webauthn/login/begin")
+      .then(function (options) {
+        if (options.redirect) {
+          window.location = options.redirect;
+          return null;
+        }
+        options.challenge = toBuffer(options.challenge);
+        (options.allowCredentials || []).forEach(function (credential) {
+          credential.id = toBuffer(credential.id);
+        });
+        return navigator.credentials.get({ publicKey: options });
+      })
+      .then(function (credential) {
+        if (!credential) return null;
+        return post("/webauthn/login/finish", {
+          credential: serializeAuthentication(credential),
+        });
+      })
+      .then(function (data) {
+        if (data && data.redirect) window.location = data.redirect;
+      })
+      .catch(showError);
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    var addBox = document.querySelector("[data-passkey-add]");
+    var unsupported = document.querySelector("[data-passkey-unsupported]");
+    var loginBox = document.querySelector("[data-passkey-login-box]");
+    var available = supported();
+
+    if (addBox) addBox.hidden = !available;
+    if (unsupported) unsupported.hidden = available;
+    if (loginBox) loginBox.hidden = !available;
+    if (!available) return;
+
+    var addButton = document.querySelector("[data-passkey-register]");
+    if (addButton) addButton.addEventListener("click", register);
+    var loginButton = document.querySelector("[data-passkey-login]");
+    if (loginButton) loginButton.addEventListener("click", login);
+  });
+})();
+
 // Register the service worker so FleetBox is installable and has an offline
 // fallback. Same-origin, so it is allowed under our strict CSP.
 if ("serviceWorker" in navigator) {

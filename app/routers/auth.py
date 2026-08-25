@@ -21,6 +21,7 @@ from app.security import (
     account_is_locked,
     clear_reset_token,
     consume_reset_token,
+    establish_session,
     find_by_identifier,
     hash_password,
     issue_reset_token,
@@ -47,24 +48,6 @@ _register_limiter = RateLimiter(
 _reset_limiter = RateLimiter(
     settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
 )
-
-
-def _establish_session(request: Request, user: User) -> None:
-    """Start a fresh session for a completed login.
-
-    Clearing first drops any pre-login state (session-fixation hygiene, stale
-    2FA challenges) and rotates the CSRF token; UI preferences survive.
-    """
-    preserved = {
-        key: value
-        for key in ("theme", "skin")
-        if (value := request.session.get(key)) is not None
-    }
-    request.session.clear()
-    request.session.update(preserved)
-    request.session["user_id"] = user.id
-    request.session["session_generation"] = user.session_generation
-    request.session["lang"] = user.locale
 
 
 @router.get("/login")
@@ -110,7 +93,7 @@ def login(
 
     _login_limiter.reset(key)
     reset_failed_logins(user)
-    _establish_session(request, user)
+    establish_session(request, user)
     audit(db, request, "login.success", user=user)
     db.commit()
     return RedirectResponse("/dashboard", status_code=303)
@@ -180,7 +163,7 @@ def two_factor_verify(
     audit(db, request, "login.success", user=user, detail="2fa")
     db.commit()
     _login_limiter.reset(key)
-    _establish_session(request, user)
+    establish_session(request, user)
     return RedirectResponse("/dashboard", status_code=303)
 
 
@@ -259,7 +242,7 @@ def register(
     db.flush()  # assign user.id for the audit entry
     audit(db, request, "register", user=user)
     db.commit()
-    _establish_session(request, user)
+    establish_session(request, user)
     return RedirectResponse("/dashboard", status_code=303)
 
 

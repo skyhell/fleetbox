@@ -91,6 +91,17 @@ class Settings(BaseSettings):
     # reminder emails. Leave empty to omit the link.
     base_url: str = ""
 
+    # Passkeys (WebAuthn). Both are derived from base_url — and, failing that,
+    # from the request itself — when left empty, which is what makes
+    # http://localhost:8000 work in development without any configuration.
+    # Set them explicitly behind a reverse proxy.
+    #   rp_id:  the bare domain, no scheme and no port (fleetbox.example.com)
+    #   origin: scheme + host (+ port), exactly as the browser sees it
+    # Note: browsers only expose WebAuthn in a secure context — HTTPS, or
+    # localhost. Over plain http://<ip> the passkey UI hides itself.
+    webauthn_rp_id: str = ""
+    webauthn_origin: str = ""
+
     # Email (SMTP) for reminder notifications. Reminders are only sent when a host
     # is configured, by the `fleetbox send-reminders` command (run from cron or a
     # systemd timer).

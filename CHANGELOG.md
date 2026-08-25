@@ -6,6 +6,18 @@ All notable changes to FleetBox are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Passkeys (WebAuthn)**: sign in without username or password — the
+  authenticator verifies you with a fingerprint, face or device PIN. Add one
+  under Account security; the login page then offers "Sign in with a passkey".
+  Only the public key is stored, user verification is required on every
+  ceremony, and the signature counter is checked for regressions (the
+  cloned-authenticator signal). A passkey login is held to the same rules as a
+  password login — rate limit, account lockout, audit trail — and satisfies
+  `FLEETBOX_REQUIRE_ADMIN_2FA` on its own. The password stays active as a
+  fallback, so a lost device cannot lock an account out. Needs a secure context
+  (HTTPS or localhost); where the browser has no WebAuthn, the controls simply
+  do not appear. New settings `FLEETBOX_WEBAUTHN_RP_ID` and
+  `FLEETBOX_WEBAUTHN_ORIGIN` (both derived when left empty).
 - **Confirmation messages (toasts)**: actions that finish with a redirect —
   creating, editing and deleting vehicles, service records and intervals,
   refuellings, expenses, tyre sets, attachments and users — now confirm
@@ -24,6 +36,14 @@ All notable changes to FleetBox are documented here. The format is based on
 ### Changed
 - The per-request user lookup loads service intervals along with the user and
   their vehicles (one extra batched query) to compute the attention badge.
+- CSRF validation accepts the session token in an `X-CSRF-Token` header as well
+  as in the form field, so JSON requests (the passkey ceremonies) can be
+  protected the same way.
+- New dependency: `webauthn` (py_webauthn) for the WebAuthn ceremonies.
+
+### Security
+- Raised the `cryptography` floor to 50.0 — 49.0.0 and older are affected by
+  PYSEC-2026-3552.
 
 ## [0.15.1] - 2026-08-25
 
