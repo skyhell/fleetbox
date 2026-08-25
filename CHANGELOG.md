@@ -5,6 +5,24 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-08-25
+
+Maintenance release: documentation and test coverage only — no functional or
+schema changes.
+
+### Added
+- Ownership tests for the vehicle-scoped routes that had none: vehicle detail,
+  edit, delete, stats and the printable record, plus fuel-entry edit/delete and
+  service intervals. Each registers a second user and asserts a **404, not a
+  403**, so a dropped `owner_id` check can no longer pass the suite.
+- `docs/development.md` now documents how the test suite is wired, what each
+  test file covers, and the three CI jobs (test, e2e, security).
+
+### Fixed
+- Corrected two inaccurate claims in the new testing docs: the ownership
+  paragraph now lists the areas actually covered, and the conftest description
+  no longer implies the database fixtures are autouse.
+
 ## [0.15.0] - 2026-07-15
 
 ### Added
