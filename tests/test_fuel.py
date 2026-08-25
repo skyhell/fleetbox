@@ -76,3 +76,20 @@ def test_edit_fuel_entry(client):
     page = client.get(url).text
     assert "2026-03-03" in page
     assert "70,00" in page
+
+
+def test_fuel_entries_respect_ownership(client):
+    _register(client, "owner", "owner@example.com")
+    url = _create_vehicle(client, name="OwnerCar")
+    _add_fuel(client, url, quantity="40", total_cost="60")
+    fuel_id = _fuel_ids(client, url)[0]
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")},
+                follow_redirects=False)
+
+    _register(client, "intruder", "intruder@example.com")
+    assert client.get(f"{url}/fuel/{fuel_id}/edit").status_code == 404
+
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(f"{url}/fuel/{fuel_id}/delete", data={"csrf_token": token},
+                       follow_redirects=False)
+    assert resp.status_code == 404

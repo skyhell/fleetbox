@@ -114,7 +114,7 @@ def test_post_without_csrf_token_is_forbidden(client):
     assert resp.status_code == 403
 
 
-def test_vehicle_crud_and_ownership(client):
+def test_vehicle_crud(client):
     _register(client, "bob", "bob@example.com")
 
     token = _csrf(client, "/vehicles/new")
@@ -150,6 +150,48 @@ def test_vehicle_crud_and_ownership(client):
     )
     assert resp.status_code == 303
     assert "Ölwechsel 5W30" in client.get(detail_url).text
+
+
+def test_vehicle_routes_reject_foreign_owner(client):
+    """Every vehicle-scoped route answers 404 (not 403) for a foreign owner.
+
+    404 rather than 403 so the app does not confirm that a foreign id exists.
+    """
+    _register(client, "owner", "owner@example.com")
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(
+        "/vehicles/new",
+        data={
+            "name": "OwnerCar",
+            "make": "VW",
+            "mileage": "50000",
+            "fuel_type": "diesel",
+            "csrf_token": token,
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    url = resp.headers["location"]
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")},
+                follow_redirects=False)
+
+    _register(client, "intruder", "intruder@example.com")
+    for path in (url, f"{url}/edit", f"{url}/stats", f"{url}/report"):
+        assert client.get(path).status_code == 404, path
+
+    # Writes too: editing (which also carries the vehicle photo) and deleting.
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(
+        f"{url}/edit",
+        data={"name": "Stolen", "mileage": "60000", "fuel_type": "diesel",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 404
+
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(f"{url}/delete", data={"csrf_token": token}, follow_redirects=False)
+    assert resp.status_code == 404
 
 
 def test_vehicle_with_operating_hours(client):

@@ -96,3 +96,34 @@ def test_edit_foreign_record_rejected(client):
     _register(client, "mallory", "mallory@example.com")
     edit_url = f"{url}/records/{record_id}/edit"
     assert client.get(edit_url).status_code == 404
+
+
+def test_service_intervals_respect_ownership(client):
+    _register(client, "owner", "owner@example.com")
+    url = _create_vehicle(client)
+    token = _csrf(client, url)
+    client.post(
+        f"{url}/intervals",
+        data={"name": "Ölwechsel", "service_type": "oil_change", "interval_km": "15000",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+    ids = sorted({int(i) for i in re.findall(r"/intervals/(\d+)/delete", client.get(url).text)})
+    assert ids, "interval was not created"
+    interval_id = ids[0]
+
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+    _register(client, "intruder", "intruder@example.com")
+
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(
+        f"{url}/intervals",
+        data={"name": "Fremd", "service_type": "oil_change", "csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 404
+
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(f"{url}/intervals/{interval_id}/delete",
+                       data={"csrf_token": token}, follow_redirects=False)
+    assert resp.status_code == 404

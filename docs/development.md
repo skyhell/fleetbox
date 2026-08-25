@@ -94,10 +94,13 @@ pytest
 
 ### How the suite is wired
 
-`tests/conftest.py` gives every test an isolated **in-memory SQLite database**
-(`sqlite://` on a `StaticPool`, so all connections share one database) and points
-the app's session factory at it, so routes and assertions see the same data. Two
-fixtures cover the two levels tests are written at:
+`tests/conftest.py` gives every test that requests `db_session` or `client` an
+isolated **in-memory SQLite database** (`sqlite://` on a `StaticPool`, so all
+connections share one database) and points the app's session factory at it, so
+routes and assertions see the same data. Neither fixture is autouse: a test that
+touches the database must request one, or it falls through to the import-time
+engine, which has no tables (`OperationalError: no such table`). Two fixtures
+cover the two levels tests are written at:
 
 - **`client`** — boots the real FastAPI app through Starlette's `TestClient`.
   Exercises the full HTTP path: session cookies, CSRF, ownership checks,
@@ -119,11 +122,15 @@ that exhausts the login limit would lock out unrelated tests that log in later.
 | Backup | `test_backup` | CSV and ZIP export/import round-trips, no duplicate vehicles on re-import, invalid archives rejected |
 | Presentation & infra | `test_pwa`, `test_theme`, `test_skin`, `test_i18n`, `test_migrations` | Manifest and service worker, theme/skin switching, translation lookup and locale resolution, additive auto-migration |
 
-Ownership is the cross-cutting concern: every vehicle-scoped feature has a test
-that registers a second user and asserts they get a **404, not a 403** — the app
-does not confirm that a foreign id exists. Search is the exception, since it is a
-query rather than an id lookup: `test_search_respects_ownership` asserts the
-foreign vehicle is simply absent from the results.
+Ownership is the cross-cutting concern. Each vehicle-scoped area — the vehicle
+routes themselves (detail, edit, delete, stats, report) plus fuel, service
+records, service intervals, expenses, attachments, tyres and quick-add — has a
+test that registers a second user and asserts they get a **404, not a 403**: the
+app does not confirm that a foreign id exists. Add one for every new
+vehicle-scoped route. Search is the
+exception, since it is a query rather than an id lookup:
+`test_search_respects_ownership` asserts the foreign vehicle is simply absent
+from the results.
 
 ### Browser end-to-end smoke test
 
