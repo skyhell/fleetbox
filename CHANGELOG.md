@@ -5,6 +5,11 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-25
+
+Two packs in one release: passkeys, and the usability round that makes the app
+say what it just did and what still needs attention.
+
 ### Added
 - **Passkeys (WebAuthn)**: sign in without username or password — the
   authenticator verifies you with a fingerprint, face or device PIN. Add one
