@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.flash import flash
 from app.models import Expense, ExpenseCategory, User, Vehicle
 from app.security import require_user
 from app.templating import render
@@ -44,6 +45,7 @@ def _category(value: str | None) -> ExpenseCategory:
 
 @router.post("")
 def add_expense(
+    request: Request,
     vehicle_id: int,
     category: str = Form("other"),
     title: str = Form(...),
@@ -65,6 +67,7 @@ def add_expense(
         )
     )
     db.commit()
+    flash(request, "flash.expense.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -83,6 +86,7 @@ def edit_expense_form(
 
 @router.post("/{expense_id}/edit")
 def update_expense(
+    request: Request,
     vehicle_id: int,
     expense_id: int,
     category: str = Form("other"),
@@ -101,11 +105,13 @@ def update_expense(
     expense.spent_on = date.fromisoformat(spent_on) if spent_on else date.today()
     expense.notes = notes or None
     db.commit()
+    flash(request, "flash.expense.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{expense_id}/delete")
 def delete_expense(
+    request: Request,
     vehicle_id: int,
     expense_id: int,
     db: Session = Depends(get_db),
@@ -115,4 +121,5 @@ def delete_expense(
     expense = _get_owned_expense(db, vehicle, expense_id)
     db.delete(expense)
     db.commit()
+    flash(request, "flash.expense.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

@@ -705,3 +705,86 @@ th.sortable.sort-desc::after { content: "↓"; opacity: 1; }
   .bottomnav a:hover, .bottomnav a:focus-visible { color: var(--primary); }
   body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
 }
+
+/* --- Toasts: one-shot confirmations that survive a redirect --------------- */
+.toasts {
+  position: fixed;
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: max(0.9rem, env(safe-area-inset-right));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: min(23rem, calc(100vw - 1.8rem));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.65rem 0.7rem 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--muted);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: toast-in 0.22s ease-out;
+}
+.toast > span { flex: 1 1 auto; }
+.toast-success { border-left-color: var(--ok); }
+.toast-error { border-left-color: var(--overdue); }
+.toast-info { border-left-color: var(--primary); }
+.toast.is-hiding { opacity: 0; transform: translateY(-0.35rem); transition: opacity 0.25s ease, transform 0.25s ease; }
+.toast-close {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.toast-close:hover { color: var(--text); background: var(--hover); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-0.5rem); } to { opacity: 1; transform: none; } }
+
+/* --- Attention badge: overdue/due-soon count next to the dashboard link --- */
+.navbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  margin-left: 0.35rem;
+  padding: 0 0.32rem;
+  border-radius: var(--radius-pill);
+  background: var(--overdue);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.bottomnav a { position: relative; }
+.navbadge-dot { position: absolute; top: 0.05rem; right: 0.5rem; margin-left: 0; }
+
+/* --- Empty states: an explanation and a way forward, not a blank card ----- */
+.empty-icon { display: block; font-size: 2rem; line-height: 1; margin-bottom: 0.6rem; }
+.card.empty h2 { margin-bottom: 0.45rem; }
+.card.empty p { margin: 0 auto 1.2rem; max-width: 34rem; }
+.card.empty .empty-actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+.empty-inline { text-align: center; padding: 1.5rem 1rem; color: var(--muted); }
+.empty-inline .empty-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+
+@media (max-width: 640px) {
+  .toasts {
+    left: max(0.7rem, env(safe-area-inset-left));
+    right: max(0.7rem, env(safe-area-inset-right));
+    width: auto;
+  }
+}

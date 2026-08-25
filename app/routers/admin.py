@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.audit import audit
 from app.config import settings
 from app.database import get_db
+from app.flash import flash
 from app.models import AuditLog, User
 from app.security import hash_password, require_admin
 from app.templating import render
@@ -72,6 +73,7 @@ def create_user(
     db.add(user)
     audit(db, request, "user.created", user=admin, detail=username)
     db.commit()
+    flash(request, "flash.user.created")
     return RedirectResponse("/admin/users", status_code=303)
 
 
@@ -146,6 +148,7 @@ def edit_user(
         audit(db, request, "password.reset", user=admin, detail=username)
     audit(db, request, "user.updated", user=admin, detail=username)
     db.commit()
+    flash(request, "flash.user.updated")
     return RedirectResponse("/admin/users", status_code=303)
 
 
@@ -164,6 +167,7 @@ def toggle_active(
         event = "user.activated" if user.is_active else "user.deactivated"
         audit(db, request, event, user=admin, detail=user.username)
         db.commit()
+        flash(request, f"flash.{event}")
     return RedirectResponse("/admin/users", status_code=303)
 
 
@@ -182,6 +186,7 @@ def delete_user(
     audit(db, request, "user.deleted", user=admin, detail=user.username)
     db.delete(user)
     db.commit()
+    flash(request, "flash.user.deleted")
     return RedirectResponse("/admin/users", status_code=303)
 
 

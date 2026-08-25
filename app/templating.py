@@ -11,6 +11,7 @@ from jinja2 import pass_context
 from app import __version__
 from app.config import settings
 from app.csrf import get_csrf_token
+from app.flash import pop_flashes
 from app.i18n import resolve_locale, translate
 from app.models import (
     SELECTABLE_FUEL_TYPES,
@@ -128,6 +129,7 @@ def render(request: Request, template: str, **context):
         "request": request,
         "t": t,
         "csrf_token": get_csrf_token(request),
+        "flashes": pop_flashes(request),
         "locale": locale,
         "theme": get_theme(request),
         "themes": THEMES,
@@ -136,6 +138,7 @@ def render(request: Request, template: str, **context):
         "supported_locales": settings.supported_locales,
         "user": getattr(request.state, "user", None),
         "nav_vehicles": getattr(request.state, "nav_vehicles", []),
+        "due_count": getattr(request.state, "due_count", 0),
         "app_version": __version__,
         "docs_url": settings.docs_url,
         "ServiceType": ServiceType,

@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.flash import flash
 from app.models import FuelLog, User, Vehicle
 from app.security import require_user
 from app.templating import render
@@ -66,6 +67,7 @@ def new_fuel_form(
 
 @router.post("")
 def add_fuel(
+    request: Request,
     vehicle_id: int,
     filled_on: str = Form(...),
     mileage: str = Form(""),
@@ -96,6 +98,7 @@ def add_fuel(
     if log.mileage and log.mileage > vehicle.mileage:
         vehicle.mileage = log.mileage
     db.commit()
+    flash(request, "flash.fuel.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -121,6 +124,7 @@ def edit_fuel_form(
 
 @router.post("/{log_id}/edit")
 def update_fuel(
+    request: Request,
     vehicle_id: int,
     log_id: int,
     filled_on: str = Form(...),
@@ -149,11 +153,13 @@ def update_fuel(
     if log.mileage and log.mileage > vehicle.mileage:
         vehicle.mileage = log.mileage
     db.commit()
+    flash(request, "flash.fuel.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{log_id}/delete")
 def delete_fuel(
+    request: Request,
     vehicle_id: int,
     log_id: int,
     db: Session = Depends(get_db),
@@ -163,4 +169,5 @@ def delete_fuel(
     log = _get_owned_log(db, vehicle, log_id)
     db.delete(log)
     db.commit()
+    flash(request, "flash.fuel.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

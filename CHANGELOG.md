@@ -5,6 +5,26 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Confirmation messages (toasts)**: actions that finish with a redirect —
+  creating, editing and deleting vehicles, service records and intervals,
+  refuellings, expenses, tyre sets, attachments and users — now confirm
+  themselves with a short message on the next page instead of returning
+  silently. Messages are stored as translation keys, so they follow the
+  reader's language even if it changes between the action and the page, and
+  they disappear on their own (errors wait to be dismissed).
+- **Attention badge in the navigation**: the Dashboard link carries a count of
+  everything overdue or due soon — service intervals and periodic inspections —
+  so the same items the dashboard lists are visible from every page.
+- **Empty states**: the dashboard of a user without vehicles, an empty vehicle
+  list, a vehicle's still-empty sections, the cost report without data and a
+  search without results now explain what belongs there and link to the next
+  step, instead of showing a bare dash.
+
+### Changed
+- The per-request user lookup loads service intervals along with the user and
+  their vehicles (one extra batched query) to compute the attention badge.
+
 ## [0.15.1] - 2026-08-25
 
 Maintenance release: documentation and test coverage only — no functional or

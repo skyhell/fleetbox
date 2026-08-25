@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.flash import flash
 from app.models import FuelType, UsageUnit, User, Vehicle
 from app.routers.attachments import save_attachment
 from app.security import require_user
@@ -113,6 +114,7 @@ async def create_vehicle(
     if photo is not None:
         await save_attachment(db, vehicle, photo, as_title_image=True)
     db.commit()
+    flash(request, "flash.vehicle.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -235,11 +237,13 @@ async def update_vehicle(
         # Replaces the current vehicle photo, if any.
         await save_attachment(db, vehicle, photo, as_title_image=True)
     db.commit()
+    flash(request, "flash.vehicle.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{vehicle_id}/delete")
 def delete_vehicle(
+    request: Request,
     vehicle_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
@@ -247,4 +251,5 @@ def delete_vehicle(
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
     db.delete(vehicle)
     db.commit()
+    flash(request, "flash.vehicle.deleted")
     return RedirectResponse("/vehicles", status_code=303)

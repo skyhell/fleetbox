@@ -10,9 +10,17 @@
 </form>
 
 {% if not q %}
-  <p class="muted">{{ t('search.prompt') }}</p>
+  <div class="empty-inline">
+    <span class="empty-icon" aria-hidden="true">🔍</span>
+    <p>{{ t('search.prompt') }}</p>
+    <p class="small">{{ t('search.empty.hint') }}</p>
+  </div>
 {% elif not vehicles and not records %}
-  <p class="muted">{{ t('search.no_results', q=q) }}</p>
+  <div class="empty-inline">
+    <span class="empty-icon" aria-hidden="true">🔍</span>
+    <p>{{ t('search.no_results', q=q) }}</p>
+    <p class="small">{{ t('search.empty.hint') }}</p>
+  </div>
 {% else %}
 
 {% if vehicles %}

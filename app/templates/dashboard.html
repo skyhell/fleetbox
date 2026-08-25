@@ -3,6 +3,19 @@
 {% block content %}
 <h1>{{ t('dashboard.title') }}</h1>
 
+{% if not vehicles %}
+{# First run: a dashboard full of empty cards says nothing — point somewhere. #}
+<div class="card empty">
+  <span class="empty-icon" aria-hidden="true">🚗</span>
+  <h2>{{ t('dashboard.empty.title') }}</h2>
+  <p class="muted">{{ t('dashboard.empty.body') }}</p>
+  <div class="empty-actions">
+    <a class="btn btn-primary" href="/vehicles/new">+ {{ t('vehicle.add') }}</a>
+    <a class="btn" href="/backup">{{ t('backup.import.title') }}</a>
+  </div>
+</div>
+{% else %}
+
 <section class="grid">
   <div class="card stat">
     <span class="stat-value">{{ vehicles|length }}</span>
@@ -14,7 +27,6 @@
   </div>
 </section>
 
-{% if vehicles %}
 <section class="card">
   <h2>{{ t('dashboard.quick.title') }}</h2>
   <ul class="quick-list">
@@ -29,7 +41,6 @@
     {% endfor %}
   </ul>
 </section>
-{% endif %}
 
 <section class="card">
   <h2>{{ t('dashboard.due_services') }}</h2>
@@ -124,7 +135,11 @@
       </tbody>
     </table>
   {% else %}
-    <p class="muted">{{ t('common.none') }}</p>
+    <div class="empty-inline">
+      <span class="empty-icon" aria-hidden="true">⛽</span>
+      <p>{{ t('dashboard.empty.fuel') }}</p>
+    </div>
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

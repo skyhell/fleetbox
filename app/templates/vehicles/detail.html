@@ -79,7 +79,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">📅</span><p>{{ t('vehicle.empty.intervals') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('service.add_interval') }}</summary>
@@ -147,7 +147,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">🔧</span><p>{{ t('vehicle.empty.records') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('service.add_record') }}</summary>
@@ -210,7 +210,7 @@
     </li>
     {% endfor %}
   </ul>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">📎</span><p>{{ t('vehicle.empty.attachments') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('attachment.add') }}</summary>
@@ -291,7 +291,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">🛞</span><p>{{ t('vehicle.empty.tires') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('tire.add') }}</summary>
@@ -366,7 +366,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">⛽</span><p>{{ t('vehicle.empty.fuel') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('fuel.add') }}</summary>
@@ -433,7 +433,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<p class="muted">{{ t('common.none') }}</p>{% endif %}
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">💶</span><p>{{ t('vehicle.empty.expenses') }}</p></div>{% endif %}
 
   <details class="adder">
     <summary class="btn btn-sm">+ {{ t('expense.add') }}</summary>

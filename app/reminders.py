@@ -33,6 +33,31 @@ class Reminder:
     detail: str
 
 
+ATTENTION_STATUSES = ("due_soon", "overdue")
+
+
+def count_attention_items(vehicles: list[Vehicle], today: date | None = None) -> int:
+    """How many things across these vehicles need attention right now.
+
+    Counts service intervals and periodic inspections that are due soon or
+    overdue — the same set the dashboard lists — so the navigation badge and
+    the dashboard can never disagree. Seasonal tyre hints are informational and
+    deliberately excluded.
+
+    Takes already-loaded vehicles (no queries of its own) because the caller is
+    the per-request middleware.
+    """
+    today = today or date.today()
+    count = 0
+    for vehicle in vehicles:
+        for interval in vehicle.service_intervals:
+            if interval.status(vehicle.mileage) in ATTENTION_STATUSES:
+                count += 1
+        if vehicle.inspection_status(today) in ATTENTION_STATUSES:
+            count += 1
+    return count
+
+
 def due_tire_switch(
     vehicle: Vehicle,
     today: date,

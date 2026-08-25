@@ -9,7 +9,14 @@
 </div>
 
 {% if not report.has_data %}
-<section class="card"><p class="muted">{{ t('report.costs.no_data') }}</p></section>
+<div class="card empty">
+  <span class="empty-icon" aria-hidden="true">📊</span>
+  <h2>{{ t('report.costs.no_data') }}</h2>
+  <p class="muted">{{ t('report.costs.empty.body') }}</p>
+  <div class="empty-actions">
+    <a class="btn btn-primary" href="/vehicles">{{ t('nav.vehicles') }}</a>
+  </div>
+</div>
 {% else %}
 
 <section class="grid">

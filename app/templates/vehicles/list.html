@@ -23,6 +23,13 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="card empty"><p class="muted">{{ t('vehicle.list.empty') }}</p></div>
+<div class="card empty">
+  <span class="empty-icon" aria-hidden="true">🚗</span>
+  <h2>{{ t('vehicle.empty.title') }}</h2>
+  <p class="muted">{{ t('vehicle.empty.body') }}</p>
+  <div class="empty-actions">
+    <a class="btn btn-primary" href="/vehicles/new">+ {{ t('vehicle.add') }}</a>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

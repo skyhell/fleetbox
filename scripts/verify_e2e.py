@@ -58,6 +58,7 @@ def _seed(db_path: str) -> int:
         Expense,
         ExpenseCategory,
         FuelLog,
+        ServiceInterval,
         ServiceRecord,
         ServiceType,
         User,
@@ -96,6 +97,13 @@ def _seed(db_path: str) -> int:
                            mileage=11000, quantity=40, total_cost=72, full_tank=True))
             db.add(Expense(vehicle_id=vehicle.id, category=ExpenseCategory.insurance,
                            title="Insurance", amount=600, spent_on=date(yr, 3, 1)))
+        # Next oil change was due at 60.000 km — overdue at 95.000, so the
+        # navigation badge has exactly one item to count.
+        db.add(ServiceInterval(
+            vehicle_id=vehicle.id, name="Oil change",
+            service_type=ServiceType.oil_change,
+            interval_km=15000, last_service_mileage=45000,
+        ))
         db.commit()
         return int(vehicle.id)
     finally:
@@ -168,6 +176,35 @@ def _run_browser(base: str, vehicle_id: int) -> None:
             topbar = page.eval_on_selector(".topbar", "el => getComputedStyle(el).display")
             check("app chrome hidden in print media", topbar == "none")
             page.emulate_media(media="screen")
+
+            # --- U2: attention badge counts the overdue interval ---
+            page.goto(f"{base}/dashboard")
+            page.wait_for_timeout(300)
+            badge = page.query_selector(".mainnav .navbadge")
+            check("attention badge visible", badge is not None)
+            if badge:
+                check("attention badge counts the overdue interval",
+                      badge.inner_text().strip() == "1")
+
+            # --- U1: a toast confirms an action and fades on its own ---
+            page.goto(f"{base}/vehicles/{vehicle_id}")
+            page.wait_for_timeout(300)
+            page.eval_on_selector("details.adder", "el => el.open = true")
+            page.fill('form[action$="/intervals"] input[name="name"]', "Brake fluid")
+            page.click('form[action$="/intervals"] button[type="submit"]')
+            page.wait_for_timeout(600)
+            check("toast shown after an action", page.query_selector(".toast") is not None)
+            page.wait_for_timeout(6000)  # VISIBLE_MS (5s) + the fade-out
+            check("toast disappears on its own", page.query_selector(".toast") is None)
+            page.reload()
+            page.wait_for_timeout(400)
+            check("toast is one-shot", page.query_selector(".toast") is None)
+
+            # --- U3: empty state instead of a bare dash ---
+            page.goto(f"{base}/search?q=zzzzzzzz")
+            page.wait_for_timeout(300)
+            check("search empty state rendered",
+                  page.query_selector(".empty-inline") is not None)
 
             # --- A1: sign out everywhere else ---
             page.goto(f"{base}/account/security")

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.flash import flash
 from app.models import TireSeason, TireSet, User, Vehicle
 from app.security import require_user
 
@@ -41,6 +42,7 @@ def _float(v: str | None) -> float | None:
 
 @router.post("")
 def add_tire_set(
+    request: Request,
     vehicle_id: int,
     season: str = Form(...),
     label: str = Form(""),
@@ -66,11 +68,13 @@ def add_tire_set(
         _mount(vehicle, tire)
     db.add(tire)
     db.commit()
+    flash(request, "flash.tire.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{tire_id}/mount")
 def mount_tire_set(
+    request: Request,
     vehicle_id: int,
     tire_id: int,
     db: Session = Depends(get_db),
@@ -80,11 +84,13 @@ def mount_tire_set(
     tire = _get_tire(db, vehicle, tire_id)
     _mount(vehicle, tire)
     db.commit()
+    flash(request, "flash.tire.mounted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{tire_id}/unmount")
 def unmount_tire_set(
+    request: Request,
     vehicle_id: int,
     tire_id: int,
     db: Session = Depends(get_db),
@@ -94,11 +100,13 @@ def unmount_tire_set(
     tire = _get_tire(db, vehicle, tire_id)
     tire.is_mounted = False
     db.commit()
+    flash(request, "flash.tire.unmounted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/{tire_id}/delete")
 def delete_tire_set(
+    request: Request,
     vehicle_id: int,
     tire_id: int,
     db: Session = Depends(get_db),
@@ -108,6 +116,7 @@ def delete_tire_set(
     tire = _get_tire(db, vehicle, tire_id)
     db.delete(tire)
     db.commit()
+    flash(request, "flash.tire.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 

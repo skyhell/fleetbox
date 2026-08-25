@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.flash import flash
 from app.models import ServiceInterval, ServiceRecord, ServiceType, User, Vehicle
 from app.security import require_user
 from app.templating import render
@@ -76,6 +77,7 @@ def new_record_form(
 
 @router.post("/records")
 def add_record(
+    request: Request,
     vehicle_id: int,
     service_type: str = Form(...),
     title: str = Form(...),
@@ -103,6 +105,7 @@ def add_record(
     if record.mileage and record.mileage > vehicle.mileage:
         vehicle.mileage = record.mileage
     db.commit()
+    flash(request, "flash.record.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -128,6 +131,7 @@ def edit_record_form(
 
 @router.post("/records/{record_id}/edit")
 def update_record(
+    request: Request,
     vehicle_id: int,
     record_id: int,
     service_type: str = Form(...),
@@ -152,11 +156,13 @@ def update_record(
     if record.mileage and record.mileage > vehicle.mileage:
         vehicle.mileage = record.mileage
     db.commit()
+    flash(request, "flash.record.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/records/{record_id}/delete")
 def delete_record(
+    request: Request,
     vehicle_id: int,
     record_id: int,
     db: Session = Depends(get_db),
@@ -166,6 +172,7 @@ def delete_record(
     record = _get_owned_record(db, vehicle, record_id)
     db.delete(record)
     db.commit()
+    flash(request, "flash.record.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -174,6 +181,7 @@ def delete_record(
 
 @router.post("/intervals")
 def add_interval(
+    request: Request,
     vehicle_id: int,
     name: str = Form(...),
     service_type: str = Form(...),
@@ -198,11 +206,13 @@ def add_interval(
     )
     db.add(interval)
     db.commit()
+    flash(request, "flash.interval.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
 @router.post("/intervals/{interval_id}/delete")
 def delete_interval(
+    request: Request,
     vehicle_id: int,
     interval_id: int,
     db: Session = Depends(get_db),
@@ -214,4 +224,5 @@ def delete_interval(
         raise HTTPException(status_code=404, detail="Interval not found")
     db.delete(interval)
     db.commit()
+    flash(request, "flash.interval.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import secrets
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.config import ALLOWED_UPLOAD_TYPES, settings
 from app.database import get_db
+from app.flash import flash
 from app.models import Attachment, ServiceRecord, User, Vehicle
 from app.security import require_user
 
@@ -125,6 +126,7 @@ async def save_attachment(
 
 @router.post("/attachments")
 async def upload_attachment(
+    request: Request,
     vehicle_id: int,
     file: UploadFile = File(...),
     title: str = Form(""),
@@ -147,6 +149,7 @@ async def upload_attachment(
         db, vehicle, file, title=title, service_record_id=linked_record_id
     )
     db.commit()
+    flash(request, "flash.attachment.uploaded")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
@@ -183,6 +186,7 @@ def download_attachment(
 
 @router.post("/attachments/{attachment_id}/delete")
 def delete_attachment(
+    request: Request,
     vehicle_id: int,
     attachment_id: int,
     db: Session = Depends(get_db),
@@ -196,4 +200,5 @@ def delete_attachment(
     (settings.upload_path / attachment.stored_name).unlink(missing_ok=True)
     db.delete(attachment)
     db.commit()
+    flash(request, "flash.attachment.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

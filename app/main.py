@@ -15,7 +15,8 @@ from app import __version__, database
 from app.config import settings
 from app.csrf import csrf_protect
 from app.database import init_db
-from app.models import User
+from app.models import User, Vehicle
+from app.reminders import count_attention_items
 from app.routers import (
     account,
     admin,
@@ -107,6 +108,7 @@ async def attach_user(request: Request, call_next):
     """Attach the current user (if any) to ``request.state`` for templates."""
     request.state.user = None
     request.state.nav_vehicles = []
+    request.state.due_count = 0
 
     path = request.url.path
     if path.startswith("/static/") or path in _NO_USER_PATHS:
@@ -120,10 +122,11 @@ async def attach_user(request: Request, call_next):
         db = database.SessionLocal()
         try:
             # One round-trip for the user and their vehicles (for the topbar
-            # switcher), instead of two separate queries.
+            # switcher), plus one batched follow-up for the service intervals
+            # behind the "needs attention" badge.
             user = (
                 db.query(User)
-                .options(joinedload(User.vehicles))
+                .options(joinedload(User.vehicles).selectinload(Vehicle.service_intervals))
                 .filter(User.id == user_id)
                 .first()
             )
@@ -137,6 +140,7 @@ async def attach_user(request: Request, call_next):
                 request.state.nav_vehicles = sorted(
                     user.vehicles, key=lambda v: v.name
                 )
+                request.state.due_count = count_attention_items(user.vehicles)
         finally:
             db.close()
     return await call_next(request)

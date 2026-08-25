@@ -25,7 +25,7 @@
   <a class="brand" href="/dashboard">🚗 {{ t('app.name') }}</a>
   <nav class="mainnav">
     {% if user %}
-      <a href="/dashboard">{{ t('nav.dashboard') }}</a>
+      <a href="/dashboard">{{ t('nav.dashboard') }}{% if due_count %}<span class="navbadge" title="{{ t('nav.due_badge', count=due_count) }}">{{ due_count }}</span>{% endif %}</a>
       <a href="/vehicles">{{ t('nav.vehicles') }}</a>
       {% if nav_vehicles|length > 1 %}
       <details class="vehnav">
@@ -76,6 +76,18 @@
   </div>
 </header>
 
+{% if flashes %}
+{# One-shot messages from the previous request; auto-dismissed by app.js. #}
+<div class="toasts" role="status" aria-live="polite">
+  {% for f in flashes %}
+  <div class="toast toast-{{ f.level }}">
+    <span>{{ t(f.key, **f.params) }}</span>
+    <button class="toast-close" type="button" aria-label="{{ t('common.close') }}">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <main class="container">
   {% block content %}{% endblock %}
 </main>
@@ -91,6 +103,8 @@
   <a href="/dashboard">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
     <span>{{ t('nav.dashboard') }}</span>
+    {% if due_count %}<span class="navbadge navbadge-dot"
+      title="{{ t('nav.due_badge', count=due_count) }}">{{ due_count }}</span>{% endif %}
   </a>
   <a href="/vehicles">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16"/><rect x="4" y="16" width="16" height="4" rx="1"/><circle cx="7.5" cy="20" r="1"/><circle cx="16.5" cy="20" r="1"/></svg>

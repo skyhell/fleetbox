@@ -270,6 +270,43 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
+// --- Toasts ------------------------------------------------------------------
+// Flash messages are rendered server-side (so they survive without JS); this
+// only dismisses them — automatically for confirmations, on click for all.
+(function () {
+  var VISIBLE_MS = 5000;
+
+  function dismiss(toast) {
+    if (toast.dataset.dismissed) return;
+    toast.dataset.dismissed = "1";
+    toast.classList.add("is-hiding");
+    window.setTimeout(function () {
+      var box = toast.parentNode;
+      toast.remove();
+      if (box && !box.children.length) box.remove();
+    }, 300);
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    var toasts = document.querySelectorAll(".toast");
+    Array.prototype.forEach.call(toasts, function (toast, index) {
+      var close = toast.querySelector(".toast-close");
+      if (close) {
+        close.addEventListener("click", function () {
+          dismiss(toast);
+        });
+      }
+      // Errors wait for the reader; confirmations time out, staggered so a
+      // stack does not vanish all at once.
+      if (!toast.classList.contains("toast-error")) {
+        window.setTimeout(function () {
+          dismiss(toast);
+        }, VISIBLE_MS + index * 400);
+      }
+    });
+  });
+})();
+
 // Register the service worker so FleetBox is installable and has an offline
 // fallback. Same-origin, so it is allowed under our strict CSP.
 if ("serviceWorker" in navigator) {
