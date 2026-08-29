@@ -5,6 +5,12 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-29
+
+Due dates leave the app and land in your calendar, the cost report finally
+says which vehicle the money went to, and the yearly distance behind it adds
+up instead of losing every trip across New Year.
+
 ### Added
 - **Calendar subscription (ICS feed)**: subscribe to your due dates in Google,
   Apple or Outlook Calendar. Switch the feed on under **Account security** and
