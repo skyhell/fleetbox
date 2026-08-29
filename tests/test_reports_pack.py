@@ -78,16 +78,19 @@ def test_cost_report_aggregates_by_year(db_session):
     years = {y.year: y for y in report.years}
     assert set(years) == {2025, 2026}
     assert years[2025].fuel_cost == 120.0            # 50 + 70
-    assert years[2025].distance == 5000.0            # 6000 - 1000
-    assert years[2025].cost_per_distance == round(120.0 / 5000.0, 3)
+    # Distance is interpolated along the reading timeline: 1000 -> 6000 falls
+    # entirely into 2025, and the 6000 -> 8000 step (273 days, 214 of them in
+    # 2025) is split across the New Year.
+    assert years[2025].distance == round(5000.0 + 2000.0 * 214 / 273, 2)
+    assert years[2025].cost_per_distance == round(120.0 / years[2025].distance, 3)
     assert years[2026].service_cost == 120.0
     assert years[2026].other_cost == 500.0
-    assert years[2026].distance == 0.0               # only one reading in 2026
-    assert years[2026].cost_per_distance is None
+    assert years[2026].distance == round(2000.0 * 59 / 273, 2)
     # Newest year first, grand totals across years.
     assert report.years[0].year == 2026
     assert report.total_cost == round(120.0 + 120.0 + 500.0, 2)
-    assert report.total_distance == 5000.0
+    # Nothing is lost or invented: the yearly shares add up to the full spread.
+    assert report.total_distance == 7000.0
 
 
 def test_cost_report_ignores_hour_based_distance(db_session):

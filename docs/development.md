@@ -119,14 +119,15 @@ that exhausts the login limit would lock out unrelated tests that log in later.
 | Area | Files | What is asserted |
 | --- | --- | --- |
 | Security | `test_app`, `test_security_pack`, `test_security_pack2`, `test_security_pack3`, `test_admin_edit`, `test_webauthn` | Security headers, CSRF rejection, registration rules, 2FA enrollment + TOTP replay, recovery codes, per-IP rate limits and per-account lockout, forgot/reset password, upload magic-byte sniffing, session invalidation after a password change, audit log, admin-2FA policy, admin user editing incl. the self-demotion guard, passkey enrollment/login incl. single-use challenges, sign-count regression and the CSRF header |
-| Domain logic | `test_stats`, `test_reminders`, `test_reports_pack`, `test_models` | Full-to-full and partial-fill consumption, electric and hour-based vehicles, yearly cost aggregation, service-interval status, §57a inspection thresholds, seasonal tyre logic, reminder email rendering |
+| Domain logic | `test_stats`, `test_reminders`, `test_reports_pack`, `test_calendar_pack`, `test_models` | Full-to-full and partial-fill consumption, electric and hour-based vehicles, yearly cost aggregation, distance interpolated across the New Year, service-interval status, §57a inspection thresholds, seasonal tyre logic, reminder email rendering, iCalendar document contents |
 | CRUD & flows | `test_vehicle_photo`, `test_service`, `test_fuel`, `test_fuel_types`, `test_expenses`, `test_tires`, `test_attachments`, `test_quick_add`, `test_search`, `test_readings`, `test_usability` | Create/edit/delete per entity, ownership enforcement on every vehicle-scoped route, upload validation, decimal readings, repeat-entry prefill |
-| Backup | `test_backup` | CSV and ZIP export/import round-trips, no duplicate vehicles on re-import, invalid archives rejected |
+| Backup & exports | `test_backup`, `test_calendar_pack` | CSV and ZIP export/import round-trips, no duplicate vehicles on re-import, invalid archives rejected, cost-report CSV incl. its ownership check |
 | Presentation & infra | `test_pwa`, `test_theme`, `test_skin`, `test_i18n`, `test_migrations`, `test_usability_pack2` | Manifest and service worker, theme/skin switching, translation lookup and locale resolution, additive auto-migration, flash messages (one-shot, locale-following, capped), the attention badge and the empty states |
 
 Ownership is the cross-cutting concern. Each vehicle-scoped area — the vehicle
 routes themselves (detail, edit, delete, stats, report) plus fuel, service
-records, service intervals, expenses, attachments, tyres and quick-add — has a
+records, service intervals, expenses, attachments, tyres, quick-add and the
+cost-report CSV (`/reports/costs.csv?vehicle_id=`) — has a
 test that registers a second user and asserts they get a **404, not a 403**: the
 app does not confirm that a foreign id exists. Add one for every new
 vehicle-scoped route. Search is the
@@ -139,8 +140,9 @@ from the results.
 The unit suite never runs JavaScript, so a small Playwright script exercises the
 JS-driven behaviour (table pagination, the print button, the report pages, the
 toasts — that one shows up, fades on its own and does not come back on reload —
-and the passkey flow, enrolled and replayed for real through Chromium's virtual
-authenticator) against a live server. It seeds a throwaway database, starts uvicorn and drives
+the passkey flow, enrolled and replayed for real through Chromium's virtual
+authenticator, the cost-report drill-down with its CSV download, and the
+calendar feed fetched from its subscription URL) against a live server. It seeds a throwaway database, starts uvicorn and drives
 Chromium, then tears everything down:
 
 ```bash

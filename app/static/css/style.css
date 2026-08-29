@@ -793,3 +793,25 @@ th.sortable.sort-desc::after { content: "↓"; opacity: 1; }
 .passkey-or { text-align: center; margin: 1.2rem 0 0.6rem; font-size: 0.85rem; }
 [data-passkey-login-box] { display: flex; flex-direction: column; align-items: stretch; }
 [data-passkey-add] { margin-top: 0.6rem; }
+
+/* --- Cost-report drill-down (native <details>, no JS) --------------------- */
+.drill { border-top: 1px solid var(--border); }
+.drill:last-of-type { border-bottom: 1px solid var(--border); }
+.drill > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.2rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.drill > summary::-webkit-details-marker { color: var(--muted); }
+.drill-figures { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 500; }
+.drill[open] > summary { border-bottom: 1px solid var(--border); }
+.drill .table { margin-top: 0.6rem; }
+.drill-actions,
+.btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.drill-actions { margin: 0.8rem 0 1rem; }
+.btn-row { margin-top: 0.8rem; }
+.btn-row form { margin: 0; }

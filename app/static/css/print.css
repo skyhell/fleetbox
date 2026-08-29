@@ -53,4 +53,20 @@
   .chart {
     max-width: 100%;
   }
+
+  /* Drill-downs print expanded where the browser lets CSS reveal them; the
+   * marker triangle is pointless on paper either way. Browsers without
+   * ::details-content simply print what is open on screen. */
+  details.drill > summary {
+    list-style: none;
+  }
+
+  details.drill > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  details.drill::details-content {
+    content-visibility: visible;
+    block-size: auto;
+  }
 }

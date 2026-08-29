@@ -32,6 +32,8 @@ Account with login credentials. `is_admin` users can manage other users.
 | `locked_until`   | datetime/null | account locked until this time after too many failures |
 | `reset_token_hash` | str/null | SHA-256 hash of the current password-reset token |
 | `reset_token_expires` | datetime/null | expiry of the password-reset token |
+| `calendar_token_hash` | str/null | SHA-256 hash of the ICS calendar-feed token (how the feed URL is looked up) |
+| `calendar_token_enc` | text/null | the same token encrypted at rest, so the subscription URL can be shown again |
 | `created_at`     | datetime | account creation time                   |
 
 ## Vehicle

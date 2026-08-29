@@ -15,6 +15,7 @@ deployment.
 | **TOTP 2FA** | Optional per user; the seed is encrypted at rest, codes are single-use (replay-protected), with one-time recovery codes. |
 | **Passkeys (WebAuthn)** | Optional passwordless login. Only the public key is stored; user verification is required and the signature counter is checked for regressions. |
 | **Session invalidation** | Changing a password ends all other sessions; users can also "sign out everywhere else". |
+| **Calendar feed token** | The public ICS feed is reachable only through an unguessable per-user token, stored hashed, revocable at any time, and every value it renders is escaped as iCalendar text. |
 | **Audit log** | Security-relevant events are recorded and visible to administrators. |
 | **Upload validation** | Uploaded files are checked by content (magic bytes) and served sandboxed. |
 | **Security headers** | CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP, CORP, and HSTS over HTTPS. |
@@ -213,12 +214,43 @@ an IP is not a valid relying-party id; see `FLEETBOX_WEBAUTHN_RP_ID` in
 - **Logout is POST-only** with a CSRF token, so link prefetching or an old
   bookmark cannot end a session.
 
+## Calendar subscription (ICS feed)
+
+The calendar feed at `/calendar/<token>.ics` is the only unauthenticated route
+that serves user data, because calendar clients cannot log in. It is protected
+the way every calendar subscription is — by an unguessable bearer token in the
+URL:
+
+- The token is 32 random bytes (`secrets.token_urlsafe(32)`), created only when
+  the user switches the feed on under **Account security**.
+- Stored **twice**: as a SHA-256 hash, which is what the URL is looked up by,
+  and encrypted at rest (Fernet, keyed from `FLEETBOX_SECRET_KEY`) so the page
+  can show the subscription URL again later.
+- The feed is **read-only** and contains nothing but vehicle names and due
+  dates. Unknown, regenerated and disabled tokens all get the same `404`, so it
+  cannot be used to probe which tokens exist, and responses are `no-store` to
+  keep the URL out of shared caches.
+- **Revoking**: "Regenerate address" replaces the token — every existing
+  subscription stops working immediately — and "Disable subscription" removes
+  it entirely. Both are recorded in the audit log.
+- **Where the token appears**: it is part of the URL, so it is written to the
+  access log of any reverse proxy in front of FleetBox and stored in the
+  calendar client's configuration. The account page that shows it is served
+  `no-store`, and it reads its on/off state off the stored hash, so the feed
+  can still be revoked after `FLEETBOX_SECRET_KEY` was rotated and the URL
+  itself can no longer be decrypted.
+- Everything the feed writes is escaped as iCalendar TEXT, line breaks and
+  control characters included, so a vehicle or interval name cannot end a
+  content line early and add calendar entries of its own.
+
+Treat the URL like a password: anyone holding it can read the due dates.
+
 ## Audit log
 
 Security-relevant events are recorded to an append-only audit trail and shown to
 administrators under **Users → Audit log** (`/admin/audit`, newest first): logins
 and failed attempts, logouts, registrations, password and 2FA changes, admin
-user management, and "sign out everywhere". Each entry keeps a snapshot of the
+user management, "sign out everywhere", and calendar-feed changes. Each entry keeps a snapshot of the
 acting/attempted username, the client IP and a UTC timestamp, so it stays
 meaningful even after the user is renamed or deleted.
 

@@ -27,7 +27,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -47,8 +47,12 @@ def _free_port() -> int:
         return int(s.getsockname()[1])
 
 
-def _seed(db_path: str) -> int:
-    """Create the schema and a user + vehicle + 25 service records; return its id."""
+INSPECTION_IN_DAYS = 120  # far enough out that it never trips the "due soon" badge
+
+
+def _seed(db_path: str) -> tuple[int, date]:
+    """Seed the throwaway database; return the main vehicle id and the
+    inspection date of the second one (which the calendar check looks for)."""
     os.environ["FLEETBOX_SECRET_KEY"] = SECRET
     os.environ["FLEETBOX_DATABASE_URL"] = f"sqlite:///{db_path}"
     sys.path.insert(0, str(REPO))
@@ -61,6 +65,8 @@ def _seed(db_path: str) -> int:
         ServiceInterval,
         ServiceRecord,
         ServiceType,
+        TireSeason,
+        TireSet,
         User,
         Vehicle,
     )
@@ -104,8 +110,22 @@ def _seed(db_path: str) -> int:
             service_type=ServiceType.oil_change,
             interval_km=15000, last_service_mileage=45000,
         ))
+        inspection_due = date.today() + timedelta(days=INSPECTION_IN_DAYS)
+        # A second vehicle so the cost report has more than one drill-down, with
+        # an inspection date and a winter tyre set feeding the calendar feed.
+        second = Vehicle(
+            owner_id=user.id, name="Caddy", make="VW", model="Caddy",
+            year=2015, mileage=140000, inspection_due=inspection_due,
+        )
+        db.add(second)
+        db.flush()
+        db.add(TireSet(vehicle_id=second.id, season=TireSeason.winter, label="Winter"))
+        db.add(FuelLog(vehicle_id=second.id, filled_on=date(2025, 2, 1),
+                       mileage=130000, quantity=45, total_cost=80, full_tank=True))
+        db.add(FuelLog(vehicle_id=second.id, filled_on=date(2025, 9, 1),
+                       mileage=140000, quantity=45, total_cost=85, full_tank=True))
         db.commit()
-        return int(vehicle.id)
+        return int(vehicle.id), inspection_due
     finally:
         db.close()
 
@@ -130,7 +150,7 @@ def _service_rows_visible(page) -> int:
     )
 
 
-def _run_browser(base: str, vehicle_id: int) -> None:
+def _run_browser(base: str, vehicle_id: int, inspection_due: date) -> None:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
@@ -161,11 +181,73 @@ def _run_browser(base: str, vehicle_id: int) -> None:
             page.wait_for_timeout(200)
             check("filter finds a row from a collapsed page", _service_rows_visible(page) == 1)
 
+            # --- 0.17: the reading label follows the counter-unit select ---
+            page.goto(f"{base}/vehicles/new")
+            page.wait_for_timeout(300)
+            labels = page.eval_on_selector(
+                "[data-reading-label]",
+                "el => ({km: el.getAttribute('data-label-km'),"
+                " h: el.getAttribute('data-label-h'),"
+                " shown: el.querySelector('[data-reading-text]').textContent})",
+            )
+            page.select_option('select[name="usage_unit"]', "h")
+            page.wait_for_timeout(150)
+            switched = page.eval_on_selector(
+                "[data-reading-text]", "el => el.textContent"
+            )
+            page.select_option('select[name="usage_unit"]', "km")
+            page.wait_for_timeout(150)
+            back = page.eval_on_selector("[data-reading-text]", "el => el.textContent")
+            check(
+                "reading label follows the counter unit",
+                labels["shown"] == labels["km"]
+                and switched == labels["h"]
+                and back == labels["km"],
+            )
+
             # --- B1: cost report ---
             page.goto(f"{base}/reports")
             page.wait_for_timeout(300)
             html = page.content()
             check("cost report renders", "Cost report" in html or "Kostenbericht" in html)
+
+            # --- 0.17: per-vehicle drill-down + CSV export ---
+            drill = page.query_selector_all("details.drill")
+            check("cost report has a drill-down per vehicle", len(drill) == 2)
+            if drill:
+                page.eval_on_selector("details.drill", "el => el.open = true")
+                page.wait_for_timeout(150)
+                rows = page.eval_on_selector(
+                    "details.drill", "el => el.querySelectorAll('tbody tr').length"
+                )
+                check("drill-down reveals its yearly rows", rows > 0)
+            csv = page.request.get(f"{base}/reports/costs.csv")
+            body = csv.text()
+            check(
+                "cost CSV downloads",
+                csv.status == 200
+                and "text/csv" in csv.headers.get("content-type", "")
+                and body.startswith("vehicle,year,fuel_cost")
+                and "Caddy" in body,
+            )
+
+            # --- 0.17: calendar feed ---
+            page.goto(f"{base}/account/security")
+            page.wait_for_timeout(300)
+            page.click('form[action="/account/calendar/enable"] button[type="submit"]')
+            page.wait_for_timeout(400)
+            feed_url = page.eval_on_selector("#calendar-url", "el => el.value")
+            check("calendar subscription URL shown", "/calendar/" in (feed_url or ""))
+            if feed_url:
+                ics = page.request.get(feed_url)
+                text = ics.text()
+                check(
+                    "calendar feed serves the due dates",
+                    ics.status == 200
+                    and text.startswith("BEGIN:VCALENDAR")
+                    and f"DTSTART;VALUE=DATE:{inspection_due:%Y%m%d}" in text
+                    and "RRULE:FREQ=YEARLY" in text,
+                )
 
             # --- B3: vehicle record + print stylesheet ---
             page.goto(f"{base}/vehicles/{vehicle_id}/report")
@@ -262,7 +344,7 @@ def main() -> int:
     # address is not one — the passkey checks below would fail on 127.0.0.1.
     base = f"http://localhost:{port}"
 
-    vehicle_id = _seed(db_path)
+    vehicle_id, inspection_due = _seed(db_path)
 
     env = dict(os.environ)
     env["FLEETBOX_SECRET_KEY"] = SECRET
@@ -275,7 +357,7 @@ def main() -> int:
     )
     try:
         _wait_until_up(base)
-        _run_browser(base, vehicle_id)
+        _run_browser(base, vehicle_id, inspection_due)
     finally:
         server.terminate()
         try:

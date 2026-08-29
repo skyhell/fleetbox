@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models import User
 
@@ -113,6 +114,41 @@ def consume_reset_token(db: Session, token: str) -> User | None:
 def clear_reset_token(user: User) -> None:
     user.reset_token_hash = None
     user.reset_token_expires = None
+
+
+def issue_calendar_token(user: User) -> str:
+    """Issue (or rotate) the user's calendar-feed token; returns the raw token.
+
+    Stored twice: as a hash for the URL lookup, and encrypted so the account
+    page can show the subscription URL again later. Rotating invalidates the
+    previous subscription, which is how a leaked URL is revoked.
+    """
+    token = secrets.token_urlsafe(32)
+    user.calendar_token_hash = hash_token(token)
+    user.calendar_token_enc = encrypt(token)
+    return token
+
+
+def calendar_token_for(user: User) -> str | None:
+    """The user's current calendar token, or ``None`` if the feed is off."""
+    return decrypt(user.calendar_token_enc)
+
+
+def clear_calendar_token(user: User) -> None:
+    user.calendar_token_hash = None
+    user.calendar_token_enc = None
+
+
+def user_by_calendar_token(db: Session, token: str) -> User | None:
+    """Resolve a calendar-feed token to its (active) user, else ``None``."""
+    if not token:
+        return None
+    user = (
+        db.query(User).filter(User.calendar_token_hash == hash_token(token)).first()
+    )
+    if user is None or not user.is_active:
+        return None
+    return user
 
 
 def establish_session(request: Request, user: User) -> None:

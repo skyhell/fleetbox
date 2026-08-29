@@ -13,7 +13,14 @@ from app.config import settings
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models import User
-from app.security import hash_password, require_user, verify_password
+from app.security import (
+    calendar_token_for,
+    clear_calendar_token,
+    hash_password,
+    issue_calendar_token,
+    require_user,
+    verify_password,
+)
 from app.templating import render
 from app.totp import (
     generate_recovery_codes,
@@ -38,7 +45,34 @@ def _security(request: Request, user: User, **context):
     """
     request.state.user = user
     context.setdefault("min_password_length", settings.min_password_length)
-    return render(request, "account/security.html", **context)
+    # Whether the feed is on is the hash, not the readable URL: the two differ
+    # once the secret key has been rotated, and the page still has to offer the
+    # switch that revokes the token it can no longer show.
+    context.setdefault("calendar_enabled", user.calendar_token_hash is not None)
+    context.setdefault("calendar_url", _calendar_url(request, user))
+    response = render(request, "account/security.html", **context)
+    # This page shows the calendar subscription URL, which is a credential.
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+def _calendar_url(request: Request, user: User) -> str | None:
+    """The user's ICS subscription URL, or ``None`` if it cannot be shown.
+
+    That is either because the feed is off, or because the stored token no
+    longer decrypts after a secret-key rotation - the subscription itself keeps
+    working in that case, so the page reads its on/off state off the hash and
+    only the URL goes missing.
+
+    Prefers the configured public base URL — behind a reverse proxy the request
+    host may be the internal one, and a subscription URL has to work from
+    outside.
+    """
+    token = calendar_token_for(user)
+    if not token:
+        return None
+    base = settings.base_url.rstrip("/") or str(request.base_url).rstrip("/")
+    return f"{base}/calendar/{token}.ics"
 
 
 @router.get("/security")
@@ -107,6 +141,43 @@ def update_notifications(
     db.add(user)
     db.commit()
     return _security(request, user, message="notify.saved")
+
+
+@router.post("/calendar/enable")
+def enable_calendar(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Turn the ICS feed on, or hand out a fresh token for an existing one.
+
+    Regenerating is also how a leaked subscription URL is revoked: the old
+    token stops resolving the moment the new one is stored.
+    """
+    rotated = user.calendar_token_hash is not None
+    issue_calendar_token(user)
+    audit(db, request, "calendar.regenerated" if rotated else "calendar.enabled", user=user)
+    db.add(user)
+    db.commit()
+    return _security(
+        request,
+        user,
+        message="calendar.regenerated" if rotated else "calendar.enabled",
+    )
+
+
+@router.post("/calendar/disable")
+def disable_calendar(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Switch the feed off; existing subscriptions stop working immediately."""
+    clear_calendar_token(user)
+    audit(db, request, "calendar.disabled", user=user)
+    db.add(user)
+    db.commit()
+    return _security(request, user, message="calendar.disabled")
 
 
 @router.post("/2fa/begin")

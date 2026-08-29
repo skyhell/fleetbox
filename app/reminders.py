@@ -58,6 +58,15 @@ def count_attention_items(vehicles: list[Vehicle], today: date | None = None) ->
     return count
 
 
+def owns_season(vehicle: Vehicle, season: TireSeason) -> bool:
+    """Whether the vehicle owns at least one tyre set of that season.
+
+    Shared by the seasonal reminder and the calendar feed, so both agree on
+    which vehicles a tyre-change date applies to at all.
+    """
+    return any(t.season == season for t in vehicle.tire_sets)
+
+
 def due_tire_switch(
     vehicle: Vehicle,
     today: date,
@@ -70,18 +79,14 @@ def due_tire_switch(
     for the upcoming season that is not the one currently mounted. Vehicles
     without a matching set (or running all-season tyres only) get no reminder.
     """
-    sets = vehicle.tire_sets
-    if not sets:
+    if not vehicle.tire_sets:
         return None
     mounted = vehicle.mounted_tire_set
 
-    def has(season: TireSeason) -> bool:
-        return any(t.season == season for t in sets)
-
-    if today.month == winter_month and has(TireSeason.winter):
+    if today.month == winter_month and owns_season(vehicle, TireSeason.winter):
         if mounted is None or mounted.season != TireSeason.winter:
             return "winter"
-    if today.month == summer_month and has(TireSeason.summer):
+    if today.month == summer_month and owns_season(vehicle, TireSeason.summer):
         if mounted is None or mounted.season != TireSeason.summer:
             return "summer"
     return None

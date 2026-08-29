@@ -120,6 +120,13 @@ class User(Base):
     # expiry. Cleared when the reset completes or a new token is issued.
     reset_token_hash: Mapped[str | None] = mapped_column(String(64))
     reset_token_expires: Mapped[datetime | None] = mapped_column(DateTime)
+    # Calendar subscription (ICS feed). The SHA-256 hash is what the feed URL is
+    # looked up by; the encrypted copy exists so the URL can be shown again on
+    # the account page. Deliberately un-indexed: the auto-migration only adds
+    # columns, never indexes, so an index would exist on fresh databases and be
+    # missing on upgraded ones — and `users` is small.
+    calendar_token_hash: Mapped[str | None] = mapped_column(String(64))
+    calendar_token_enc: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicles: Mapped[list[Vehicle]] = relationship(

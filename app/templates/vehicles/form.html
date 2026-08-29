@@ -48,7 +48,10 @@
       </label>
     </div>
     <div class="form-row">
-      <label>{{ t('vehicle.field.reading_' + (vehicle.usage_unit.value if vehicle else 'km')) }}
+      {# The label follows the counter-unit select live (app.js); the text
+         rendered here is the starting point and the no-JS fallback. #}
+      <label data-reading-label{% for uu in UsageUnit %} data-label-{{ uu.value }}="{{ t('vehicle.field.reading_' + uu.value) }}"{% endfor %}>
+        <span data-reading-text>{{ t('vehicle.field.reading_' + (vehicle.usage_unit.value if vehicle else 'km')) }}</span>
         <input type="number" name="mileage" min="0" step="0.01" value="{{ vehicle.mileage|num if vehicle else 0 }}">
       </label>
       <label>{{ t('vehicle.field.inspection_due') }}

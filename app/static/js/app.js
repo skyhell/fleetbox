@@ -466,6 +466,66 @@ document.addEventListener("keydown", function (event) {
   });
 })();
 
+// Buttons marked data-copy put the value of the field they point at on the
+// clipboard — used for the calendar subscription URL, which is too long to
+// retype and easy to select only halfway.
+(function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      var field = document.querySelector(button.getAttribute("data-copy"));
+      if (!field) return;
+
+      button.addEventListener("click", function () {
+        var done = function () {
+          var label = button.textContent;
+          button.textContent = button.getAttribute("data-copy-done") || label;
+          button.disabled = true;
+          setTimeout(function () {
+            button.textContent = label;
+            button.disabled = false;
+          }, 1500);
+        };
+        var fallback = function () {
+          // Older browsers, and any page not served over HTTPS, where the
+          // async clipboard API is unavailable.
+          field.removeAttribute("readonly");
+          field.select();
+          try {
+            document.execCommand("copy");
+            done();
+          } catch (err) {
+            /* nothing else to try; the field is selected for a manual copy */
+          }
+          field.setAttribute("readonly", "readonly");
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(field.value).then(done, fallback);
+        } else {
+          fallback();
+        }
+      });
+    });
+  });
+})();
+
+// The reading field is labelled per counter unit — kilometres or operating
+// hours. The server only knows the *saved* unit, so follow the select while the
+// form is still being filled in.
+(function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    var select = document.querySelector('select[name="usage_unit"]');
+    var label = document.querySelector("[data-reading-label]");
+    var text = label && label.querySelector("[data-reading-text]");
+    if (!select || !text) return;
+
+    select.addEventListener("change", function () {
+      var next = label.getAttribute("data-label-" + select.value);
+      if (next) text.textContent = next;  // unknown unit: keep what is there
+    });
+  });
+})();
+
 // Register the service worker so FleetBox is installable and has an offline
 // fallback. Same-origin, so it is allowed under our strict CSP.
 if ("serviceWorker" in navigator) {

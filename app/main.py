@@ -23,6 +23,7 @@ from app.routers import (
     attachments,
     auth,
     backup,
+    calendar,
     dashboard,
     expenses,
     fuel,
@@ -183,6 +184,10 @@ app.include_router(webauthn.router, dependencies=_csrf)
 # Public PWA endpoints (manifest + service worker). No auth/CSRF: they serve no
 # user data and must be reachable before login so the app is installable.
 app.include_router(pwa.router)
+
+# Public calendar feed. Calendar clients cannot log in, so the per-user token in
+# the URL is the credential; the route is read-only, hence no CSRF dependency.
+app.include_router(calendar.router)
 
 
 @app.get("/")

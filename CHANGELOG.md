@@ -5,6 +5,54 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Calendar subscription (ICS feed)**: subscribe to your due dates in Google,
+  Apple or Outlook Calendar. Switch the feed on under **Account security** and
+  the page shows a private subscription URL (with a copy button). The feed
+  carries one all-day event per §57a/TÜV inspection and per date-based service
+  interval, plus the seasonal tyre changes as yearly-recurring events, each with
+  a reminder a week ahead. Texts follow the user's language.
+- **Cost report per vehicle**: `/reports` now breaks the fleet figures down per
+  vehicle in expandable sections (most expensive first), each with its own
+  yearly table, cost per km and a link to the vehicle record.
+- **Cost report CSV export**: `/reports/costs.csv` — one row per vehicle and
+  year, in machine format; per vehicle via `?vehicle_id=`, which enforces
+  ownership like every other vehicle-scoped route.
+
+### Changed
+- **Yearly distance is interpolated instead of clipped to the calendar year.**
+  It used to be the spread of the readings *inside* one year, so a trip across
+  New Year was lost entirely and a year holding a single reading counted as
+  0 km — which skewed cost per km. Each step between two readings is now spread
+  over the days it covers, so the yearly figures add up to the full distance.
+  Odometer regressions (corrections, a replaced cluster) are ignored.
+- The CSV writer behind the backup exports moved to `app/csvout.py` and is now
+  shared with the report export.
+
+### Fixed
+- The reading field on the vehicle form is now labelled by the counter unit you
+  just picked, not the saved one: switching to operating hours relabels it
+  immediately instead of leaving "Mileage (km)" above the field you type into.
+- The calendar section under **Account security** now reads its on/off state
+  off the stored token itself. If the address can no longer be decrypted -
+  after `FLEETBOX_SECRET_KEY` was rotated - the page says so and still offers
+  "Regenerate" and "Disable", instead of pretending the feed were off while
+  the old URL kept serving.
+
+### Security
+- The calendar feed is the only unauthenticated route serving user data and is
+  protected by an unguessable per-user token in the URL: stored as a SHA-256
+  hash for lookup plus a Fernet-encrypted copy so the URL can be shown again,
+  read-only, `no-store`, and answering an identical `404` for unknown, revoked
+  or disabled tokens. Regenerating or disabling revokes every existing
+  subscription; both are recorded in the audit log.
+- ICS escaping now also normalises a lone carriage return and drops the
+  remaining control characters, so free text (vehicle and interval names)
+  cannot end a content line early and pose as further calendar properties.
+- The account security page is served `no-store`: it carries the calendar
+  subscription URL, which is a credential.
+
+
 ## [0.16.0] - 2026-08-25
 
 Two packs in one release: passkeys, and the usability round that makes the app

@@ -131,4 +131,40 @@
     <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
   </form>
 </section>
+
+<section class="card narrow">
+  <h2>{{ t('calendar.title') }}</h2>
+  <p class="muted">{{ t('calendar.hint') }}</p>
+  {% if calendar_enabled %}
+  {% if calendar_url %}
+  <label>{{ t('calendar.url_label') }}
+    <input type="text" id="calendar-url" value="{{ calendar_url }}" readonly>
+  </label>
+  <p class="muted">{{ t('calendar.secret_hint') }}</p>
+  {% else %}
+  {# The token is still valid, it just cannot be decrypted any more. #}
+  <p class="muted">{{ t('calendar.url_lost') }}</p>
+  {% endif %}
+  <div class="btn-row">
+    {% if calendar_url %}
+    <button class="btn" type="button" data-copy="#calendar-url"
+            data-copy-done="{{ t('calendar.copied') }}">{{ t('calendar.copy') }}</button>
+    {% endif %}
+    <form method="post" action="/account/calendar/enable">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" type="submit">{{ t('calendar.regenerate') }}</button>
+    </form>
+    <form method="post" action="/account/calendar/disable"
+          data-confirm="{{ t('calendar.disable_confirm') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-danger" type="submit">{{ t('calendar.disable') }}</button>
+    </form>
+  </div>
+  {% else %}
+  <form method="post" action="/account/calendar/enable">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary" type="submit">{{ t('calendar.enable') }}</button>
+  </form>
+  {% endif %}
+</section>
 {% endblock %}

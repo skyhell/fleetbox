@@ -29,6 +29,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.config import ALLOWED_UPLOAD_TYPES, settings
+from app.csvout import csv_response, csv_text
 from app.database import get_db
 from app.models import (
     Attachment,
@@ -145,22 +146,6 @@ def _cell(value) -> str:
 # --- Export -----------------------------------------------------------------
 
 
-def _csv_text(columns: list[str], rows: list[list]) -> str:
-    buffer = io.StringIO()
-    writer = csv.writer(buffer)
-    writer.writerow(columns)
-    writer.writerows(rows)
-    return buffer.getvalue()
-
-
-def _csv_response(filename: str, columns: list[str], rows: list[list]) -> Response:
-    return Response(
-        content=_csv_text(columns, rows),
-        media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
 def _user_vehicles(db: Session, user: User) -> list[Vehicle]:
     return db.query(Vehicle).filter(Vehicle.owner_id == user.id).order_by(Vehicle.name).all()
 
@@ -239,27 +224,27 @@ def _attachment_rows(db: Session, user: User) -> tuple[list[list], list[Attachme
 
 @router.get("/export/vehicles.csv")
 def export_vehicles(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return _csv_response("vehicles.csv", VEHICLE_COLUMNS, _vehicle_rows(db, user))
+    return csv_response("vehicles.csv", VEHICLE_COLUMNS, _vehicle_rows(db, user))
 
 
 @router.get("/export/service_records.csv")
 def export_records(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return _csv_response("service_records.csv", RECORD_COLUMNS, _record_rows(db, user))
+    return csv_response("service_records.csv", RECORD_COLUMNS, _record_rows(db, user))
 
 
 @router.get("/export/service_intervals.csv")
 def export_intervals(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return _csv_response("service_intervals.csv", INTERVAL_COLUMNS, _interval_rows(db, user))
+    return csv_response("service_intervals.csv", INTERVAL_COLUMNS, _interval_rows(db, user))
 
 
 @router.get("/export/fuel_logs.csv")
 def export_fuel(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return _csv_response("fuel_logs.csv", FUEL_COLUMNS, _fuel_rows(db, user))
+    return csv_response("fuel_logs.csv", FUEL_COLUMNS, _fuel_rows(db, user))
 
 
 @router.get("/export/expenses.csv")
 def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    return _csv_response("expenses.csv", EXPENSE_COLUMNS, _expense_rows(db, user))
+    return csv_response("expenses.csv", EXPENSE_COLUMNS, _expense_rows(db, user))
 
 
 @router.get("/export/fleetbox-backup.zip")
@@ -267,13 +252,13 @@ def export_zip(db: Session = Depends(get_db), user: User = Depends(require_user)
     """Full backup: every CSV plus all uploaded files, in one archive."""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("vehicles.csv", _csv_text(VEHICLE_COLUMNS, _vehicle_rows(db, user)))
-        zf.writestr("service_records.csv", _csv_text(RECORD_COLUMNS, _record_rows(db, user)))
-        zf.writestr("service_intervals.csv", _csv_text(INTERVAL_COLUMNS, _interval_rows(db, user)))
-        zf.writestr("fuel_logs.csv", _csv_text(FUEL_COLUMNS, _fuel_rows(db, user)))
-        zf.writestr("expenses.csv", _csv_text(EXPENSE_COLUMNS, _expense_rows(db, user)))
+        zf.writestr("vehicles.csv", csv_text(VEHICLE_COLUMNS, _vehicle_rows(db, user)))
+        zf.writestr("service_records.csv", csv_text(RECORD_COLUMNS, _record_rows(db, user)))
+        zf.writestr("service_intervals.csv", csv_text(INTERVAL_COLUMNS, _interval_rows(db, user)))
+        zf.writestr("fuel_logs.csv", csv_text(FUEL_COLUMNS, _fuel_rows(db, user)))
+        zf.writestr("expenses.csv", csv_text(EXPENSE_COLUMNS, _expense_rows(db, user)))
         att_rows, attachments = _attachment_rows(db, user)
-        zf.writestr("attachments.csv", _csv_text(ATTACHMENT_COLUMNS, att_rows))
+        zf.writestr("attachments.csv", csv_text(ATTACHMENT_COLUMNS, att_rows))
         for a in attachments:
             zf.write(settings.upload_path / a.stored_name, f"uploads/{a.stored_name}")
     filename = f"fleetbox-backup-{date.today().isoformat()}.zip"

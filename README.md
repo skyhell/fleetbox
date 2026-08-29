@@ -22,9 +22,10 @@ a **Proxmox** host with a single script.
 - 🛞 **Tyre tracker** — summer/winter/all-season sets, storage location, tread depth, mount/unmount with reading
 - 🛠️ **Inspection due date** — track the next roadworthiness inspection (§57a "Pickerl" / TÜV/HU) with due/overdue warnings
 - 🔔 **Reminders** — email digests for due services, inspections and seasonal tyre changes (opt-in per user)
+- 📅 **Calendar subscription** — subscribe to your due dates (inspection, service intervals, seasonal tyre changes) in Google/Apple/Outlook Calendar via a private ICS feed
 - 🔎 **Search** — find vehicles and performed work (service records) across your fleet
 - 📊 **Statistics** — fuel consumption, costs per month and mileage trends as charts
-- 🧾 **Cost report** — fleet-wide yearly costs (fuel, service, other) with distance and cost per km
+- 🧾 **Cost report** — fleet-wide yearly costs (fuel, service, other) with distance and cost per km, a per-vehicle drill-down and CSV export
 - 🖨️ **Printable vehicle record** — a one-page "Fahrzeugakte" summary, print- or PDF-ready
 - 📎 **Documents & photos** — attach invoices, receipts and pictures; the vehicle photo is set right on the vehicle form
 - 💾 **Backup & migration** — one-click full backup (ZIP with all data **and** uploaded documents) plus per-entity CSV export/import

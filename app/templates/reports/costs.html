@@ -6,6 +6,11 @@
     <h1>{{ t('report.costs.title') }}</h1>
     <p class="muted">{{ t('report.costs.intro') }}</p>
   </div>
+  {% if report.has_data %}
+  <div class="head-actions">
+    <a class="btn" href="/reports/costs.csv" download>{{ t('report.costs.export_csv') }}</a>
+  </div>
+  {% endif %}
 </div>
 
 {% if not report.has_data %}
@@ -62,6 +67,56 @@
       {% endfor %}
     </tbody>
   </table>
+</section>
+
+<section class="card">
+  <h2>{{ t('report.costs.by_vehicle') }}</h2>
+  <p class="muted">{{ t('report.costs.by_vehicle.hint') }}</p>
+  {% for block in report.vehicles %}
+  <details class="drill">
+    <summary>
+      <span class="drill-name">{{ block.name }}</span>
+      <span class="drill-figures">
+        {{ block.report.total_cost|money }}
+        {% if block.report.cost_per_distance is not none %}
+        · {{ block.report.cost_per_distance|money(3) }}/{{ block.unit_label }}
+        {% endif %}
+      </span>
+    </summary>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ t('report.costs.year') }}</th>
+          <th>{{ t('stats.fuel_cost') }}</th>
+          <th>{{ t('stats.service_cost') }}</th>
+          <th>{{ t('stats.other_cost') }}</th>
+          <th>{{ t('report.costs.total') }}</th>
+          <th>{{ t('report.costs.distance') }} ({{ block.unit_label }})</th>
+          <th>{{ t('report.costs.per_km') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for y in block.report.years %}
+        <tr>
+          <td>{{ y.year }}</td>
+          <td>{{ y.fuel_cost|money }}</td>
+          <td>{{ y.service_cost|money }}</td>
+          <td>{{ y.other_cost|money }}</td>
+          <td>{{ y.total_cost|money }}</td>
+          <td>{% if y.distance %}{{ y.distance|lnum }}{% else %}—{% endif %}</td>
+          <td>{% if y.cost_per_distance is not none %}{{ y.cost_per_distance|money(3) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="drill-actions no-print">
+      <a class="btn" href="/reports/costs.csv?vehicle_id={{ block.vehicle_id }}" download>
+        {{ t('report.costs.export_csv') }}
+      </a>
+      <a class="btn" href="/vehicles/{{ block.vehicle_id }}/report">{{ t('report.vehicle.open') }}</a>
+    </p>
+  </details>
+  {% endfor %}
 </section>
 
 <section class="card">

@@ -64,3 +64,19 @@ def test_trailing_zero_decimal_is_trimmed(client):
     page = client.get(url).text
     assert "2.500,5" in page
     assert "2.500,50" not in page
+
+
+def test_vehicle_form_carries_both_reading_labels(client):
+    """The counter-unit select can switch the label client-side (app.js), so the
+    form ships both variants and starts on the vehicle's own unit."""
+    _register(client, "erin", "erin@example.com")
+
+    new_form = client.get("/vehicles/new").text
+    assert 'data-label-km="Kilometerstand (km)"' in new_form
+    assert 'data-label-h="Betriebsstunden (h)"' in new_form
+    assert "<span data-reading-text>Kilometerstand (km)</span>" in new_form
+
+    url = _create_vehicle(client, usage_unit="h", mileage="500")
+    edit_form = client.get(f"{url}/edit").text
+    assert "<span data-reading-text>Betriebsstunden (h)</span>" in edit_form
+    assert 'data-label-km="Kilometerstand (km)"' in edit_form
