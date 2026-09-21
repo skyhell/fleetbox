@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-21
+
 ### Added
 - **Odometer reading on other expenses** — an optional reading, exactly like
   service records and refuellings already carry. Entering it is never required.
