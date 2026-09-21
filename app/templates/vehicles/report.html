@@ -181,6 +181,30 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if tire_mounts %}
+  <h3>{{ t('tire.history.title') }}</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('tire.field.label') }}</th>
+        <th>{{ t('tire.history.mounted') }}</th>
+        <th>{{ t('tire.history.removed') }}</th>
+        <th>{{ t('tire.history.distance') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in tire_mounts %}
+      <tr>
+        <td>{{ m.tire_set.label or t(m.tire_set.season_label_key) }}</td>
+        <td>{{ m.mounted_on }}{% if m.mounted_mileage is not none %} · {{ m.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}</td>
+        <td>{% if m.is_open %}{{ t('tire.mounted') }}{% else %}{{ m.removed_on }}{% if m.removed_mileage is not none %} · {{ m.removed_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}{% endif %}</td>
+        <td>{% if m.distance is not none %}{{ m.distance|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 </section>
 {% endif %}
 

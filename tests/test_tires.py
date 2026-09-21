@@ -175,6 +175,163 @@ def test_mount_reading_is_listed_on_the_vehicle_page(client):
     assert "60.000 km" in page
 
 
+def _periods(tire_id: int) -> list[tuple]:
+    """The mounting periods of a set as plain tuples, newest first."""
+    from app.database import SessionLocal
+    from app.models import TireSet
+
+    db = SessionLocal()
+    try:
+        tire = db.get(TireSet, tire_id)
+        return [
+            (m.mounted_on, m.mounted_mileage, m.removed_on, m.removed_mileage)
+            for m in tire.mounts
+        ]
+    finally:
+        db.close()
+
+
+def test_mounting_opens_a_period_and_unmounting_closes_it(client):
+    _register(client, "hans", "hans@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="51000")
+    (tire_id,) = _tire_ids(client, url)
+
+    ((_on, mounted, removed_on, _removed),) = _periods(tire_id)
+    assert mounted == 51000
+    assert removed_on is None  # still running
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": "57000"}, follow_redirects=False)
+
+    ((_on, mounted, removed_on, removed),) = _periods(tire_id)
+    assert (mounted, removed) == (51000, 57000)
+    assert removed_on is not None
+    # 6000 km run in that period, listed in the history card.
+    assert "6.000 km" in client.get(url).text
+
+
+def test_unmount_without_a_reading_falls_back_to_the_vehicle(client):
+    _register(client, "iris", "iris@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", is_mounted="1", mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": ""}, follow_redirects=False)
+
+    ((_on, _mounted, _removed_on, removed),) = _periods(tire_id)
+    assert removed == 50000
+
+
+def test_swapping_sets_closes_the_previous_period(client):
+    _register(client, "jan", "jan@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="50000")
+    _add_tire(client, url, season="summer", label="SummerSet")
+    winter_id, summer_id = _tire_ids(client, url)
+
+    # Mounting the summer set must end the winter set's period at the same
+    # reading — one swap, not two unrelated events.
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{summer_id}/mount",
+                data={"csrf_token": token, "mileage": "56500"}, follow_redirects=False)
+
+    ((_on, mounted, removed_on, removed),) = _periods(winter_id)
+    assert (mounted, removed) == (50000, 56500)
+    assert removed_on is not None
+    ((_on2, mounted2, removed_on2, _r2),) = _periods(summer_id)
+    assert mounted2 == 56500
+    assert removed_on2 is None
+
+
+def test_a_set_mounted_before_the_history_still_gets_its_period(client):
+    """Sets mounted by an older version have no period — 0.22.0 reconstructs it."""
+    _register(client, "kim", "kim@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", is_mounted="1", mileage="44000")
+    (tire_id,) = _tire_ids(client, url)
+
+    from app.database import SessionLocal
+    from app.models import TireMount
+
+    db = SessionLocal()
+    try:
+        db.query(TireMount).delete()
+        db.commit()
+    finally:
+        db.close()
+    assert _periods(tire_id) == []
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": "52000"}, follow_redirects=False)
+
+    ((_on, mounted, removed_on, removed),) = _periods(tire_id)
+    assert (mounted, removed) == (44000, 52000)
+    assert removed_on is not None
+
+
+def test_deleting_a_set_removes_its_history(client):
+    _register(client, "lena", "lena@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", is_mounted="1", mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+    assert len(_periods(tire_id)) == 1
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/delete",
+                data={"csrf_token": token}, follow_redirects=False)
+
+    from app.database import SessionLocal
+    from app.models import TireMount
+
+    db = SessionLocal()
+    try:
+        assert db.query(TireMount).count() == 0
+    finally:
+        db.close()
+
+
+def test_history_is_empty_until_something_is_mounted(client):
+    _register(client, "mara", "mara@example.com")
+    url = _create_vehicle(client)
+    _add_tire(client, url, season="winter", label="WinterSet")
+    page = client.get(url).text
+    assert "Reifen-Historie" in page
+    assert "Noch keine Wechsel aufgezeichnet" in page
+
+
+def test_total_distance_run_is_shown_on_the_set(client):
+    _register(client, "nils", "nils@example.com")
+    url = _create_vehicle(client, mileage="10000")
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="10000")
+    (tire_id,) = _tire_ids(client, url)
+
+    # Two seasons on the vehicle: 4000 km + 3000 km.
+    for mounted, removed in ((None, "14000"), ("20000", "23000")):
+        token = _csrf(client, url)
+        if mounted is not None:
+            client.post(f"{url}/tires/{tire_id}/mount",
+                        data={"csrf_token": token, "mileage": mounted},
+                        follow_redirects=False)
+            token = _csrf(client, url)
+        client.post(f"{url}/tires/{tire_id}/unmount",
+                    data={"csrf_token": token, "mileage": removed},
+                    follow_redirects=False)
+
+    assert len(_periods(tire_id)) == 2
+    # 4000 + 3000; the number keeps its unit in a nowrap span, hence the split.
+    page = client.get(url).text
+    assert "Laufleistung:" in page
+    assert "7.000 km" in page
+
+
 def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")

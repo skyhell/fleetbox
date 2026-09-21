@@ -133,11 +133,40 @@ is not the one currently mounted.
 
 Mounting a set automatically unmounts any other set on the vehicle.
 
-The reading is optional on both the *Add tyre set* form and the *Mount* button:
-left empty it falls back to the vehicle's current reading. A reading ahead of
-the vehicle lifts the vehicle's own reading, as a service record does. Both the
-date and the reading stay on the set after it is unmounted — that is how long
-the set ran.
+The reading is optional on the *Add tyre set* form and on both the *Mount* and
+*Unmount* buttons: left empty it falls back to the vehicle's current reading. A
+reading ahead of the vehicle lifts the vehicle's own reading, as a service
+record does. Both the date and the reading stay on the set after it is
+unmounted — that is how long the set ran.
+
+`mounted_on` / `mounted_mileage` describe the **current** (or last) mount; the
+full history lives in `TireMount`.
+
+## TireMount
+One period a tyre set spent on the vehicle — written when it is mounted, closed
+when it comes off. This is what the *Tyre history* card on the vehicle page and
+in the printable record lists.
+
+| Field              | Type     | Notes                                          |
+|--------------------|----------|------------------------------------------------|
+| `tire_set_id`      | int FK   | owning set (cascade delete)                    |
+| `vehicle_id`       | int FK   | owning vehicle (cascade delete)                |
+| `mounted_on`       | date     | when the set went on                           |
+| `mounted_mileage`  | float/null | reading then                                 |
+| `removed_on`       | date/null | when it came off — `null` while still mounted |
+| `removed_mileage`  | float/null | reading then                                 |
+
+`TireMount.distance` is the distance of one period, `TireSet.distance_run` the
+sum over all of a set's periods (the running one counts up to the vehicle's
+current reading). A period with a missing reading is skipped rather than
+guessed.
+
+Swapping sets is one event: mounting a set closes the outgoing set's period at
+the same reading. A set that was already mounted **before 0.22.0** has no period
+recorded — it is reconstructed from `mounted_on` / `mounted_mileage` the moment
+it is unmounted, so no time on the vehicle is lost. Sets that were already back
+in storage at upgrade time keep only their last mount date on the set itself;
+their history starts with the next mount.
 
 ## Expense
 A miscellaneous vehicle expense that is neither fuel nor a service record

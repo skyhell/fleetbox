@@ -255,7 +255,7 @@
       {% for ts in tire_sets %}
       <tr id="tire-{{ ts.id }}">
         <td>{{ t(ts.season_label_key) }}</td>
-        <td>{{ ts.label or t('common.none') }}</td>
+        <td>{{ ts.label or t('common.none') }}{% if ts.distance_run %}<br><span class="muted small">{{ t('tire.history.total') }}: <span class="nowrap">{{ ts.distance_run|lnum }} {{ vehicle.usage_unit_label }}</span></span>{% endif %}</td>
         <td>{{ ts.dimension or t('common.none') }}</td>
         <td>{{ ts.storage_location or t('common.none') }}</td>
         <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
@@ -272,8 +272,13 @@
         <td>
           <div class="row-actions">
             {% if ts.is_mounted %}
-            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unmount">
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unmount"
+                  class="mount-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="number" name="mileage" min="0" step="0.01" class="input-inline"
+                     placeholder="{{ vehicle.usage_unit_label }}"
+                     aria-label="{{ t('tire.field.removed_at') }}"
+                     title="{{ t('tire.field.mounted_at_hint') }}">
               <button class="btn btn-sm" type="submit">{{ t('tire.unmount') }}</button>
             </form>
             {% else %}
@@ -334,6 +339,37 @@
     </form>
   </details>
 </section>
+
+{# ---- Tyre history: one row per period a set spent on the vehicle ---- #}
+{% if tire_sets %}
+<section class="card">
+  <h2>{{ t('tire.history.title') }}</h2>
+  {% if tire_mounts %}
+  <table class="table" data-enhance>
+    <thead>
+      <tr>
+        <th>{{ t('tire.field.label') }}</th>
+        <th>{{ t('tire.history.mounted') }}</th>
+        <th>{{ t('tire.history.removed') }}</th>
+        <th>{{ t('tire.history.distance') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in tire_mounts %}
+      <tr id="tire-mount-{{ m.id }}">
+        <td>{{ m.tire_set.label or t(m.tire_set.season_label_key) }}{% if m.tire_set.label %}<br><span class="muted small">{{ t(m.tire_set.season_label_key) }}</span>{% endif %}</td>
+        <td class="nowrap">{{ m.mounted_on }}{% if m.mounted_mileage is not none %} <span class="muted small">· {{ m.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}</span>{% endif %}</td>
+        <td class="nowrap">{% if m.is_open %}<span class="badge badge-ok">{{ t('tire.mounted') }}</span>{% else %}{{ m.removed_on }}{% if m.removed_mileage is not none %} <span class="muted small">· {{ m.removed_mileage|lnum }} {{ vehicle.usage_unit_label }}</span>{% endif %}{% endif %}</td>
+        {#- A running period has no end yet, so it counts up to the vehicle's
+            current reading — shown muted, because it is not final. -#}
+        <td class="nowrap">{% if m.distance is not none %}{{ m.distance|lnum }} {{ vehicle.usage_unit_label }}{% elif m.is_open and m.mounted_mileage is not none and vehicle.mileage >= m.mounted_mileage %}<span class="muted">{{ (vehicle.mileage - m.mounted_mileage)|lnum }} {{ vehicle.usage_unit_label }}</span>{% else %}{{ t('common.none') }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">🛞</span><p>{{ t('vehicle.empty.tire_history') }}</p></div>{% endif %}
+</section>
+{% endif %}
 
 {# ---- Fuel log ---- #}
 <section class="card">

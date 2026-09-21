@@ -5,6 +5,20 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Tyre history** — every mounting period is now recorded: when a set went on
+  and came off, at which reading, and how far it ran in between. A new *Tyre
+  history* card on the vehicle page lists them (sortable and filterable like
+  the other tables), each set shows its total distance run, and the printable
+  vehicle record carries the history too. Unmounting takes an optional reading,
+  the same way mounting does since 0.21.0; swapping sets counts as one event,
+  so the outgoing set's period closes at the reading the incoming one starts
+  at.
+- New table `tire_mounts`, created automatically on startup. A set that was
+  already mounted before this release has its period reconstructed from the set
+  when it is next unmounted, so no time on the vehicle is lost; sets that were
+  already in storage start their history with the next mount.
+
 ## [0.21.0] - 2026-09-21
 
 ### Added

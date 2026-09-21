@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.flash import flash
-from app.models import TireSeason, TireSet, User, Vehicle
+from app.models import TireMount, TireSeason, TireSet, User, Vehicle
 from app.security import require_user
 
 router = APIRouter(prefix="/vehicles/{vehicle_id}/tires", tags=["tires"])
@@ -101,12 +101,19 @@ def unmount_tire_set(
     request: Request,
     vehicle_id: int,
     tire_id: int,
+    mileage: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
     tire = _get_tire(db, vehicle, tire_id)
+    reading = _reading(mileage)
+    if reading is None:
+        reading = vehicle.mileage
     tire.is_mounted = False
+    _close_period(vehicle, tire, reading)
+    if reading > vehicle.mileage:
+        vehicle.mileage = reading
     db.commit()
     flash(request, "flash.tire.unmounted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
@@ -137,11 +144,40 @@ def _mount(vehicle: Vehicle, tire: TireSet, mileage: float | None = None) -> Non
     that is ahead of the vehicle lifts the vehicle's own reading, exactly as a
     service record or a fuel log does.
     """
+    today = date.today()
+    reading = vehicle.mileage if mileage is None else mileage
     for other in vehicle.tire_sets:
-        if other is not tire:
+        if other is not tire and other.is_mounted:
             other.is_mounted = False
+            # The set coming off closes its period at the same reading — this
+            # is one swap, not two separate events.
+            _close_period(vehicle, other, reading)
     tire.is_mounted = True
-    tire.mounted_on = date.today()
-    tire.mounted_mileage = vehicle.mileage if mileage is None else mileage
-    if tire.mounted_mileage and tire.mounted_mileage > vehicle.mileage:
-        vehicle.mileage = tire.mounted_mileage
+    tire.mounted_on = today
+    tire.mounted_mileage = reading
+    tire.mounts.append(
+        TireMount(vehicle_id=vehicle.id, mounted_on=today, mounted_mileage=reading)
+    )
+    if reading and reading > vehicle.mileage:
+        vehicle.mileage = reading
+
+
+def _close_period(vehicle: Vehicle, tire: TireSet, reading: float | None) -> None:
+    """End ``tire``'s running mounting period today, at ``reading``.
+
+    Sets mounted before 0.22.0 have no period recorded — back then only the set
+    itself carried the mount date. Rather than lose that time on the vehicle,
+    the period is reconstructed from the set and closed right away.
+    """
+    period = next((m for m in tire.mounts if m.removed_on is None), None)
+    if period is None:
+        if tire.mounted_on is None:
+            return
+        period = TireMount(
+            vehicle_id=vehicle.id,
+            mounted_on=tire.mounted_on,
+            mounted_mileage=tire.mounted_mileage,
+        )
+        tire.mounts.append(period)
+    period.removed_on = date.today()
+    period.removed_mileage = reading

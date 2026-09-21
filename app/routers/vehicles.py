@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.flash import flash
-from app.models import FuelType, UsageUnit, User, Vehicle
+from app.models import FuelType, TireMount, UsageUnit, User, Vehicle
 from app.routers.attachments import save_attachment
 from app.security import require_user
 from app.stats import compute_stats, fuel_summary
@@ -24,6 +24,17 @@ def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
     if vehicle is None or vehicle.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle
+
+
+def _tire_history(vehicle: Vehicle) -> list[TireMount]:
+    """Every mounting period of the vehicle's tyre sets, newest first.
+
+    The period that is still running sorts to the top: it has no removal date
+    yet, but it is by definition the most recent one.
+    """
+    mounts = [m for ts in vehicle.tire_sets for m in ts.mounts]
+    mounts.sort(key=lambda m: (m.mounted_on, m.id or 0), reverse=True)
+    return mounts
 
 
 def _parse_int(value: str | None) -> int | None:
@@ -147,6 +158,7 @@ def vehicle_detail(
     return render(
         request,
         "vehicles/detail.html",
+        tire_mounts=_tire_history(vehicle),
         vehicle=vehicle,
         intervals=intervals,
         records=records,
@@ -186,6 +198,7 @@ def vehicle_report(
         records=records,
         expenses=expenses,
         tire_sets=tire_sets,
+        tire_mounts=_tire_history(vehicle),
         generated_on=date.today(),
     )
 

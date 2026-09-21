@@ -418,11 +418,76 @@ class TireSet(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="tire_sets")
+    mounts: Mapped[list[TireMount]] = relationship(
+        back_populates="tire_set",
+        cascade="all, delete-orphan",
+        order_by="TireMount.mounted_on.desc()",
+    )
 
     @property
     def season_label_key(self) -> str:
         """i18n key for the season, e.g. ``tire.season.winter``."""
         return f"tire.season.{self.season.value}"
+
+    @property
+    def distance_run(self) -> float | None:
+        """Total distance this set has run, summed over its mounting periods.
+
+        ``None`` when nothing can be computed — a set whose periods predate the
+        history (mounted before 0.22.0) or that never recorded a reading. The
+        period the set is on the vehicle *right now* counts up to the vehicle's
+        current reading.
+        """
+        total = 0.0
+        known = False
+        for mount in self.mounts:
+            start = mount.mounted_mileage
+            end = mount.removed_mileage
+            if end is None and self.is_mounted:
+                end = self.vehicle.mileage
+            if start is None or end is None or end < start:
+                continue
+            total += end - start
+            known = True
+        return total if known else None
+
+
+class TireMount(Base):
+    """One period a tyre set spent mounted on the vehicle.
+
+    Written when a set is mounted and closed when it comes off again, so a set
+    carries its own history: when it ran, and how far. ``removed_on`` is open
+    for the period that is still running.
+    """
+
+    __tablename__ = "tire_mounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tire_set_id: Mapped[int] = mapped_column(
+        ForeignKey("tire_sets.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    vehicle_id: Mapped[int] = mapped_column(
+        ForeignKey("vehicles.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    mounted_on: Mapped[date] = mapped_column(Date, nullable=False)
+    mounted_mileage: Mapped[float | None] = mapped_column(Float)
+    removed_on: Mapped[date | None] = mapped_column(Date)
+    removed_mileage: Mapped[float | None] = mapped_column(Float)
+
+    tire_set: Mapped[TireSet] = relationship(back_populates="mounts")
+
+    @property
+    def is_open(self) -> bool:
+        """True while the set is still on the vehicle."""
+        return self.removed_on is None
+
+    @property
+    def distance(self) -> float | None:
+        """Distance run in this period, or ``None`` if a reading is missing."""
+        if self.mounted_mileage is None or self.removed_mileage is None:
+            return None
+        gap = self.removed_mileage - self.mounted_mileage
+        return gap if gap >= 0 else None
 
 
 class Expense(Base):

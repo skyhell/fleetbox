@@ -51,7 +51,7 @@ def _free_port() -> int:
 INSPECTION_IN_DAYS = 120  # far enough out that it never trips the "due soon" badge
 
 
-def _seed(db_path: str) -> tuple[int, date, int]:
+def _seed(db_path: str) -> tuple[int, date, int, int]:
     """Seed the throwaway database; return the main vehicle id, the inspection
     date of the second one (which the calendar check looks for) and the id of
     the record the deep-link check searches for."""
@@ -137,7 +137,7 @@ def _seed(db_path: str) -> tuple[int, date, int]:
         db.add(FuelLog(vehicle_id=second.id, filled_on=date(2025, 9, 1),
                        mileage=140000, quantity=45, total_cost=85, full_tank=True))
         db.commit()
-        return int(vehicle.id), inspection_due, deep_record_id
+        return int(vehicle.id), inspection_due, deep_record_id, int(second.id)
     finally:
         db.close()
 
@@ -162,7 +162,13 @@ def _service_rows_visible(page) -> int:
     )
 
 
-def _run_browser(base: str, vehicle_id: int, inspection_due: date, deep_record_id: int) -> None:
+def _run_browser(
+    base: str,
+    vehicle_id: int,
+    inspection_due: date,
+    deep_record_id: int,
+    tire_vehicle_id: int,
+) -> None:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
@@ -216,6 +222,33 @@ def _run_browser(base: str, vehicle_id: int, inspection_due: date, deep_record_i
                 and switched == labels["h"]
                 and back == labels["km"],
             )
+
+            # --- 0.22: mounting and unmounting writes the tyre history ---
+            page.goto(f"{base}/vehicles/{tire_vehicle_id}")
+            page.wait_for_timeout(800)
+            mount = page.query_selector('form[action$="/mount"]')
+            check("tyre set offers a mount form", mount is not None)
+            if mount is not None:
+                mount.query_selector('input[name="mileage"]').fill("141000")
+                mount.query_selector('button[type="submit"]').click()
+                page.wait_for_timeout(800)
+                unmount = page.query_selector('form[action$="/unmount"]')
+                check("mounting switches the row to unmount", unmount is not None)
+                if unmount is not None:
+                    unmount.query_selector('input[name="mileage"]').fill("147500")
+                    unmount.query_selector('button[type="submit"]').click()
+                    page.wait_for_timeout(800)
+                    html = page.content()
+                    # 147500 - 141000 = 6500, localized as "6.500" in German.
+                    check(
+                        "history card lists the closed period",
+                        ("Reifen-Historie" in html or "Tyre history" in html)
+                        and "6.500 km" in html,
+                    )
+                    check(
+                        "the set shows its total distance run",
+                        "Laufleistung" in html or "Distance run" in html,
+                    )
 
             # --- B1: cost report ---
             page.goto(f"{base}/reports")
@@ -374,7 +407,7 @@ def main() -> int:
     # address is not one — the passkey checks below would fail on 127.0.0.1.
     base = f"http://localhost:{port}"
 
-    vehicle_id, inspection_due, deep_record_id = _seed(db_path)
+    vehicle_id, inspection_due, deep_record_id, tire_vehicle_id = _seed(db_path)
 
     env = dict(os.environ)
     env["FLEETBOX_SECRET_KEY"] = SECRET
@@ -387,7 +420,7 @@ def main() -> int:
     )
     try:
         _wait_until_up(base)
-        _run_browser(base, vehicle_id, inspection_due, deep_record_id)
+        _run_browser(base, vehicle_id, inspection_due, deep_record_id, tire_vehicle_id)
     finally:
         server.terminate()
         try:
