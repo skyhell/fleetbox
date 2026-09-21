@@ -414,6 +414,10 @@ class TireSet(Base):
     is_mounted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     mounted_on: Mapped[date | None] = mapped_column(Date)
     mounted_mileage: Mapped[float | None] = mapped_column(Float)
+    # Set when the tyres are worn out and replaced. The set is kept, never
+    # deleted, so its mounting history and distance stay readable next to the
+    # set that succeeded it.
+    retired_on: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
@@ -428,6 +432,11 @@ class TireSet(Base):
     def season_label_key(self) -> str:
         """i18n key for the season, e.g. ``tire.season.winter``."""
         return f"tire.season.{self.season.value}"
+
+    @property
+    def is_retired(self) -> bool:
+        """Worn out and taken out of service — kept only for its history."""
+        return self.retired_on is not None
 
     @property
     def distance_run(self) -> float | None:

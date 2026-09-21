@@ -531,6 +531,129 @@ def test_period_editing_respects_ownership(client):
     ).status_code == 404
 
 
+def test_retiring_a_set_keeps_it_and_its_history(client):
+    _register(client, "vera", "vera@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="AltSet", is_mounted="1", mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/retire",
+                data={"csrf_token": token, "mileage": "58000"}, follow_redirects=False)
+
+    tire = _tire(tire_id)
+    assert tire.retired_on is not None
+    # Retiring a mounted set takes it off in the same step and closes its period.
+    assert tire.is_mounted is False
+    ((_start, mounted, removed_on, removed),) = _periods(tire_id)
+    assert (mounted, removed) == (50000, 58000)
+    assert removed_on is not None
+
+    page = client.get(url).text
+    assert "Verschlissen" in page
+    assert "AltSet" in page          # still listed
+    assert "8.000 km" in page        # and its distance is still readable
+
+
+def test_a_retired_set_cannot_be_mounted(client):
+    _register(client, "wim", "wim@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="AltSet")
+    (tire_id,) = _tire_ids(client, url)
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/retire",
+                data={"csrf_token": token}, follow_redirects=False)
+
+    page = client.get(url).text
+    assert f"/tires/{tire_id}/mount" not in page  # no button offered
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/mount",
+                data={"csrf_token": token, "mileage": "51000"}, follow_redirects=False)
+    assert _tire(tire_id).is_mounted is False
+
+
+def test_the_replacement_set_lives_next_to_the_worn_one(client):
+    """The point of retiring: a new set with the same name, both readable."""
+    _register(client, "xenia", "xenia@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="WinterContact", is_mounted="1",
+              mileage="50000")
+    (old_id,) = _tire_ids(client, url)
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{old_id}/retire",
+                data={"csrf_token": token, "mileage": "58000"}, follow_redirects=False)
+
+    _add_tire(client, url, season="winter", label="WinterContact", is_mounted="1",
+              mileage="58000")
+    ids = _tire_ids(client, url)
+    assert len(ids) == 2
+    new_id = next(i for i in ids if i != old_id)
+
+    assert _tire(old_id).retired_on is not None
+    assert _tire(new_id).retired_on is None
+    assert _tire(new_id).is_mounted is True
+    # Both sets' periods stay in the one history.
+    assert len(_periods(old_id)) == 1
+    assert len(_periods(new_id)) == 1
+
+
+def test_a_retired_set_stops_the_seasonal_reminder(client, db_session):
+    from datetime import date
+
+    from app.models import TireSeason, TireSet, Vehicle
+    from app.reminders import due_tire_switch, owns_season
+
+    _register(client, "yanna", "yanna@example.com")
+    url = _create_vehicle(client)
+    vehicle = db_session.get(Vehicle, int(url.rsplit("/", 1)[1]))
+    winter = TireSet(vehicle_id=vehicle.id, season=TireSeason.winter, label="Winter")
+    db_session.add(winter)
+    db_session.commit()
+    db_session.refresh(vehicle)
+    assert owns_season(vehicle, TireSeason.winter) is True
+    assert due_tire_switch(vehicle, date(2026, 10, 5), 10, 4) == "winter"
+
+    # Worn out: nothing left to be reminded to fit.
+    winter.retired_on = date(2026, 9, 1)
+    db_session.commit()
+    db_session.refresh(vehicle)
+    assert owns_season(vehicle, TireSeason.winter) is False
+    assert due_tire_switch(vehicle, date(2026, 10, 5), 10, 4) is None
+
+
+def test_a_set_can_be_put_back_into_service(client):
+    _register(client, "zora", "zora@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="AltSet")
+    (tire_id,) = _tire_ids(client, url)
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/retire",
+                data={"csrf_token": token}, follow_redirects=False)
+    assert _tire(tire_id).retired_on is not None
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unretire",
+                data={"csrf_token": token}, follow_redirects=False)
+    assert _tire(tire_id).retired_on is None
+    assert f"/tires/{tire_id}/mount" in client.get(url).text
+
+
+def test_retiring_respects_ownership(client):
+    _register(client, "owner2", "owner2@example.com")
+    url = _create_vehicle(client, name="OwnerCar2")
+    _add_tire(client, url, season="winter", label="Mine")
+    (tire_id,) = _tire_ids(client, url)
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+
+    _register(client, "intruder2", "intruder2@example.com")
+    token = _csrf(client, "/vehicles/new")
+    for action in ("retire", "unretire"):
+        resp = client.post(f"{url}/tires/{tire_id}/{action}",
+                           data={"csrf_token": token}, follow_redirects=False)
+        assert resp.status_code == 404
+
+
 def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")

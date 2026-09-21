@@ -49,5 +49,28 @@
       <a class="btn" href="/vehicles/{{ vehicle.id }}#tire-{{ tire.id }}">{{ t('common.cancel') }}</a>
     </div>
   </form>
+
+  {#- Worn out: the set is kept, never deleted, so its history survives next to
+      the set that replaces it. -#}
+  <div class="inline-form">
+    {% if tire.is_retired %}
+    <p class="muted small">{{ t('tire.retired_on', date=tire.retired_on) }}</p>
+    <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ tire.id }}/unretire">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" type="submit">{{ t('tire.unretire') }}</button>
+    </form>
+    {% else %}
+    <p class="muted small">{{ t('tire.retire_hint') }}</p>
+    <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ tire.id }}/retire"
+          data-confirm="{{ t('tire.retire_confirm') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>{{ t('tire.field.removed_at') }} ({{ vehicle.usage_unit_label }})
+        <input type="number" name="mileage" min="0" step="0.01"
+               placeholder="{{ vehicle.mileage|num }}">
+      </label>
+      <button class="btn btn-danger" type="submit">{{ t('tire.retire') }}</button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

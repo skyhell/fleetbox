@@ -59,12 +59,13 @@ def count_attention_items(vehicles: list[Vehicle], today: date | None = None) ->
 
 
 def owns_season(vehicle: Vehicle, season: TireSeason) -> bool:
-    """Whether the vehicle owns at least one tyre set of that season.
+    """Whether the vehicle owns at least one usable tyre set of that season.
 
     Shared by the seasonal reminder and the calendar feed, so both agree on
-    which vehicles a tyre-change date applies to at all.
+    which vehicles a tyre-change date applies to at all. Retired sets do not
+    count — worn tyres are not something to be reminded to fit.
     """
-    return any(t.season == season for t in vehicle.tire_sets)
+    return any(t.season == season and not t.is_retired for t in vehicle.tire_sets)
 
 
 def due_tire_switch(

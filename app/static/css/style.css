@@ -477,10 +477,17 @@ form { display: inline; }
 /* Mounting a tyre set takes an optional reading right in the row, so this one
    form stays a row itself — it has to beat the `.card form` block above. */
 .card form.mount-form { display: flex; gap: 0.3rem; align-items: center; }
-.input-inline { flex: 0 0 6rem; width: 6rem; padding: 0.25rem 0.4rem; font-size: 0.82rem; }
+.input-inline { flex: 0 0 5rem; width: 5rem; padding: 0.25rem 0.4rem; font-size: 0.82rem; }
+/* Spin buttons are useless on an odometer field stepping by 0.01, and
+   they eat the width the placeholder needs. */
+.input-inline { appearance: textfield; -moz-appearance: textfield; }
+.input-inline::-webkit-outer-spin-button,
+.input-inline::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 /* The tyre row carries four controls; let it scroll rather than spill out
    of the card on a narrow card or a wider skin. */
 .table-scroll { overflow-x: auto; }
+/* A retired tyre set stays listed for its history, but steps back. */
+.table tbody tr.retired > td { opacity: 0.62; }
 
 /* Alerts */
 .alert { padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem; font-weight: 500; }

@@ -176,7 +176,7 @@
         <td>{{ ts.storage_location or t('common.none') }}</td>
         <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{% if ts.mounted_on or ts.mounted_mileage is not none %}{{ ts.mounted_on or '' }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{{ t('tire.mounted') if ts.is_mounted else t('tire.stored') }}</td>
+        <td>{% if ts.is_retired %}{{ t('tire.retired') }} ({{ ts.retired_on }}){% elif ts.is_mounted %}{{ t('tire.mounted') }}{% else %}{{ t('tire.stored') }}{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

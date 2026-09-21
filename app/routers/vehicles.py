@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.flash import flash
-from app.models import FuelType, TireMount, UsageUnit, User, Vehicle
+from app.models import FuelType, TireMount, TireSet, UsageUnit, User, Vehicle
 from app.routers.attachments import save_attachment
 from app.security import require_user
 from app.stats import compute_stats, fuel_summary
@@ -24,6 +24,14 @@ def _get_owned_vehicle(db: Session, user: User, vehicle_id: int) -> Vehicle:
     if vehicle is None or vehicle.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle
+
+
+def _sorted_tire_sets(vehicle: Vehicle) -> list[TireSet]:
+    """Mounted set first, then the sets in service, retired ones last."""
+    return sorted(
+        vehicle.tire_sets,
+        key=lambda t: (t.is_retired, not t.is_mounted, t.season.value),
+    )
 
 
 def _tire_history(vehicle: Vehicle) -> list[TireMount]:
@@ -151,9 +159,7 @@ def vehicle_detail(
         key=lambda a: a.uploaded_at,
         reverse=True,
     )
-    tire_sets = sorted(
-        vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
-    )
+    tire_sets = _sorted_tire_sets(vehicle)
     expenses = sorted(vehicle.expenses, key=lambda e: e.spent_on, reverse=True)
     return render(
         request,
@@ -185,9 +191,7 @@ def vehicle_report(
     ]
     records = sorted(vehicle.service_records, key=lambda r: r.performed_on, reverse=True)
     expenses = sorted(vehicle.expenses, key=lambda e: e.spent_on, reverse=True)
-    tire_sets = sorted(
-        vehicle.tire_sets, key=lambda t: (not t.is_mounted, t.season.value)
-    )
+    tire_sets = _sorted_tire_sets(vehicle)
     return render(
         request,
         "vehicles/report.html",

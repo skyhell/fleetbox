@@ -82,15 +82,18 @@ FUEL_COLUMNS = [
 EXPENSE_COLUMNS = [
     "vehicle", "spent_on", "category", "title", "amount", "mileage", "notes",
 ]
+# ``key`` is opaque and only links the two tyre CSVs *within one archive* — a
+# set has no unique name, and once a worn set is replaced its successor may
+# carry exactly the same season and label. Season and label are exported on the
+# periods too, for the human reading the file and as a fallback for archives
+# written by 0.23.0, which had no key column.
 TIRE_COLUMNS = [
-    "vehicle", "season", "label", "dimension", "storage_location",
-    "tread_depth_mm", "is_mounted", "mounted_on", "mounted_mileage", "notes",
+    "key", "vehicle", "season", "label", "dimension", "storage_location",
+    "tread_depth_mm", "is_mounted", "mounted_on", "mounted_mileage",
+    "retired_on", "notes",
 ]
-# A tyre set has no unique name, so a mounting period points at its set by the
-# pair that identifies it in practice: season + label. A row whose pair matches
-# no set, or more than one, is skipped rather than attached to a guess.
 TIRE_MOUNT_COLUMNS = [
-    "vehicle", "season", "label", "mounted_on", "mounted_mileage",
+    "set_key", "vehicle", "season", "label", "mounted_on", "mounted_mileage",
     "removed_on", "removed_mileage",
 ]
 # ``file`` is the member path inside the ZIP; the record columns let the import
@@ -222,10 +225,11 @@ def _tire_rows(db: Session, user: User) -> list[list]:
     for v in _user_vehicles(db, user):
         for ts in v.tire_sets:
             rows.append([
-                v.name, _cell(ts.season), _cell(ts.label), _cell(ts.dimension),
-                _cell(ts.storage_location), _cell(ts.tread_depth_mm),
-                _cell(ts.is_mounted), _cell(ts.mounted_on),
-                _cell(ts.mounted_mileage), _cell(ts.notes),
+                _cell(ts.id), v.name, _cell(ts.season), _cell(ts.label),
+                _cell(ts.dimension), _cell(ts.storage_location),
+                _cell(ts.tread_depth_mm), _cell(ts.is_mounted),
+                _cell(ts.mounted_on), _cell(ts.mounted_mileage),
+                _cell(ts.retired_on), _cell(ts.notes),
             ])
     return rows
 
@@ -236,7 +240,7 @@ def _tire_mount_rows(db: Session, user: User) -> list[list]:
         for ts in v.tire_sets:
             for m in ts.mounts:
                 rows.append([
-                    v.name, _cell(ts.season), _cell(ts.label),
+                    _cell(ts.id), v.name, _cell(ts.season), _cell(ts.label),
                     _cell(m.mounted_on), _cell(m.mounted_mileage),
                     _cell(m.removed_on), _cell(m.removed_mileage),
                 ])
@@ -458,10 +462,24 @@ def _import_rows(
 
     # 6. Tyre sets, then their mounting periods. Both are absent from backups
     #    written before 0.23.0 — an older archive simply restores no tyres.
-    sets_by_key: dict[tuple[int, str, str], TireSet] = {}
+    # Two lookups: by the archive's own key (authoritative) and by season+label
+    # (the fallback for 0.23.0 archives, which had no key). The fallback map
+    # drops ambiguous pairs — after a worn set is replaced, its successor can
+    # carry the same season and label, and guessing between them would attach
+    # history to the wrong set.
+    by_archive_key: dict[str, TireSet] = {}
+    ambiguous: set[tuple[int, str, str]] = set()
+    by_pair: dict[tuple[int, str, str], TireSet] = {}
+
+    def _remember(vehicle_id: int, tire: TireSet) -> None:
+        pair = (vehicle_id, tire.season.value, tire.label or "")
+        if pair in by_pair:
+            ambiguous.add(pair)
+        by_pair[pair] = tire
+
     for vehicle in by_name.values():
         for existing in vehicle.tire_sets:
-            sets_by_key[(vehicle.id, existing.season.value, existing.label or "")] = existing
+            _remember(vehicle.id, existing)
 
     for row in tire_sets or []:
         vehicle = _vehicle(row)
@@ -470,8 +488,22 @@ def _import_rows(
             continue
         season = _enum(TireSeason, row.get("season"), TireSeason.summer)
         label = _s(row.get("label"))
-        key = (vehicle.id, season.value, label or "")
-        if key in sets_by_key:  # re-importing the same archive stays a no-op
+        retired_on = _date(row.get("retired_on"))
+        # Re-importing the same archive stays a no-op. A worn set and the set
+        # that replaced it share season and label, so the retirement date is
+        # part of what makes a set the same set.
+        existing = next(
+            (
+                ts for ts in vehicle.tire_sets
+                if ts.season == season
+                and (ts.label or None) == label
+                and ts.retired_on == retired_on
+            ),
+            None,
+        )
+        if existing is not None:
+            if key := _s(row.get("key")):
+                by_archive_key[key] = existing
             summary["skipped"] += 1
             continue
         tire = TireSet(
@@ -484,10 +516,15 @@ def _import_rows(
             is_mounted=_bool(row.get("is_mounted")),
             mounted_on=_date(row.get("mounted_on")),
             mounted_mileage=_reading(row.get("mounted_mileage")),
+            # Absent in backups written before 0.25.0 — then the set is in use.
+            retired_on=retired_on,
             notes=_s(row.get("notes")),
         )
         db.add(tire)
-        sets_by_key[key] = tire
+        vehicle.tire_sets.append(tire)
+        if key := _s(row.get("key")):
+            by_archive_key[key] = tire
+        _remember(vehicle.id, tire)
         summary["tires"] += 1
     db.flush()  # assign ids so the periods can reference their sets
 
@@ -497,8 +534,11 @@ def _import_rows(
         if vehicle is None or mounted_on is None:
             summary["skipped"] += 1
             continue
-        season = _enum(TireSeason, row.get("season"), TireSeason.summer)
-        tire = sets_by_key.get((vehicle.id, season.value, _s(row.get("label")) or ""))
+        tire = by_archive_key.get(_s(row.get("set_key")) or "")
+        if tire is None:
+            season = _enum(TireSeason, row.get("season"), TireSeason.summer)
+            pair = (vehicle.id, season.value, _s(row.get("label")) or "")
+            tire = None if pair in ambiguous else by_pair.get(pair)
         if tire is None:
             summary["skipped"] += 1
             continue

@@ -241,6 +241,11 @@ def mount_tire_set(
 ):
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
     tire = _get_tire(db, vehicle, tire_id)
+    if tire.is_retired:
+        # The UI offers no mount button for a retired set; this catches a stale
+        # page or a hand-made request rather than fitting worn tyres.
+        flash(request, "flash.tire.retired_cannot_mount", level="error")
+        return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
     _mount(vehicle, tire, _reading(mileage))
     db.commit()
     flash(request, "flash.tire.mounted")
@@ -267,6 +272,59 @@ def unmount_tire_set(
         vehicle.mileage = reading
     db.commit()
     flash(request, "flash.tire.unmounted")
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
+@router.post("/{tire_id}/retire")
+def retire_tire_set(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    mileage: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Mark a set as worn out.
+
+    The set stays — deleting it would take its mounting history with it, and
+    how far a set ran before it was finished is exactly what you want to look
+    up when buying the next one. A retired set can no longer be mounted and no
+    longer counts towards the seasonal change reminder.
+
+    Retiring a set that is still on the vehicle takes it off in the same step:
+    that is what happens in the workshop, and leaving it "mounted but worn"
+    would be a state nothing else in the app expects.
+    """
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    reading = _reading(mileage)
+    if reading is None:
+        reading = vehicle.mileage
+    if tire.is_mounted:
+        tire.is_mounted = False
+        _close_period(vehicle, tire, reading)
+        if reading > vehicle.mileage:
+            vehicle.mileage = reading
+    tire.retired_on = date.today()
+    db.commit()
+    flash(request, "flash.tire.retired")
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
+@router.post("/{tire_id}/unretire")
+def unretire_tire_set(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Put a set back into service — for when it was retired by mistake."""
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    tire.retired_on = None
+    db.commit()
+    flash(request, "flash.tire.unretired")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 

@@ -5,6 +5,24 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Tyre sets can be marked as worn out.** *Mark as worn out* on the tyre edit
+  page retires a set instead of deleting it: it keeps its mounting history and
+  its total distance, so when you buy the replacement you can see how far the
+  old set actually ran. Buy new tyres, add them as a new set — both stay
+  listed, the worn one greyed out at the bottom, and the tyre history shows
+  every period of both.
+  - A retired set cannot be mounted and no longer triggers the seasonal tyre
+    reminder (or its calendar entry).
+  - Retiring a set that is still fitted takes it off in the same step and
+    closes its period, with an optional reading like unmounting.
+  - Retired by mistake? *Reactivate* puts it back into service.
+- The tyre backup CSVs gained the `retired_on` column, and a `key` column that
+  links a set to its periods inside the archive — a worn set and its
+  replacement can carry exactly the same season and label, which the previous
+  season+label matching could not tell apart. Archives written by 0.23.0/0.24.0
+  still import via the old matching.
+
 ## [0.24.0] - 2026-09-21
 
 ### Added

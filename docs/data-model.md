@@ -130,6 +130,7 @@ is not the one currently mounted.
 | `is_mounted`       | bool     | currently on the vehicle (≤1 mounted per vehicle) |
 | `mounted_on`       | date     | recorded when mounted                          |
 | `mounted_mileage`  | float    | reading when mounted — entered, or the vehicle's |
+| `retired_on`       | date/null | set when the tyres are worn out; `null` = in use |
 
 Mounting a set automatically unmounts any other set on the vehicle.
 
@@ -146,6 +147,15 @@ A set's own details (season, label, dimension, storage location, tread depth,
 notes) are editable at `/vehicles/<id>/tires/<id>/edit`. Whether a set is
 mounted is deliberately **not** editable there — that is what the *Mount* and
 *Unmount* buttons do.
+
+**Retiring a set** (*Mark as worn out* on the edit page) stamps `retired_on`
+instead of deleting the row: the set keeps its mounting history and its total
+distance, so the set that replaces it can be compared against it. A retired set
+cannot be mounted, is listed last and greyed out, and no longer counts towards
+the seasonal change reminder (`reminders.owns_season`, which the calendar feed
+shares). Retiring a mounted set unmounts it in the same step — "mounted but
+worn out" is a state nothing else in the app expects. It can be put back into
+service if it was retired by mistake.
 
 A recorded period is editable at
 `/vehicles/<id>/tires/<id>/mounts/<id>/edit`, and deletable from the same page.

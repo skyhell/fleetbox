@@ -295,7 +295,7 @@ def test_tire_sets_and_their_history_are_exported(client):
 
     sets_csv = client.get("/backup/export/tire_sets.csv")
     assert sets_csv.status_code == 200
-    assert sets_csv.text.splitlines()[0].startswith("vehicle,season,label")
+    assert sets_csv.text.splitlines()[0].startswith("key,vehicle,season,label")
     assert "WinterContact" in sets_csv.text
     assert "205/55 R16" in sets_csv.text
 
@@ -373,3 +373,61 @@ def test_import_tolerates_a_backup_without_the_tyre_csvs(client):
     )
     assert resp.status_code == 200
     assert "Polo" in client.get("/vehicles").text
+
+
+def test_a_worn_set_and_its_namesake_replacement_survive_a_round_trip(client):
+    """Same season, same label, different sets — the archive key keeps them apart."""
+    _register(client, "wear", "wear@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    _add_tire(client, vehicle_url, label="WinterContact", is_mounted="1", mileage="1000")
+    old_id = int(re.search(r"/tires/(\d+)/", client.get(vehicle_url).text).group(1))
+    token = _csrf(client, vehicle_url)
+    client.post(f"{vehicle_url}/tires/{old_id}/retire",
+                data={"csrf_token": token, "mileage": "40000"}, follow_redirects=False)
+    _add_tire(client, vehicle_url, label="WinterContact", is_mounted="1", mileage="40000")
+    archive = client.get("/backup/export/fleetbox-backup.zip").content
+
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+    _register(client, "wear2", "wear2@example.com")
+    token = _csrf(client, "/backup")
+    client.post(
+        "/backup/import/zip",
+        data={"csrf_token": token},
+        files={"archive": ("backup.zip", archive, "application/zip")},
+        follow_redirects=False,
+    )
+
+    new_url = re.search(r"/vehicles/\d+", client.get("/vehicles").text).group(0)
+    page = client.get(new_url).text
+    # Both sets came across: one worn out, one in service, each with its period.
+    assert page.count("<td>WinterContact") == 4  # 2 tyre rows + 2 history rows
+    assert "Verschlissen" in page
+    assert "39.000 km" in page  # 40000 - 1000, the worn set's run
+
+
+def test_import_tolerates_a_backup_without_the_retired_column(client):
+    """0.23.0 wrote tyre CSVs without `key` or `retired_on` — still importable."""
+    _register(client, "old23", "old23@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    sets_csv = (
+        "vehicle,season,label,dimension,storage_location,tread_depth_mm,"
+        "is_mounted,mounted_on,mounted_mileage,notes\n"
+        "Golf,winter,WinterContact,205/55 R16,Keller,6.5,false,2025-10-18,1000,\n"
+    )
+    mounts_csv = (
+        "vehicle,season,label,mounted_on,mounted_mileage,removed_on,removed_mileage\n"
+        "Golf,winter,WinterContact,2025-10-18,1000,2026-04-12,7500\n"
+    )
+    token = _csrf(client, "/backup")
+    resp = client.post(
+        "/backup/import",
+        files={"tire_sets": ("tire_sets.csv", sets_csv.encode("utf-8"), "text/csv"),
+               "tire_mounts": ("tire_mounts.csv", mounts_csv.encode("utf-8"), "text/csv")},
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code in (200, 303)
+    page = client.get(vehicle_url).text
+    assert "WinterContact" in page
+    assert "Verschlissen" not in page  # no retired_on column means "in use"
+    assert "6.500 km" in page          # the period linked via season + label

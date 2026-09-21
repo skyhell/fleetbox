@@ -263,14 +263,17 @@
     </thead>
     <tbody>
       {% for ts in tire_sets %}
-      <tr id="tire-{{ ts.id }}">
+      <tr id="tire-{{ ts.id }}" class="{{ 'retired' if ts.is_retired else '' }}">
         <td>{{ t(ts.season_label_key) }}</td>
         <td>{{ ts.label or t('common.none') }}{% if ts.distance_run %}<br><span class="muted small">{{ t('tire.history.total') }}: <span class="nowrap">{{ ts.distance_run|lnum }} {{ vehicle.usage_unit_label }}</span></span>{% endif %}</td>
         <td>{{ ts.dimension or t('common.none') }}</td>
         <td>{{ ts.storage_location or t('common.none') }}</td>
         <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
         <td class="nowrap">
-          {% if ts.is_mounted %}
+          {% if ts.is_retired %}
+            <span class="badge badge-unknown">{{ t('tire.retired') }}</span>
+            <br><span class="muted small">{{ ts.retired_on }}</span>
+          {% elif ts.is_mounted %}
             <span class="badge badge-ok">{{ t('tire.mounted') }}</span>
           {% else %}
             <span class="muted small">{{ t('tire.stored') }}</span>
@@ -286,7 +289,12 @@
                 button out of the card. -#}
             <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/edit"
                title="{{ t('common.edit') }}" aria-label="{{ t('common.edit') }}">✎</a>
-            {% if ts.is_mounted %}
+            {% if ts.is_retired %}
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unretire">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm" type="submit">{{ t('tire.unretire') }}</button>
+            </form>
+            {% elif ts.is_mounted %}
             <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unmount"
                   class="mount-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
