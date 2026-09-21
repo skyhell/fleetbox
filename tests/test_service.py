@@ -127,3 +127,20 @@ def test_service_intervals_respect_ownership(client):
     resp = client.post(f"{url}/intervals/{interval_id}/delete",
                        data={"csrf_token": token}, follow_redirects=False)
     assert resp.status_code == 404
+
+
+def test_record_row_shows_workshop_and_notes_on_a_second_line(client):
+    _register(client, "notes", "notes@example.com")
+    url = _create_vehicle(client)
+    _add_record(client, url, title="Bremsen", workshop="Werkstatt Gauper",
+                notes="Belaege und Scheiben")
+    _add_record(client, url, title="Luftfilter", notes="Nur der Filter")
+    _add_record(client, url, title="Wischer")
+
+    page = client.get(url).text
+    # Workshop and notes share the muted second line, separated by a middle dot.
+    assert "Werkstatt Gauper · Belaege und Scheiben" in page
+    # Notes alone stand on that line without a stray separator.
+    assert "Luftfilter<br><span class=\"muted small\">Nur der Filter</span>" in page
+    # A record with neither stays a one-liner.
+    assert "Wischer<br>" not in page

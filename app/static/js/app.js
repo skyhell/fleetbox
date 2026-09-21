@@ -53,9 +53,35 @@
   });
 })();
 
+// --- Clickable rows ------------------------------------------------------------
+// A <tr data-href> navigates on click, so a search hit is a full-row target and
+// not just a small link. Delegated, so it also covers rows added later. Real
+// links, buttons and an active text selection keep their own behaviour.
+document.addEventListener("click", function (event) {
+  if (!event.target || !event.target.closest) return;
+  var row = event.target.closest("tr[data-href]");
+  if (!row) return;
+  if (event.target.closest("a, button, input, label, form")) return;
+  if (window.getSelection && String(window.getSelection())) return;
+  window.location.href = row.dataset.href;
+});
+
 // --- One-time DOM enhancements ------------------------------------------------
 window.addEventListener("DOMContentLoaded", function () {
   var body = document.body;
+
+  // Deep links from search look like /vehicles/12#record-42. Resolve the target
+  // up front: the table enhancement below hides rows past the first page, and a
+  // browser will not scroll to a hidden element. getElementById (not
+  // querySelector) keeps an arbitrary fragment from being parsed as a selector.
+  var hashTarget = null;
+  if (location.hash.length > 1) {
+    try {
+      hashTarget = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    } catch (e) {
+      hashTarget = null; // malformed percent-escape
+    }
+  }
 
   // Password visibility: wrap every password field and inject a show/hide
   // toggle. Done from JS so the button only exists when it can work.
@@ -238,8 +264,27 @@ window.addEventListener("DOMContentLoaded", function () {
       table.parentNode.insertBefore(moreBtn, table.nextSibling);
     }
 
+    // A deep-linked row may sit past the first page — page far enough for it.
+    if (hashTarget && tbody.contains(hashTarget)) {
+      var pos = Array.prototype.indexOf.call(tbody.rows, hashTarget);
+      if (pos >= 0) shown = Math.max(shown, Math.ceil((pos + 1) / PAGE) * PAGE);
+    }
+
     refresh();
   });
+
+  // Now that every row the link points at is visible, mark it and bring it into
+  // view. Centering sidesteps the sticky topbar.
+  if (hashTarget) {
+    hashTarget.classList.add("row-hit");
+    hashTarget.scrollIntoView({ block: "center" });
+    // The browser retries the fragment itself once everything has loaded —
+    // which top-aligns the row and tucks it under the sticky topbar. Take the
+    // scroll position back afterwards.
+    window.addEventListener("load", function () {
+      hashTarget.scrollIntoView({ block: "center" });
+    });
+  }
 });
 
 // --- Keyboard shortcuts --------------------------------------------------------

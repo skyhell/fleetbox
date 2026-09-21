@@ -50,6 +50,12 @@
     border-color: #ccc !important;
   }
 
+  /* A deep-link highlight is screen-only feedback. */
+  .table tbody tr.row-hit > td,
+  li.row-hit {
+    background: none !important;
+  }
+
   .chart {
     max-width: 100%;
   }

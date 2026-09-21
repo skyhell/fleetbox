@@ -1,5 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ t('search.title') }}{% endblock %}
+
+{# One result section. `truncated` says the query hit the per-section cap; the
+   caller supplies <thead>/<tbody>. Every parameter is passed explicitly so the
+   macro never has to reach into the render context. #}
+{% macro hits(heading, items, truncated, more_text) %}
+{% if items %}
+<section class="card">
+  <h2>{{ heading }} ({{ items|length }})</h2>
+  <table class="table">{{ caller() }}</table>
+  {% if truncated %}<p class="muted small">{{ more_text }}</p>{% endif %}
+</section>
+{% endif %}
+{% endmacro %}
+
 {% block content %}
 <div class="page-head"><div><h1>{{ t('search.title') }}</h1></div></div>
 
@@ -9,13 +23,17 @@
   <button class="btn btn-primary" type="submit">{{ t('search.title') }}</button>
 </form>
 
+{% set more = t('search.more', n=limit) %}
+{% set found = vehicles or records or intervals or fuel_logs
+               or attachments or tire_sets or expenses %}
+
 {% if not q %}
   <div class="empty-inline">
     <span class="empty-icon" aria-hidden="true">🔍</span>
     <p>{{ t('search.prompt') }}</p>
     <p class="small">{{ t('search.empty.hint') }}</p>
   </div>
-{% elif not vehicles and not records %}
+{% elif not found %}
   <div class="empty-inline">
     <span class="empty-icon" aria-hidden="true">🔍</span>
     <p>{{ t('search.no_results', q=q) }}</p>
@@ -23,48 +41,139 @@
   </div>
 {% else %}
 
-{% if vehicles %}
-<section class="card">
-  <h2>{{ t('search.vehicles') }} ({{ vehicles|length }})</h2>
-  <table class="table">
-    <tbody>
-      {% for v in vehicles %}
-      <tr>
-        <td><a href="/vehicles/{{ v.id }}">{{ v.display_name }}</a></td>
-        <td>{% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}</td>
-        <td class="muted">{{ v.mileage|lnum }} {{ v.usage_unit_label }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
-{% endif %}
+{% call hits(t('search.vehicles'), vehicles, vehicles|length >= limit, more) %}
+  <tbody>
+    {% for v in vehicles %}
+    <tr class="row-link" data-href="/vehicles/{{ v.id }}">
+      <td><a href="/vehicles/{{ v.id }}">{{ v.display_name }}</a></td>
+      <td>{% if v.license_plate %}<span class="plate">{{ v.license_plate }}</span>{% endif %}</td>
+      <td class="muted">{{ v.mileage|lnum }} {{ v.usage_unit_label }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
 
-{% if records %}
-<section class="card">
-  <h2>{{ t('search.records') }} ({{ records|length }})</h2>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>{{ t('service.field.date') }}</th>
-        <th>{{ t('nav.vehicles') }}</th>
-        <th>{{ t('service.field.type') }}</th>
-        <th>{{ t('service.field.title') }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in records %}
-      <tr>
-        <td>{{ r.performed_on }}</td>
-        <td><a href="/vehicles/{{ r.vehicle_id }}">{{ r.vehicle.display_name }}</a></td>
-        <td>{{ t('service.type.' + r.service_type.value) }}</td>
-        <td>{{ r.title }}{% if r.workshop %}<br><span class="muted small">{{ r.workshop }}</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
-{% endif %}
+{% call hits(t('search.records'), records, records|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('service.field.date') }}</th>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('service.field.type') }}</th>
+      <th>{{ t('service.field.title') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in records %}
+    <tr class="row-link" data-href="/vehicles/{{ r.vehicle_id }}#record-{{ r.id }}">
+      <td class="nowrap">{{ r.performed_on }}</td>
+      <td class="muted">{{ r.vehicle.display_name }}</td>
+      <td>{{ t('service.type.' + r.service_type.value) }}</td>
+      <td><a href="/vehicles/{{ r.vehicle_id }}#record-{{ r.id }}">{{ r.title }}</a>
+        {%- if r.workshop or r.notes %}<br><span class="muted small">{% if r.workshop %}{{ r.workshop }}{% endif %}{% if r.workshop and r.notes %} · {% endif %}{% if r.notes %}{{ r.notes }}{% endif %}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
+
+{% call hits(t('service.intervals'), intervals, intervals|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('service.field.name') }}</th>
+      <th>{{ t('service.field.type') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for iv in intervals %}
+    <tr class="row-link" data-href="/vehicles/{{ iv.vehicle_id }}#interval-{{ iv.id }}">
+      <td class="muted">{{ iv.vehicle.display_name }}</td>
+      <td><a href="/vehicles/{{ iv.vehicle_id }}#interval-{{ iv.id }}">{{ iv.name }}</a></td>
+      <td>{{ t('service.type.' + iv.service_type.value) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
+
+{% call hits(t('fuel.log'), fuel_logs, fuel_logs|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('fuel.field.date') }}</th>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('fuel.field.quantity') }}</th>
+      <th>{{ t('fuel.field.notes') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in fuel_logs %}
+    <tr class="row-link" data-href="/vehicles/{{ f.vehicle_id }}#fuel-{{ f.id }}">
+      <td class="nowrap">{{ f.filled_on }}</td>
+      <td class="muted">{{ f.vehicle.display_name }}</td>
+      <td>{{ f.quantity|lnum }}</td>
+      <td><a href="/vehicles/{{ f.vehicle_id }}#fuel-{{ f.id }}">{{ f.notes }}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
+
+{% call hits(t('attachment.title'), attachments, attachments|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('attachment.field.title') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in attachments %}
+    <tr class="row-link" data-href="/vehicles/{{ a.vehicle_id }}#attachment-{{ a.id }}">
+      <td class="muted">{{ a.vehicle.display_name }}</td>
+      <td><a href="/vehicles/{{ a.vehicle_id }}#attachment-{{ a.id }}">{{ a.title or a.filename }}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
+
+{% call hits(t('tire.title'), tire_sets, tire_sets|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('tire.field.label') }}</th>
+      <th>{{ t('tire.field.dimension') }}</th>
+      <th>{{ t('tire.field.storage') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ts in tire_sets %}
+    <tr class="row-link" data-href="/vehicles/{{ ts.vehicle_id }}#tire-{{ ts.id }}">
+      <td class="muted">{{ ts.vehicle.display_name }}</td>
+      <td><a href="/vehicles/{{ ts.vehicle_id }}#tire-{{ ts.id }}">{{ ts.label or t(ts.season_label_key) }}</a></td>
+      <td>{{ ts.dimension or t('common.none') }}</td>
+      <td>{{ ts.storage_location or t('common.none') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
+
+{% call hits(t('expense.title'), expenses, expenses|length >= limit, more) %}
+  <thead>
+    <tr>
+      <th>{{ t('expense.field.date') }}</th>
+      <th>{{ t('nav.vehicles') }}</th>
+      <th>{{ t('expense.field.category') }}</th>
+      <th>{{ t('expense.field.title') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in expenses %}
+    <tr class="row-link" data-href="/vehicles/{{ e.vehicle_id }}#expense-{{ e.id }}">
+      <td class="nowrap">{{ e.spent_on }}</td>
+      <td class="muted">{{ e.vehicle.display_name }}</td>
+      <td>{{ t(e.category_label_key) }}</td>
+      <td><a href="/vehicles/{{ e.vehicle_id }}#expense-{{ e.id }}">{{ e.title }}</a>
+        {%- if e.notes %}<br><span class="muted small">{{ e.notes }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+{% endcall %}
 
 {% endif %}
 {% endblock %}

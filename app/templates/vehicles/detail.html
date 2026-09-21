@@ -59,7 +59,7 @@
     <tbody>
       {% for item in intervals %}
       {% set iv = item.interval %}
-      <tr>
+      <tr id="interval-{{ iv.id }}">
         <td>{{ iv.name }}</td>
         <td>{{ t('service.type.' + iv.service_type.value) }}</td>
         <td>
@@ -125,11 +125,11 @@
     </thead>
     <tbody>
       {% for r in records %}
-      <tr>
-        <td>{{ r.performed_on }}</td>
+      <tr id="record-{{ r.id }}">
+        <td class="nowrap">{{ r.performed_on }}</td>
         <td>{{ t('service.type.' + r.service_type.value) }}</td>
-        <td>{{ r.title }}{% if r.workshop %}<br><span class="muted small">{{ r.workshop }}</span>{% endif %}</td>
-        <td>{% if r.mileage %}{{ r.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{{ r.title }}{% if r.workshop or r.notes %}<br><span class="muted small">{% if r.workshop %}{{ r.workshop }}{% endif %}{% if r.workshop and r.notes %} · {% endif %}{% if r.notes %}{{ r.notes }}{% endif %}</span>{% endif %}</td>
+        <td class="nowrap">{% if r.mileage %}{{ r.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{% if r.cost is not none %}{{ r.cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>
           <div class="row-actions">
@@ -185,7 +185,7 @@
   {% if attachments %}
   <ul class="attachments">
     {% for a in attachments %}
-    <li class="attachment">
+    <li class="attachment" id="attachment-{{ a.id }}">
       <a class="attachment-preview" href="/vehicles/{{ vehicle.id }}/attachments/{{ a.id }}"
          target="_blank" rel="noopener">
         {% if a.is_image %}
@@ -253,7 +253,7 @@
     </thead>
     <tbody>
       {% for ts in tire_sets %}
-      <tr>
+      <tr id="tire-{{ ts.id }}">
         <td>{{ t(ts.season_label_key) }}</td>
         <td>{{ ts.label or t('common.none') }}</td>
         <td>{{ ts.dimension or t('common.none') }}</td>
@@ -345,13 +345,13 @@
     </thead>
     <tbody>
       {% for f in fuel_logs %}
-      <tr>
-        <td>{{ f.filled_on }}{% if not f.full_tank %} <span class="muted small">({{ t('fuel.partial') }})</span>{% endif %}</td>
-        <td>{% if f.mileage %}{{ f.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
+      <tr id="fuel-{{ f.id }}">
+        <td class="nowrap">{{ f.filled_on }}{% if not f.full_tank %}<br><span class="muted small">({{ t('fuel.partial') }})</span>{% endif %}</td>
+        <td class="nowrap">{% if f.mileage %}{{ f.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{{ f.quantity|money }}</td>
         <td>{% if f.price_per_unit is not none %}{{ f.price_per_unit|money(3) }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{% if f.total_cost is not none %}{{ f.total_cost|money }}{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>{% if f.id in fuel.per_fill %}{{ fuel.per_fill[f.id]|money }} {{ fuel.consumption_unit }}{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td class="nowrap">{% if f.id in fuel.per_fill %}{{ fuel.per_fill[f.id]|money }} {{ fuel.consumption_unit }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>
           <div class="row-actions">
             <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/fuel/{{ f.id }}/edit">{{ t('common.edit') }}</a>
@@ -414,8 +414,8 @@
     </thead>
     <tbody>
       {% for e in expenses %}
-      <tr>
-        <td>{{ e.spent_on }}</td>
+      <tr id="expense-{{ e.id }}">
+        <td class="nowrap">{{ e.spent_on }}</td>
         <td>{{ t(e.category_label_key) }}</td>
         <td>{{ e.title }}{% if e.notes %}<br><span class="muted small">{{ e.notes }}</span>{% endif %}</td>
         <td>{{ e.amount|money }}</td>

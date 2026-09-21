@@ -5,6 +5,28 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Search results link straight to the entry**: every hit is a clickable row.
+  Clicking one opens the vehicle page scrolled to that exact record, interval,
+  refuelling, tyre set, document or expense, with the row highlighted — even
+  when it sits on a collapsed page of a long table. The primary cell stays a
+  real link, so keyboard and screen-reader use is unaffected.
+- **Search covers everything recorded**: besides vehicles and service records,
+  it now also searches service intervals (name, notes), refuellings (notes),
+  documents (title, file name), tyre sets (label, dimension, storage location,
+  notes) and other expenses (title, notes) — each in its own result section.
+- Results are capped at 50 per section, with a note when a section was cut.
+- Service records show their notes: workshop and notes share a muted second
+  line under the title (separated by `·` when both are set). A record with
+  neither stays a single line.
+
+### Fixed
+- The search hint claimed expenses were searched; they never were. Now they are
+  and the hint lists what is actually covered.
+- Fuel log: the long column headers squeezed the date onto two lines. Dates,
+  readings and consumption figures now stay on one line, and a partial fill is
+  noted underneath the date — the same layout the service records use.
+
 ## [0.17.0] - 2026-08-29
 
 Due dates leave the app and land in your calendar, the cost report finally

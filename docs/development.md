@@ -67,6 +67,13 @@ fleetbox/
   `owner_id == user.id`. Admins manage *users*, not other users' vehicles.
 - **Charts** are rendered server-side as SVG (`charts.py`) with no JavaScript or
   external library, so they work under the strict Content-Security-Policy.
+- **Deep links** point at a row on the vehicle page by URL fragment:
+  `/vehicles/<id>#record-<id>`, and likewise `interval-`, `fuel-`, `tire-`,
+  `expense-` and `attachment-`. Every row in `vehicles/detail.html` carries the
+  matching `id`. The fragment never reaches the server; `app/static/js/app.js`
+  resolves it before enhancing the tables, because those collapse to 20 rows
+  and a browser cannot scroll to a hidden row. Give any new row type an `id`
+  in the same shape so it stays linkable.
 - **i18n** is intentionally dependency-free: flat JSON catalogs and a `t()`
   helper injected into every template. See [i18n.md](i18n.md).
 - **PWA**: `app/routers/pwa.py` serves the web app manifest
@@ -132,8 +139,9 @@ test that registers a second user and asserts they get a **404, not a 403**: the
 app does not confirm that a foreign id exists. Add one for every new
 vehicle-scoped route. Search is the
 exception, since it is a query rather than an id lookup:
-`test_search_respects_ownership` asserts the foreign vehicle is simply absent
-from the results.
+`test_search_respects_ownership` and `test_child_results_respect_ownership`
+assert that the foreign vehicle and everything recorded under it are simply
+absent from the results.
 
 ### Browser end-to-end smoke test
 
@@ -141,8 +149,9 @@ The unit suite never runs JavaScript, so a small Playwright script exercises the
 JS-driven behaviour (table pagination, the print button, the report pages, the
 toasts — that one shows up, fades on its own and does not come back on reload —
 the passkey flow, enrolled and replayed for real through Chromium's virtual
-authenticator, the cost-report drill-down with its CSV download, and the
-calendar feed fetched from its subscription URL) against a live server. It seeds a throwaway database, starts uvicorn and drives
+authenticator, the cost-report drill-down with its CSV download, the calendar
+feed fetched from its subscription URL, and a deep link from a search hit that
+has to reveal a row hidden on a collapsed page) against a live server. It seeds a throwaway database, starts uvicorn and drives
 Chromium, then tears everything down:
 
 ```bash

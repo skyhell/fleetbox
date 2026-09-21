@@ -36,6 +36,7 @@
   --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.05), 0 10px 28px rgba(0, 0, 0, 0.09);
   --ring: 0 0 0 4px var(--primary-soft);
   --hover: color-mix(in srgb, var(--text) 5%, transparent);
+  --hit: #fff3c4;
   --input-bg: var(--surface-2);
   --code-bg: #ececee;
   --plate-bg: #1d1d1f;
@@ -73,6 +74,7 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.5);
   --hover: color-mix(in srgb, var(--text) 7%, transparent);
+  --hit: #4a3a0f;
   --input-bg: var(--surface-2);
   --code-bg: #2c2c30;
   --plate-bg: #000000;
@@ -107,6 +109,7 @@
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.5);
     --hover: color-mix(in srgb, var(--text) 7%, transparent);
+    --hit: #4a3a0f;
     --input-bg: var(--surface-2);
     --code-bg: #2c2c30;
     --plate-bg: #000000;
@@ -341,6 +344,16 @@ h3 { margin: 0 0 0.5rem; font-size: 1.12rem; font-weight: 600; letter-spacing: -
 .table tbody tr { transition: background 0.15s ease; }
 .table tbody tr:hover { background: var(--hover); }
 .table tbody tr:last-child td { border-bottom: none; }
+/* Date cells: long headers elsewhere in the row must not squeeze a date onto
+   two lines. Anything belonging under it gets its own line via <br>. */
+.table .nowrap { white-space: nowrap; }
+/* Search hits: the whole row is a click target (app.js reads data-href). */
+.table tbody tr.row-link { cursor: pointer; }
+/* The row a deep link pointed at. Painted on the cells so it beats the row's
+   own hover and striping backgrounds, and stays put — the hit should remain
+   findable after scrolling away. */
+.row-hit { scroll-margin-top: 5rem; }
+.table tbody tr.row-hit > td, li.row-hit { background: var(--hit); }
 .row-actions { display: flex; gap: 0.4rem; }
 
 /* Badges — tinted, semantic color carries the state */

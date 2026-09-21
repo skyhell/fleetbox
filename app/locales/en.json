@@ -52,7 +52,7 @@
 
   "search.title": "Search",
   "search.placeholder": "Search vehicles & work…",
-  "search.prompt": "Enter a search term to find vehicles and service records.",
+  "search.prompt": "Enter a search term to find vehicles, work and receipts.",
   "search.no_results": "Nothing found for “{q}”.",
   "search.vehicles": "Vehicles",
   "search.records": "Service records",
@@ -420,7 +420,8 @@
   "vehicle.empty.tires": "No tyre sets yet.",
   "vehicle.empty.attachments": "No documents or photos yet.",
   "report.costs.empty.body": "Once refuellings, service records or expenses exist, the yearly breakdown appears here.",
-  "search.empty.hint": "Searches vehicles, service records, expenses and notes.",
+  "search.empty.hint": "Searches vehicles, service records, intervals, refuellings, tyres, documents and other expenses.",
+  "search.more": "Only the first {n} hits are shown.",
 
   "passkey.title": "Passkeys",
   "passkey.hint": "A passkey replaces username and password: you sign in with a fingerprint, your face or the device PIN. Your password keeps working as before.",

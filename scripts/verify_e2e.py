@@ -2,10 +2,11 @@
 """End-to-end smoke test: drive a real browser against a live FleetBox.
 
 Covers the JavaScript-driven behaviour the unit tests (which never run JS)
-cannot: table pagination ("show more"), the print button and print media, and
-that the report pages render. It seeds a throwaway SQLite database, starts
-uvicorn in a subprocess, drives it with Playwright/Chromium, then tears
-everything down. Exits non-zero if any check fails.
+cannot: table pagination ("show more"), deep links from a search hit to the row
+it found, the print button and print media, and that the report pages render.
+It seeds a throwaway SQLite database, starts uvicorn in a subprocess, drives it
+with Playwright/Chromium, then tears everything down. Exits non-zero if any
+check fails.
 
 Run it after installing the dev dependencies and a browser:
 
@@ -50,9 +51,10 @@ def _free_port() -> int:
 INSPECTION_IN_DAYS = 120  # far enough out that it never trips the "due soon" badge
 
 
-def _seed(db_path: str) -> tuple[int, date]:
-    """Seed the throwaway database; return the main vehicle id and the
-    inspection date of the second one (which the calendar check looks for)."""
+def _seed(db_path: str) -> tuple[int, date, int]:
+    """Seed the throwaway database; return the main vehicle id, the inspection
+    date of the second one (which the calendar check looks for) and the id of
+    the record the deep-link check searches for."""
     os.environ["FLEETBOX_SECRET_KEY"] = SECRET
     os.environ["FLEETBOX_DATABASE_URL"] = f"sqlite:///{db_path}"
     sys.path.insert(0, str(REPO))
@@ -95,6 +97,16 @@ def _seed(db_path: str) -> tuple[int, date]:
                 title=f"Service #{i + 1}", performed_on=date(2024, 1, 1),
                 mileage=1000 * (i + 1), cost=50 + i,
             ))
+        # A 26th, older record with a unique title. It sorts last, so it lands
+        # on the second (collapsed) page — exactly the case a deep link from the
+        # search has to reveal before it can scroll to it.
+        deep = ServiceRecord(
+            vehicle_id=vehicle.id, service_type=ServiceType.repair,
+            title="Zzdeeplink brake job", performed_on=date(2020, 1, 1), cost=42,
+        )
+        db.add(deep)
+        db.flush()
+        deep_record_id = int(deep.id)
         # Fuel + expenses across two years so the cost report has content.
         for yr in (2024, 2025):
             db.add(FuelLog(vehicle_id=vehicle.id, filled_on=date(yr, 1, 1),
@@ -125,7 +137,7 @@ def _seed(db_path: str) -> tuple[int, date]:
         db.add(FuelLog(vehicle_id=second.id, filled_on=date(2025, 9, 1),
                        mileage=140000, quantity=45, total_cost=85, full_tank=True))
         db.commit()
-        return int(vehicle.id), inspection_due
+        return int(vehicle.id), inspection_due, deep_record_id
     finally:
         db.close()
 
@@ -142,15 +154,15 @@ def _wait_until_up(base: str, timeout: float = 30.0) -> None:
 
 
 def _service_rows_visible(page) -> int:
-    """Number of non-hidden rows in the 25-row service-records table."""
+    """Number of non-hidden rows in the 26-row service-records table."""
     return page.evaluate(
         "() => { const t = [...document.querySelectorAll('table[data-enhance]')]"
-        ".find(t => t.tBodies[0].rows.length === 25);"
+        ".find(t => t.tBodies[0].rows.length === 26);"
         " return t ? [...t.tBodies[0].rows].filter(r => !r.hidden).length : -1; }"
     )
 
 
-def _run_browser(base: str, vehicle_id: int, inspection_due: date) -> None:
+def _run_browser(base: str, vehicle_id: int, inspection_due: date, deep_record_id: int) -> None:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
@@ -163,7 +175,7 @@ def _run_browser(base: str, vehicle_id: int, inspection_due: date) -> None:
             page.click('form[action="/login"] button[type="submit"]')
             page.wait_for_url(f"{base}/dashboard")
 
-            # --- C2: pagination on the vehicle page (25 service records) ---
+            # --- C2: pagination on the vehicle page (26 service records) ---
             page.goto(f"{base}/vehicles/{vehicle_id}")
             page.wait_for_timeout(400)
             check("pagination shows first 20 rows", _service_rows_visible(page) == 20)
@@ -172,7 +184,7 @@ def _run_browser(base: str, vehicle_id: int, inspection_due: date) -> None:
             if more:
                 page.eval_on_selector(".show-more", "el => el.click()")
                 page.wait_for_timeout(200)
-                check("all 25 rows after 'show more'", _service_rows_visible(page) == 25)
+                check("all 26 rows after 'show more'", _service_rows_visible(page) == 26)
                 disp = page.eval_on_selector(".show-more", "el => getComputedStyle(el).display")
                 check("'show more' hides once fully revealed", disp == "none")
 
@@ -288,6 +300,24 @@ def _run_browser(base: str, vehicle_id: int, inspection_due: date) -> None:
             check("search empty state rendered",
                   page.query_selector(".empty-inline") is not None)
 
+            # --- 0.18: a search hit jumps straight at its row, page 2 included ---
+            page.goto(f"{base}/search?q=Zzdeeplink")
+            page.wait_for_timeout(400)
+            check("search result row is a click target",
+                  page.query_selector("tr.row-link[data-href]") is not None)
+            # Click the date cell, not the anchor — that is what data-href is for.
+            page.click("tr.row-link td:first-child")
+            page.wait_for_timeout(900)
+            check("row click lands on the entry",
+                  page.url.endswith(f"/vehicles/{vehicle_id}#record-{deep_record_id}"))
+            check(
+                "deep-linked row is revealed and highlighted",
+                page.eval_on_selector(
+                    f"#record-{deep_record_id}",
+                    "el => el.classList.contains('row-hit') && !el.hidden",
+                ),
+            )
+
             # --- S4: passkeys, driven by Chromium's virtual authenticator ---
             cdp = page.context.new_cdp_session(page)
             cdp.send("WebAuthn.enable", {})
@@ -344,7 +374,7 @@ def main() -> int:
     # address is not one — the passkey checks below would fail on 127.0.0.1.
     base = f"http://localhost:{port}"
 
-    vehicle_id, inspection_due = _seed(db_path)
+    vehicle_id, inspection_due, deep_record_id = _seed(db_path)
 
     env = dict(os.environ)
     env["FLEETBOX_SECRET_KEY"] = SECRET
@@ -357,7 +387,7 @@ def main() -> int:
     )
     try:
         _wait_until_up(base)
-        _run_browser(base, vehicle_id, inspection_due)
+        _run_browser(base, vehicle_id, inspection_due, deep_record_id)
     finally:
         server.terminate()
         try:

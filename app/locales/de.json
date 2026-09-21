@@ -52,7 +52,7 @@
 
   "search.title": "Suche",
   "search.placeholder": "Fahrzeuge & Arbeiten suchen…",
-  "search.prompt": "Gib einen Suchbegriff ein, um Fahrzeuge und Service-Einträge zu finden.",
+  "search.prompt": "Gib einen Suchbegriff ein, um Fahrzeuge, Arbeiten und Belege zu finden.",
   "search.no_results": "Nichts gefunden für „{q}“.",
   "search.vehicles": "Fahrzeuge",
   "search.records": "Service-Einträge",
@@ -420,7 +420,8 @@
   "vehicle.empty.tires": "Noch keine Radsätze.",
   "vehicle.empty.attachments": "Noch keine Dokumente oder Fotos.",
   "report.costs.empty.body": "Sobald Tankfüllungen, Serviceeinträge oder Ausgaben erfasst sind, erscheint hier die Jahresauswertung.",
-  "search.empty.hint": "Durchsucht Fahrzeuge, Serviceeinträge, Ausgaben und Notizen.",
+  "search.empty.hint": "Durchsucht Fahrzeuge, Serviceeinträge, Intervalle, Tankungen, Reifen, Dokumente und sonstige Kosten.",
+  "search.more": "Es werden nur die ersten {n} Treffer gezeigt.",
 
   "passkey.title": "Passkeys",
   "passkey.hint": "Ein Passkey ersetzt Benutzername und Passwort: die Anmeldung passiert mit Fingerabdruck, Gesicht oder Geräte-PIN. Das Passwort bleibt weiterhin gültig.",
