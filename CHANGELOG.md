@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-09-21
+
 ### Added
 - **Tyre sets can be marked as worn out.** *Mark as worn out* on the tyre edit
   page retires a set instead of deleting it: it keeps its mounting history and
