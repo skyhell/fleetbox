@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-21
+
 ### Added
 - **Tyre history** — every mounting period is now recorded: when a set went on
   and came off, at which reading, and how far it ran in between. A new *Tyre
