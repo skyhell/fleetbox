@@ -47,6 +47,14 @@ def _reading(v: str | None) -> float | None:
     return round(value, 2) if value is not None else None
 
 
+def _date(v: str | None) -> date | None:
+    v = (v or "").strip()
+    try:
+        return date.fromisoformat(v) if v else None
+    except ValueError:
+        return None
+
+
 @router.post("")
 def add_tire_set(
     request: Request,
@@ -122,6 +130,103 @@ def update_tire_set(
     tire.notes = notes or None
     db.commit()
     flash(request, "flash.tire.updated")
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
+def _get_mount(db: Session, tire: TireSet, mount_id: int) -> TireMount:
+    mount = db.get(TireMount, mount_id)
+    if mount is None or mount.tire_set_id != tire.id:
+        raise HTTPException(status_code=404, detail="Mounting period not found")
+    return mount
+
+
+def _sync_set_from_history(tire: TireSet) -> None:
+    """Re-derive the set's own mount date and reading from its newest period.
+
+    ``tire_sets.mounted_on`` / ``mounted_mileage`` describe the current (or
+    last) mount, which is exactly the newest period — so correcting that period
+    has to move them too, or the row and its history would disagree.
+    """
+    newest = max(tire.mounts, key=lambda m: m.mounted_on, default=None)
+    if newest is not None:
+        tire.mounted_on = newest.mounted_on
+        tire.mounted_mileage = newest.mounted_mileage
+
+
+@router.get("/{tire_id}/mounts/{mount_id}/edit")
+def edit_mount_form(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    mount_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    mount = _get_mount(db, tire, mount_id)
+    return render(request, "tires/mount_form.html", vehicle=vehicle, tire=tire, mount=mount)
+
+
+@router.post("/{tire_id}/mounts/{mount_id}/edit")
+def update_mount(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    mount_id: int,
+    mounted_on: str = Form(...),
+    mounted_mileage: str = Form(""),
+    removed_on: str = Form(""),
+    removed_mileage: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Correct a recorded mounting period.
+
+    The running period of a mounted set keeps its open end: closing it is what
+    the *Unmount* button is for, and doing it here would change the set's state
+    behind the user's back.
+    """
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    mount = _get_mount(db, tire, mount_id)
+
+    start = _date(mounted_on) or mount.mounted_on
+    end = mount.removed_on if (mount.is_open and tire.is_mounted) else _date(removed_on)
+    if end is not None and end < start:
+        flash(request, "flash.tire.period.invalid", level="error")
+        return RedirectResponse(
+            f"/vehicles/{vehicle.id}/tires/{tire.id}/mounts/{mount.id}/edit",
+            status_code=303,
+        )
+
+    mount.mounted_on = start
+    mount.mounted_mileage = _reading(mounted_mileage)
+    if not (mount.is_open and tire.is_mounted):
+        mount.removed_on = end
+        mount.removed_mileage = _reading(removed_mileage)
+    _sync_set_from_history(tire)
+    db.commit()
+    flash(request, "flash.tire.period.updated")
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
+@router.post("/{tire_id}/mounts/{mount_id}/delete")
+def delete_mount(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    mount_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    mount = _get_mount(db, tire, mount_id)
+    tire.mounts.remove(mount)
+    _sync_set_from_history(tire)
+    db.commit()
+    flash(request, "flash.tire.period.deleted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 

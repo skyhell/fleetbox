@@ -371,6 +371,7 @@
         <th>{{ t('tire.history.mounted') }}</th>
         <th>{{ t('tire.history.removed') }}</th>
         <th>{{ t('tire.history.distance') }}</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -382,6 +383,10 @@
         {#- A running period has no end yet, so it counts up to the vehicle's
             current reading — shown muted, because it is not final. -#}
         <td class="nowrap">{% if m.distance is not none %}{{ m.distance|lnum }} {{ vehicle.usage_unit_label }}{% elif m.is_open and m.mounted_mileage is not none and vehicle.mileage >= m.mounted_mileage %}<span class="muted">{{ (vehicle.mileage - m.mounted_mileage)|lnum }} {{ vehicle.usage_unit_label }}</span>{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>
+          <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/tires/{{ m.tire_set_id }}/mounts/{{ m.id }}/edit"
+             title="{{ t('tire.history.edit') }}" aria-label="{{ t('tire.history.edit') }}">✎</a>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

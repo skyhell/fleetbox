@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tire.history.edit') }}{% endblock %}
+{% block content %}
+{% set running = mount.is_open and tire.is_mounted %}
+<div class="card narrow">
+  <h1>{{ t('tire.history.edit') }}</h1>
+  <p class="muted">{{ tire.label or t(tire.season_label_key) }} — {{ vehicle.display_name }}</p>
+  <form method="post"
+        action="/vehicles/{{ vehicle.id }}/tires/{{ tire.id }}/mounts/{{ mount.id }}/edit">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-row">
+      <label>{{ t('tire.history.mounted') }} <span class="req">*</span>
+        <input type="date" name="mounted_on" required value="{{ mount.mounted_on.isoformat() }}">
+      </label>
+      <label>{{ t('tire.field.mounted_at') }} ({{ vehicle.usage_unit_label }})
+        <input type="number" name="mounted_mileage" min="0" step="0.01"
+               value="{{ mount.mounted_mileage|num if mount.mounted_mileage is not none else '' }}">
+      </label>
+    </div>
+    {% if running %}
+    {#- The running period of a mounted set keeps its open end: closing it is
+        what the Unmount button does, and doing it here would flip the set's
+        state without saying so. -#}
+    <p class="muted small">{{ t('tire.history.running_hint') }}</p>
+    {% else %}
+    <div class="form-row">
+      <label>{{ t('tire.history.removed') }}
+        <input type="date" name="removed_on"
+               value="{{ mount.removed_on.isoformat() if mount.removed_on else '' }}">
+      </label>
+      <label>{{ t('tire.field.removed_at') }} ({{ vehicle.usage_unit_label }})
+        <input type="number" name="removed_mileage" min="0" step="0.01"
+               value="{{ mount.removed_mileage|num if mount.removed_mileage is not none else '' }}">
+      </label>
+    </div>
+    <p class="muted small">{{ t('tire.history.edit_hint') }}</p>
+    {% endif %}
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="/vehicles/{{ vehicle.id }}#tire-mount-{{ mount.id }}">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+
+  <form method="post" class="inline-form"
+        action="/vehicles/{{ vehicle.id }}/tires/{{ tire.id }}/mounts/{{ mount.id }}/delete"
+        data-confirm="{{ t('tire.history.delete_confirm') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-danger" type="submit">{{ t('common.delete') }}</button>
+  </form>
+</div>
+{% endblock %}

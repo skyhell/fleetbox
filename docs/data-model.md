@@ -143,9 +143,23 @@ unmounted — that is how long the set ran.
 full history lives in `TireMount`.
 
 A set's own details (season, label, dimension, storage location, tread depth,
-notes) are editable at `/vehicles/<id>/tires/<id>/edit`. Mount state and history
-are deliberately **not** editable there — they are events, written by mounting
-and unmounting.
+notes) are editable at `/vehicles/<id>/tires/<id>/edit`. Whether a set is
+mounted is deliberately **not** editable there — that is what the *Mount* and
+*Unmount* buttons do.
+
+A recorded period is editable at
+`/vehicles/<id>/tires/<id>/mounts/<id>/edit`, and deletable from the same page.
+Two rules hold there:
+
+- Correcting the **newest** period also moves the set's own `mounted_on` /
+  `mounted_mileage`, since those describe exactly that mount; otherwise the
+  tyre row and its history would disagree. Deleting a period re-derives them
+  the same way.
+- The **running** period of a mounted set keeps its open end. Closing it is
+  what unmounting does, and doing it through the form would flip `is_mounted`
+  without saying so.
+
+A removal date before the mount date is rejected (nothing is written).
 
 ## TireMount
 One period a tyre set spent on the vehicle — written when it is mounted, closed

@@ -5,6 +5,19 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Recorded mounting periods are editable.** The ✎ button in the tyre history
+  opens a period for correction — mount date and reading, removal date and
+  reading — and it can be deleted there too. Until now a reading mistyped while
+  unmounting was permanent.
+  - Correcting the **newest** period moves the set's own "last mounted" date
+    and reading with it, so the tyre row and its history cannot drift apart.
+    Deleting a period re-derives them the same way.
+  - The **running** period of a mounted set keeps its open end: closing it is
+    what *Unmount* does, and the form says so instead of quietly flipping the
+    set into storage.
+  - A removal date before the mount date is refused, and nothing is written.
+
 ## [0.23.0] - 2026-09-21
 
 ### Added

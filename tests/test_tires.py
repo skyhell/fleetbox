@@ -398,6 +398,139 @@ def test_editing_a_set_respects_ownership(client):
     assert resp.status_code == 404
 
 
+def _mount_ids(client, vehicle_url) -> list[int]:
+    html = client.get(vehicle_url).text
+    return sorted({int(i) for i in re.findall(r"/mounts/(\d+)/edit", html)})
+
+
+def _closed_period(client, url) -> tuple[str, int, int]:
+    """A set mounted at 50000 and taken off at 56000, ready to be corrected."""
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": "56000"}, follow_redirects=False)
+    (mount_id,) = _mount_ids(client, url)
+    return f"{url}/tires/{tire_id}/mounts/{mount_id}", tire_id, mount_id
+
+
+def test_a_recorded_period_can_be_corrected(client):
+    _register(client, "quinn", "quinn@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    edit_url, tire_id, _mount_id = _closed_period(client, url)
+
+    form = client.get(f"{edit_url}/edit")
+    assert form.status_code == 200
+    assert "56000" in form.text  # the wrong reading is prefilled
+
+    token = _csrf(client, f"{edit_url}/edit")
+    client.post(
+        f"{edit_url}/edit",
+        data={"mounted_on": "2025-10-18", "mounted_mileage": "49500",
+              "removed_on": "2026-04-12", "removed_mileage": "57000",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    ((start, mounted, end, removed),) = _periods(tire_id)
+    assert (mounted, removed) == (49500, 57000)
+    assert (start.isoformat(), end.isoformat()) == ("2025-10-18", "2026-04-12")
+    # 57000 - 49500 = 7500, recomputed in the history card.
+    assert "7.500 km" in client.get(url).text
+
+
+def test_correcting_the_newest_period_moves_the_set_with_it(client):
+    _register(client, "rosa", "rosa@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    edit_url, tire_id, _mount_id = _closed_period(client, url)
+
+    token = _csrf(client, f"{edit_url}/edit")
+    client.post(
+        f"{edit_url}/edit",
+        data={"mounted_on": "2025-10-18", "mounted_mileage": "49500",
+              "removed_on": "2026-04-12", "removed_mileage": "57000",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    # The set's own "last mounted" must not keep contradicting its history.
+    tire = _tire(tire_id)
+    assert tire.mounted_mileage == 49500
+    assert tire.mounted_on.isoformat() == "2025-10-18"
+
+
+def test_the_running_period_keeps_its_open_end(client):
+    _register(client, "sven", "sven@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", is_mounted="1", mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+    (mount_id,) = _mount_ids(client, url)
+    edit_url = f"{url}/tires/{tire_id}/mounts/{mount_id}/edit"
+
+    token = _csrf(client, edit_url)
+    client.post(
+        edit_url,
+        data={"mounted_on": "2026-01-02", "mounted_mileage": "48000",
+              # Smuggled in — closing a running period is the Unmount button's job.
+              "removed_on": "2026-02-02", "removed_mileage": "52000",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    ((_start, mounted, end, removed),) = _periods(tire_id)
+    assert mounted == 48000  # the correction landed
+    assert end is None and removed is None  # the end did not
+    assert _tire(tire_id).is_mounted is True
+
+
+def test_a_removal_before_the_mounting_is_rejected(client):
+    _register(client, "tanja", "tanja@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    edit_url, tire_id, _mount_id = _closed_period(client, url)
+
+    token = _csrf(client, f"{edit_url}/edit")
+    resp = client.post(
+        f"{edit_url}/edit",
+        data={"mounted_on": "2026-04-12", "mounted_mileage": "50000",
+              "removed_on": "2025-10-18", "removed_mileage": "56000",
+              "csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.headers["location"].endswith("/edit")  # back to the form
+    ((start, _mounted, _end, _removed),) = _periods(tire_id)
+    assert start.isoformat() != "2026-04-12"  # nothing was written
+
+
+def test_a_period_can_be_deleted(client):
+    _register(client, "udo", "udo@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    edit_url, tire_id, _mount_id = _closed_period(client, url)
+
+    token = _csrf(client, f"{edit_url}/edit")
+    client.post(f"{edit_url}/delete", data={"csrf_token": token}, follow_redirects=False)
+    assert _periods(tire_id) == []
+
+
+def test_period_editing_respects_ownership(client):
+    _register(client, "holder", "holder@example.com")
+    url = _create_vehicle(client, name="HolderCar", mileage="50000")
+    edit_url, _tire_id, _mount_id = _closed_period(client, url)
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+
+    _register(client, "raider", "raider@example.com")
+    assert client.get(f"{edit_url}/edit").status_code == 404
+    token = _csrf(client, "/vehicles/new")
+    assert client.post(
+        f"{edit_url}/edit",
+        data={"mounted_on": "2020-01-01", "csrf_token": token},
+        follow_redirects=False,
+    ).status_code == 404
+    assert client.post(
+        f"{edit_url}/delete", data={"csrf_token": token}, follow_redirects=False
+    ).status_code == 404
+
+
 def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")
