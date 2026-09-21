@@ -172,8 +172,12 @@ tied to any single vehicle.
 `summer`, `winter`, `all_season`
 
 ## ExpenseCategory values
-`insurance`, `tax`, `registration`, `parking`, `toll`, `vignette`, `fine`,
-`accessory`, `cleaning`, `other`
+`insurance`, `tax`, `registration`, `inspection`, `parking`, `toll`,
+`vignette`, `fine`, `accessory`, `cleaning`, `other`
+
+`inspection` is the statutory roadworthiness check — the Austrian §57a
+"Pickerl", the German TÜV, the British MOT. It covers the *cost*; the *due
+date* lives on the vehicle (`inspection_due`) and drives the reminders.
 
 ## FuelType values
 `petrol`, `diesel`, `electric`, `hybrid`, `other` — plus the retired values

@@ -96,3 +96,21 @@ def test_expense_ownership_enforced(client):
     _register(client, "intruder", "intruder@example.com")
     resp = client.get(f"{url}/expenses/{expense_id}/edit")
     assert resp.status_code == 404
+
+
+def test_inspection_category_is_offered_and_stored(client):
+    _register(client, "pickerl", "pickerl@example.com")
+    url = _create_vehicle(client)
+
+    # The dropdown on the vehicle page offers it (both dropdowns iterate the enum).
+    assert '<option value="inspection">' in client.get(url).text
+
+    _add_expense(client, url, category="inspection", title="Pickerl 2026", amount="65")
+    page = client.get(url).text
+    assert "Pickerl 2026" in page
+    assert "Pickerl (§57a)" in page  # the German label, not the raw enum value
+
+    # It comes back preselected in the edit form.
+    expense_id = _expense_ids(client, url)[0]
+    form = client.get(f"{url}/expenses/{expense_id}/edit").text
+    assert '<option value="inspection" selected>' in form

@@ -8,8 +8,15 @@ would be missing on databases created by an older version.
 ``run_migrations`` closes that gap for the common case: it compares the ORM
 metadata against the live database and issues ``ALTER TABLE … ADD COLUMN`` for
 any column that is missing. It only ever *adds* columns; renames, drops and type
-changes are out of scope and still need a real migration. The operation is
-idempotent and safe to run on every startup.
+changes are out of scope and still need a real migration.
+
+It also *adds enum labels*. On PostgreSQL a ``Enum`` column is backed by a real
+``TYPE``, so a release that adds a member (as 0.19.0 does with the inspection
+expense category) would otherwise make that value unusable until someone ran
+``ALTER TYPE`` by hand. SQLite stores enums as plain text with no constraint, so
+there it is a no-op.
+
+Both operations are idempotent and safe to run on every startup.
 """
 
 from __future__ import annotations
@@ -17,7 +24,7 @@ from __future__ import annotations
 import enum
 import logging
 
-from sqlalchemy import Connection, Engine, inspect, text
+from sqlalchemy import Connection, Engine, Enum, inspect, text
 from sqlalchemy.schema import Column
 
 from app.database import Base
@@ -81,8 +88,65 @@ def _add_column(conn: Connection, engine: Engine, table_name: str, column: Colum
     conn.execute(text(ddl))
 
 
+def _native_enum_types() -> dict[str, tuple[str, ...]]:
+    """Every native enum type the ORM defines, as ``{type name: labels}``."""
+    types: dict[str, tuple[str, ...]] = {}
+    for table in Base.metadata.sorted_tables:
+        for column in table.columns:
+            type_ = column.type
+            if isinstance(type_, Enum) and type_.native_enum and type_.name:
+                types[type_.name] = tuple(type_.enums)
+    return types
+
+
+def _sync_enum_labels(engine: Engine) -> int:
+    """PostgreSQL only: add enum labels the ORM has but the database lacks.
+
+    Runs outside a transaction because ``ALTER TYPE … ADD VALUE`` cannot be
+    rolled back and older servers refuse it inside one. Failures are logged,
+    not raised: a database the app cannot introspect must not stop startup, and
+    the missing label only ever affects the new value.
+    """
+    if engine.dialect.name != "postgresql":
+        return 0
+
+    quote = engine.dialect.identifier_preparer.quote
+    added = 0
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        for type_name, labels in _native_enum_types().items():
+            try:
+                rows = conn.execute(
+                    text(
+                        "SELECT e.enumlabel FROM pg_enum e "
+                        "JOIN pg_type t ON t.oid = e.enumtypid "
+                        "WHERE t.typname = :name"
+                    ),
+                    {"name": type_name},
+                )
+                present = {row[0] for row in rows}
+                if not present:
+                    continue  # type does not exist yet — create_all will make it
+                for label in labels:
+                    if label in present:
+                        continue
+                    # DDL takes no bind parameters. The label comes from our own
+                    # enum definitions, never from user input; escape anyway.
+                    escaped = label.replace("'", "''")
+                    logger.info("Auto-migration: ALTER TYPE %s ADD VALUE %r", type_name, label)
+                    conn.execute(
+                        text(f"ALTER TYPE {quote(type_name)} ADD VALUE IF NOT EXISTS '{escaped}'")
+                    )
+                    added += 1
+            except Exception:  # noqa: BLE001 - never block startup over a label
+                logger.warning(
+                    "Auto-migration: could not sync labels of enum type %s", type_name,
+                    exc_info=True,
+                )
+    return added
+
+
 def run_migrations(engine: Engine) -> int:
-    """Add any ORM columns missing from existing tables. Returns the count added."""
+    """Add missing ORM columns and enum labels. Returns how many changes were made."""
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())
     added = 0
@@ -96,4 +160,5 @@ def run_migrations(engine: Engine) -> int:
                 if column.name not in existing_columns:
                     _add_column(conn, engine, table.name, column)
                     added += 1
-    return added
+
+    return added + _sync_enum_labels(engine)

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import Enum, create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app import models
 from app.database import Base
-from app.migrations import run_migrations
+from app.migrations import _native_enum_types, _sync_enum_labels, run_migrations
 
 
 def _fresh_engine():
@@ -60,3 +60,25 @@ def test_migration_skips_when_table_absent():
     # No tables created at all — create_all owns brand-new tables, not us.
     engine = create_engine("sqlite://", poolclass=StaticPool, future=True)
     assert run_migrations(engine) == 0
+
+
+def test_enum_label_sync_is_a_noop_on_sqlite():
+    """SQLite stores enums as plain text with no constraint — nothing to sync."""
+    engine = _fresh_engine()
+    assert _sync_enum_labels(engine) == 0
+
+
+def test_orm_enum_types_are_discovered():
+    """The Postgres path can only add what it finds; guard the discovery."""
+    types = _native_enum_types()
+    assert types["expensecategory"] == tuple(c.value for c in models.ExpenseCategory)
+    assert "inspection" in types["expensecategory"]
+    # Every enum column the ORM defines must be reachable, or its labels would
+    # silently never be synced on Postgres.
+    defined = {
+        col.type.name
+        for table in Base.metadata.sorted_tables
+        for col in table.columns
+        if isinstance(col.type, Enum) and col.type.native_enum
+    }
+    assert defined == set(types)

@@ -206,7 +206,21 @@ So for most changes you just:
    scalar `default=` so existing rows can be back-filled).
 2. Restart the app — the new column is added automatically.
 
-This only ever *adds* columns and tables. **Renames, drops and type changes are
-out of scope** — for those, introduce a real migration tool such as
+### Adding an enum value
+
+The same auto-migration adds missing **enum labels**. This matters only on
+PostgreSQL, where an `Enum` column is backed by a real `TYPE`: without it, a
+release that adds a member leaves that value unusable until someone runs
+`ALTER TYPE` by hand. SQLite stores enums as plain text with no constraint, so
+there it is a no-op. Add the member to the enum in `app/models.py`, add its
+`…category.<value>` / `…type.<value>` key to **both** locale files, and restart
+— the templates iterate the enum, so the dropdowns pick it up on their own.
+
+Do not *remove* or *rename* enum members: `ALTER TYPE` cannot drop a label, and
+stored rows would stop loading. Retire a value the way `FuelType` retires `lpg`
+and `cng` — keep it valid, stop offering it in the form.
+
+This only ever *adds* columns, tables and enum labels. **Renames, drops and
+type changes are out of scope** — for those, introduce a real migration tool such as
 [Alembic](https://alembic.sqlalchemy.org/) (`alembic init alembic`, then replace
 the `init_db()` call).

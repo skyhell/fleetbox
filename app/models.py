@@ -77,6 +77,7 @@ class ExpenseCategory(str, enum.Enum):
     insurance = "insurance"
     tax = "tax"
     registration = "registration"
+    inspection = "inspection"  # Austrian §57a "Pickerl", TÜV, MOT, …
     parking = "parking"
     toll = "toll"
     vignette = "vignette"

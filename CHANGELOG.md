@@ -5,6 +5,17 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Expense category "Pickerl (§57a)"** — the statutory roadworthiness
+  inspection now has its own category under *Other expenses*, instead of
+  landing in *Other*. Existing entries are untouched.
+
+### Fixed
+- Auto-migration also adds **enum labels** now, not just columns. On PostgreSQL
+  an enum column is a real `TYPE`, so a release that adds a member (like this
+  one) would leave that value unusable until someone ran `ALTER TYPE` by hand.
+  SQLite is unaffected either way — it stores enums as plain text.
+
 ## [0.18.1] - 2026-09-21
 
 ### Fixed
