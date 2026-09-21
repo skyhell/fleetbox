@@ -5,6 +5,16 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-09-21
+
+### Fixed
+- **Cancel button on every inline add form.** The six *add* forms on the vehicle
+  page (intervals, service records, documents, tyres, refuellings, expenses)
+  only offered *Save* — once opened, the only way out was to click the opening
+  button again, and anything typed stayed there. They now have *Cancel* next to
+  *Save*, which closes the form and clears the fields. The standalone forms
+  (vehicle, service record, refuelling, expense) already had one.
+
 ## [0.22.0] - 2026-09-21
 
 ### Added

@@ -66,6 +66,18 @@ document.addEventListener("click", function (event) {
   window.location.href = row.dataset.href;
 });
 
+// --- Cancelling an inline "add" form ------------------------------------------
+// The adders live in a <details>, so cancelling means closing it again. The
+// button is type="reset", which clears the fields on its own — without
+// JavaScript it still does the useful half.
+document.addEventListener("click", function (event) {
+  if (!event.target || !event.target.closest) return;
+  var button = event.target.closest("button[data-cancel]");
+  if (!button) return;
+  var box = button.closest("details");
+  if (box) box.open = false;
+});
+
 // --- One-time DOM enhancements ------------------------------------------------
 window.addEventListener("DOMContentLoaded", function () {
   var body = document.body;

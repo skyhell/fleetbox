@@ -103,7 +103,10 @@
         <label>{{ t('service.field.last_date') }}<input type="date" name="last_service_date"></label>
         <label>{{ t('service.field.last_' + vehicle.usage_unit.value) }}<input type="number" name="last_service_mileage" min="0" step="0.01"></label>
       </div>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>
@@ -174,7 +177,10 @@
         <label>{{ t('service.field.workshop') }}<input type="text" name="workshop"></label>
       </div>
       <label>{{ t('service.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>
@@ -230,7 +236,10 @@
         </label>
       </div>
       <p class="muted small">{{ t('attachment.hint') }}</p>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>
@@ -335,7 +344,10 @@
         </label>
       </div>
       <label>{{ t('service.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>
@@ -440,7 +452,10 @@
           <input type="checkbox" name="full_tank" value="1" checked> {{ t('fuel.field.full_tank') }}
         </label>
       </div>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>
@@ -509,7 +524,10 @@
         <label>{{ t(vehicle.reading_label_key) }}<input type="number" name="mileage" min="0" step="0.01"></label>
       </div>
       <label>{{ t('expense.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
-      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+        <button class="btn" type="reset" data-cancel>{{ t('common.cancel') }}</button>
+      </div>
     </form>
   </details>
 </section>

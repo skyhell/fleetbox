@@ -223,6 +223,21 @@ def _run_browser(
                 and back == labels["km"],
             )
 
+            # --- 0.22.1: cancelling an inline add form closes and clears it ---
+            page.goto(f"{base}/vehicles/{vehicle_id}")
+            page.wait_for_timeout(800)
+            page.eval_on_selector("details.adder", "el => el.open = true")
+            page.fill('details.adder input[name="name"]', "Cancelled")
+            page.click("details.adder button[data-cancel]")
+            page.wait_for_timeout(250)
+            state = page.eval_on_selector(
+                "details.adder",
+                "el => ({open: el.open,"
+                " value: el.querySelector('input[name=\"name\"]').value})",
+            )
+            check("cancel closes the inline add form", state["open"] is False)
+            check("cancel clears what was typed", state["value"] == "")
+
             # --- 0.22: mounting and unmounting writes the tyre history ---
             page.goto(f"{base}/vehicles/{tire_vehicle_id}")
             page.wait_for_timeout(800)

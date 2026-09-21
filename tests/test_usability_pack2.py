@@ -182,3 +182,19 @@ def test_vehicle_detail_sections_explain_themselves(client):
     page = client.get(_create_vehicle(client)).text
     assert "Noch keine Serviceeinträge." in page
     assert "Ab der zweiten Volltankung wird der Verbrauch berechnet." in page
+
+
+# --- Cancelling an inline add form -------------------------------------------
+
+
+def test_every_inline_add_form_offers_a_way_out(client):
+    _register(client, "jules", "jules@example.com")
+    page = client.get(_create_vehicle(client)).text
+    # Six adders on the vehicle page: intervals, records, documents, tyres,
+    # fuel, expenses. Each one has to be closable again.
+    assert page.count('<details class="adder">') == 6
+    assert page.count("data-cancel") == 6
+    # type="reset" so the fields clear even with JavaScript unavailable, and so
+    # the button can never submit a half-filled form by accident.
+    assert page.count('<button class="btn" type="reset" data-cancel>') == 6
+    assert "Abbrechen" in page
