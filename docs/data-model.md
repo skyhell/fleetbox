@@ -146,7 +146,13 @@ cost chart on the statistics page.
 | `title`      | str    | short description                      |
 | `amount`     | float  | cost in the instance's currency        |
 | `spent_on`   | date   |                                        |
+| `mileage`    | float  | optional odometer / hour-meter reading |
 | `notes`      | text   | optional                               |
+
+Like the reading on a service record or a refuelling, a filled-in `mileage`
+counts as a dated reading: it feeds the odometer chart, the tracked distance
+and the cost report's yearly distance, and lifts the vehicle's own reading when
+it is higher. Left empty it is simply ignored.
 
 ## AuditLog
 Security-relevant events: logins and failed attempts, logouts, registrations,

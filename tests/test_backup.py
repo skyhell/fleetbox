@@ -228,3 +228,48 @@ def test_zip_import_rejects_invalid_archive(client):
     )
     assert resp.status_code == 200
     assert "kein gültiges ZIP" in resp.text or "not a valid ZIP" in resp.text
+
+
+def test_expense_reading_survives_a_csv_round_trip(client):
+    _register(client, "expcsv", "expcsv@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    token = _csrf(client, vehicle_url)
+    client.post(
+        f"{vehicle_url}/expenses",
+        data={"category": "inspection", "title": "Pickerl", "amount": "65",
+              "spent_on": "2026-03-01", "mileage": "20381", "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    csv_text = client.get("/backup/export/expenses.csv").text
+    assert csv_text.splitlines()[0].split(",") == [
+        "vehicle", "spent_on", "category", "title", "amount", "mileage", "notes"
+    ]
+    assert "20381" in csv_text
+
+    # Re-importing that export restores the reading.
+    token = _csrf(client, "/backup")
+    client.post(
+        "/backup/import",
+        files={"expenses": ("expenses.csv", csv_text.encode("utf-8"), "text/csv")},
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert client.get(vehicle_url).text.count("20.381 km") >= 2
+
+
+def test_import_tolerates_a_backup_without_the_mileage_column(client):
+    """Backups written before 0.20.0 have no mileage column — import anyway."""
+    _register(client, "oldcsv", "oldcsv@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+
+    old_csv = "vehicle,spent_on,category,title,amount,notes\nGolf,2026-03-01,parking,Parken,4,\n"
+    token = _csrf(client, "/backup")
+    resp = client.post(
+        "/backup/import",
+        files={"expenses": ("expenses.csv", old_csv.encode("utf-8"), "text/csv")},
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code in (200, 303)
+    assert "Parken" in client.get(vehicle_url).text

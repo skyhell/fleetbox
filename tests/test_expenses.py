@@ -114,3 +114,40 @@ def test_inspection_category_is_offered_and_stored(client):
     expense_id = _expense_ids(client, url)[0]
     form = client.get(f"{url}/expenses/{expense_id}/edit").text
     assert '<option value="inspection" selected>' in form
+
+
+def test_expense_reading_is_optional_and_counts(client):
+    _register(client, "reading", "reading@example.com")
+    url = _create_vehicle(client, mileage="1000")
+
+    # Left empty it stays unset — the field is not mandatory.
+    _add_expense(client, url, title="Parkhaus", amount="4")
+    page = client.get(url).text
+    assert "Parkhaus" in page
+
+    # Filled in it is shown with the vehicle's unit and lifts the vehicle
+    # reading, the way a service record or a refuelling does.
+    _add_expense(client, url, category="inspection", title="Pickerl",
+                 amount="65", mileage="20381")
+    page = client.get(url).text
+    assert "20.381 km" in page
+    # The vehicle header now reports the new reading.
+    assert "20.381" in page
+
+    # A lower reading on a later entry must not pull the vehicle back.
+    _add_expense(client, url, title="Maut", amount="9", mileage="500")
+    page = client.get(url).text
+    assert "20.381" in page
+
+
+def test_expense_reading_survives_the_edit_form(client):
+    _register(client, "roundtrip", "roundtrip@example.com")
+    url = _create_vehicle(client, usage_unit="h", mileage="0")
+    _add_expense(client, url, title="Wartungspauschale", amount="120", mileage="1234,56")
+
+    expense_id = _expense_ids(client, url)[0]
+    form = client.get(f"{url}/expenses/{expense_id}/edit").text
+    # Machine format in the input, localised on the page.
+    assert 'name="mileage"' in form
+    assert 'value="1234.56"' in form
+    assert "1.234,56" in client.get(url).text

@@ -77,7 +77,7 @@ FUEL_COLUMNS = [
     "price_per_unit", "total_cost", "full_tank", "notes",
 ]
 EXPENSE_COLUMNS = [
-    "vehicle", "spent_on", "category", "title", "amount", "notes",
+    "vehicle", "spent_on", "category", "title", "amount", "mileage", "notes",
 ]
 # ``file`` is the member path inside the ZIP; the record columns let the import
 # re-link an attachment to its service record when exactly one record matches.
@@ -198,7 +198,7 @@ def _expense_rows(db: Session, user: User) -> list[list]:
         for e in v.expenses:
             rows.append([
                 v.name, _cell(e.spent_on), _cell(e.category), _cell(e.title),
-                _cell(e.amount), _cell(e.notes),
+                _cell(e.amount), _cell(e.mileage), _cell(e.notes),
             ])
     return rows
 
@@ -396,6 +396,8 @@ def _import_rows(
             title=_s(row.get("title")) or "—",
             amount=_float(row.get("amount")) or 0.0,
             spent_on=_date(row.get("spent_on")) or date.today(),
+            # Absent in backups written before 0.20.0 — then simply unset.
+            mileage=_reading(row.get("mileage")),
             notes=_s(row.get("notes")),
         ))
         summary["expenses"] += 1

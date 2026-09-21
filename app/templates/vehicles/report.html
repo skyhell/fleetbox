@@ -132,6 +132,7 @@
         <th>{{ t('expense.field.date') }}</th>
         <th>{{ t('expense.field.category') }}</th>
         <th>{{ t('expense.field.title') }}</th>
+        <th>{{ t(vehicle.reading_label_key) }}</th>
         <th>{{ t('expense.field.amount') }}</th>
       </tr>
     </thead>
@@ -141,6 +142,7 @@
         <td>{{ e.spent_on }}</td>
         <td>{{ t(e.category_label_key) }}</td>
         <td>{{ e.title }}</td>
+        <td>{% if e.mileage %}{{ e.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{{ e.amount|money }}</td>
       </tr>
       {% endfor %}

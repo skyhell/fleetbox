@@ -36,6 +36,12 @@ def _float(v: str | None) -> float:
     return float(v) if v else 0.0
 
 
+def _reading(v: str | None) -> float | None:
+    """Parse an optional odometer / hour-meter reading, up to 2 decimals."""
+    v = (v or "").strip().replace(",", ".")
+    return round(float(v), 2) if v else None
+
+
 def _category(value: str | None) -> ExpenseCategory:
     try:
         return ExpenseCategory((value or "").strip())
@@ -51,21 +57,25 @@ def add_expense(
     title: str = Form(...),
     amount: str = Form("0"),
     spent_on: str = Form(...),
+    mileage: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
-    db.add(
-        Expense(
-            vehicle_id=vehicle.id,
-            category=_category(category),
-            title=title,
-            amount=_float(amount),
-            spent_on=date.fromisoformat(spent_on) if spent_on else date.today(),
-            notes=notes or None,
-        )
+    expense = Expense(
+        vehicle_id=vehicle.id,
+        category=_category(category),
+        title=title,
+        amount=_float(amount),
+        spent_on=date.fromisoformat(spent_on) if spent_on else date.today(),
+        mileage=_reading(mileage),
+        notes=notes or None,
     )
+    db.add(expense)
+    # Keep the vehicle reading up to date, as service records and fuel logs do.
+    if expense.mileage and expense.mileage > vehicle.mileage:
+        vehicle.mileage = expense.mileage
     db.commit()
     flash(request, "flash.expense.created")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
@@ -93,6 +103,7 @@ def update_expense(
     title: str = Form(...),
     amount: str = Form("0"),
     spent_on: str = Form(...),
+    mileage: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
@@ -103,7 +114,10 @@ def update_expense(
     expense.title = title
     expense.amount = _float(amount)
     expense.spent_on = date.fromisoformat(spent_on) if spent_on else date.today()
+    expense.mileage = _reading(mileage)
     expense.notes = notes or None
+    if expense.mileage and expense.mileage > vehicle.mileage:
+        vehicle.mileage = expense.mileage
     db.commit()
     flash(request, "flash.expense.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)

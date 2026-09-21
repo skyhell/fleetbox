@@ -5,6 +5,15 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Odometer reading on other expenses** — an optional reading, exactly like
+  service records and refuellings already carry. Entering it is never required.
+  When it *is* filled in it counts as a dated reading: it appears in the
+  odometer chart, in the tracked distance and in the cost report's yearly
+  distance, and it lifts the vehicle's own reading when it is higher. The
+  column is included in the CSV and ZIP backups; backups written by older
+  versions import unchanged, just without a reading.
+
 ## [0.19.0] - 2026-09-21
 
 ### Added

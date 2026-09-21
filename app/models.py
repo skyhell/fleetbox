@@ -445,6 +445,10 @@ class Expense(Base):
     title: Mapped[str] = mapped_column(String(160), nullable=False)
     amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     spent_on: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
+    # Optional odometer / hour-meter reading, like service records and fuel
+    # logs carry. Counts as a reading for the statistics and the yearly
+    # distance when it is filled in.
+    mileage: Mapped[float | None] = mapped_column(Float)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 

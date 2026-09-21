@@ -158,12 +158,18 @@ def compute_stats(vehicle: Vehicle) -> VehicleStats:
         if r.mileage is not None:
             key = r.performed_on.isoformat()
             readings[key] = max(readings.get(key, r.mileage), r.mileage)
+    for e in expenses:
+        if e.mileage is not None:
+            key = e.spent_on.isoformat()
+            readings[key] = max(readings.get(key, e.mileage), e.mileage)
     stats.mileage_series = sorted(readings.items())
 
     # Distance tracked and cost per kilometre.
-    all_mileages = [f.mileage for f in fuel_logs if f.mileage is not None] + [
-        r.mileage for r in records if r.mileage is not None
-    ]
+    all_mileages = (
+        [f.mileage for f in fuel_logs if f.mileage is not None]
+        + [r.mileage for r in records if r.mileage is not None]
+        + [e.mileage for e in expenses if e.mileage is not None]
+    )
     if len(all_mileages) >= 2:
         stats.distance_tracked = max(all_mileages) - min(all_mileages)
         if stats.distance_tracked > 0:

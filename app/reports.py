@@ -87,9 +87,9 @@ class VehicleCosts:
 def _reading_points(vehicle: Vehicle) -> list[tuple[date, float]]:
     """Dated odometer readings of one vehicle as a sorted timeline.
 
-    Fuel logs and service records both carry readings; when several fall on the
-    same day only the highest is kept, so a same-day pair cannot produce a
-    negative step.
+    Fuel logs, service records and expenses can all carry a reading; when
+    several fall on the same day only the highest is kept, so a same-day pair
+    cannot produce a negative step.
     """
     highest: dict[date, float] = {}
     for f in vehicle.fuel_logs:
@@ -100,6 +100,10 @@ def _reading_points(vehicle: Vehicle) -> list[tuple[date, float]]:
         if r.mileage is not None:
             day = r.performed_on
             highest[day] = max(highest.get(day, r.mileage), r.mileage)
+    for e in vehicle.expenses:
+        if e.mileage is not None:
+            day = e.spent_on
+            highest[day] = max(highest.get(day, e.mileage), e.mileage)
     return sorted(highest.items())
 
 

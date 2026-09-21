@@ -408,6 +408,7 @@
         <th>{{ t('expense.field.date') }}</th>
         <th>{{ t('expense.field.category') }}</th>
         <th>{{ t('expense.field.title') }}</th>
+        <th>{{ t(vehicle.reading_label_key) }}</th>
         <th>{{ t('expense.field.amount') }}</th>
         <th></th>
       </tr>
@@ -418,6 +419,7 @@
         <td class="nowrap">{{ e.spent_on }}</td>
         <td>{{ t(e.category_label_key) }}</td>
         <td>{{ e.title }}{% if e.notes %}<br><span class="muted small">{{ e.notes }}</span>{% endif %}</td>
+        <td class="nowrap">{% if e.mileage %}{{ e.mileage|lnum }} {{ vehicle.usage_unit_label }}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{{ e.amount|money }}</td>
         <td>
           <div class="row-actions">
@@ -454,6 +456,7 @@
           <input type="date" name="spent_on" required>
         </label>
         <label>{{ t('expense.field.amount') }}<input type="text" name="amount" inputmode="decimal"></label>
+        <label>{{ t(vehicle.reading_label_key) }}<input type="number" name="mileage" min="0" step="0.01"></label>
       </div>
       <label>{{ t('expense.field.notes') }}<textarea name="notes" rows="2"></textarea></label>
       <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>

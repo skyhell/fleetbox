@@ -12,6 +12,8 @@ from datetime import date
 
 from app.calendar_feed import build_calendar
 from app.models import (
+    Expense,
+    ExpenseCategory,
     FuelLog,
     ServiceInterval,
     ServiceRecord,
@@ -389,3 +391,32 @@ def test_calendar_section_survives_an_unreadable_token(client, db_session):
     assert feed_path not in page.text  # the address cannot be shown any more
     assert "/account/calendar/disable" in page.text  # revoking still has to work
     assert client.get(feed_path).status_code == 200  # because the feed is still live
+
+
+def test_expense_reading_counts_towards_the_yearly_distance(db_session):
+    """An odometer reading on an expense is a reading like any other.
+
+    Before 0.20.0 expenses carried none, so only fuel logs and service records
+    fed the distance. A Pickerl entry with a reading has to count too, or the
+    yearly distance silently ignores a datum the user entered.
+    """
+    v = _user_with_vehicle(db_session, "expreading")
+    db_session.add_all([
+        Expense(vehicle_id=v.id, category=ExpenseCategory.inspection, title="Pickerl",
+                amount=65.0, spent_on=date(2026, 1, 1), mileage=10_000),
+        Expense(vehicle_id=v.id, category=ExpenseCategory.inspection, title="Pickerl",
+                amount=65.0, spent_on=date(2026, 12, 31), mileage=25_000),
+    ])
+    db_session.flush()
+    db_session.refresh(v)
+
+    years = {y.year: y for y in build_cost_report([v]).years}
+    assert years[2026].distance == 15_000.0
+
+    # An expense without a reading must not disturb the timeline.
+    db_session.add(Expense(vehicle_id=v.id, category=ExpenseCategory.parking,
+                           title="Parken", amount=3.0, spent_on=date(2026, 6, 1)))
+    db_session.flush()
+    db_session.refresh(v)
+    years = {y.year: y for y in build_cost_report([v]).years}
+    assert years[2026].distance == 15_000.0
