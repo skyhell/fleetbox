@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-09-21
+
 ### Added
 - **Recorded mounting periods are editable.** The ✎ button in the tyre history
   opens a period for correction — mount date and reading, removal date and
