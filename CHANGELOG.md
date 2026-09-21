@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-09-21
+
 ### Fixed
 - **Updates no longer arrive with the previous release's CSS and JavaScript.**
   On the first page load after an update the outgoing service worker still
