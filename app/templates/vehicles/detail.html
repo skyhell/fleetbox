@@ -259,13 +259,15 @@
         <td>{{ ts.dimension or t('common.none') }}</td>
         <td>{{ ts.storage_location or t('common.none') }}</td>
         <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
-        <td>
+        <td class="nowrap">
           {% if ts.is_mounted %}
             <span class="badge badge-ok">{{ t('tire.mounted') }}</span>
-            {% if ts.mounted_on %}<br><span class="muted small">{{ ts.mounted_on }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}</span>{% endif %}
           {% else %}
             <span class="muted small">{{ t('tire.stored') }}</span>
           {% endif %}
+          {#- The mount date and reading belong to the set, so they stay visible
+              once it is back in storage — that is how long it ran. -#}
+          {% if ts.mounted_on or ts.mounted_mileage is not none %}<br><span class="muted small" title="{{ t('tire.field.mounted_at') }}">{{ ts.mounted_on or '' }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}</span>{% endif %}
         </td>
         <td>
           <div class="row-actions">
@@ -275,8 +277,13 @@
               <button class="btn btn-sm" type="submit">{{ t('tire.unmount') }}</button>
             </form>
             {% else %}
-            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/mount">
+            <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/mount"
+                  class="mount-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="number" name="mileage" min="0" step="0.01" class="input-inline"
+                     placeholder="{{ vehicle.usage_unit_label }}"
+                     aria-label="{{ t('tire.field.mounted_at') }}"
+                     title="{{ t('tire.field.mounted_at_hint') }}">
               <button class="btn btn-sm" type="submit">{{ t('tire.mount') }}</button>
             </form>
             {% endif %}
@@ -313,6 +320,13 @@
         <label>{{ t('tire.field.tread') }}<input type="text" name="tread_depth_mm" inputmode="decimal"></label>
         <label class="checkbox">
           <input type="checkbox" name="is_mounted" value="1"> {{ t('tire.field.mounted_now') }}
+        </label>
+      </div>
+      <div class="form-row">
+        <label>{{ t('tire.field.mounted_at') }} ({{ vehicle.usage_unit_label }})
+          <input type="number" name="mileage" min="0" step="0.01"
+                 placeholder="{{ vehicle.mileage|num }}">
+          <span class="muted small">{{ t('tire.field.mounted_at_hint') }}</span>
         </label>
       </div>
       <label>{{ t('service.field.notes') }}<textarea name="notes" rows="2"></textarea></label>

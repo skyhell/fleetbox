@@ -129,9 +129,15 @@ is not the one currently mounted.
 | `tread_depth_mm`   | float    | optional                                       |
 | `is_mounted`       | bool     | currently on the vehicle (≤1 mounted per vehicle) |
 | `mounted_on`       | date     | recorded when mounted                          |
-| `mounted_mileage`  | float    | vehicle reading when mounted                   |
+| `mounted_mileage`  | float    | reading when mounted — entered, or the vehicle's |
 
 Mounting a set automatically unmounts any other set on the vehicle.
+
+The reading is optional on both the *Add tyre set* form and the *Mount* button:
+left empty it falls back to the vehicle's current reading. A reading ahead of
+the vehicle lifts the vehicle's own reading, as a service record does. Both the
+date and the reading stay on the set after it is unmounted — that is how long
+the set ran.
 
 ## Expense
 A miscellaneous vehicle expense that is neither fuel nor a service record

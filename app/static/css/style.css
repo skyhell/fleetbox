@@ -474,6 +474,10 @@ input:focus, select:focus, textarea:focus {
 .btn-danger:hover { background: var(--danger-dark); box-shadow: 0 4px 16px color-mix(in srgb, var(--danger) 38%, transparent); }
 form { display: inline; }
 .card form, .inline-form { display: block; }
+/* Mounting a tyre set takes an optional reading right in the row, so this one
+   form stays a row itself — it has to beat the `.card form` block above. */
+.card form.mount-form { display: flex; gap: 0.3rem; align-items: center; }
+.input-inline { width: 6rem; padding: 0.25rem 0.4rem; font-size: 0.82rem; }
 
 /* Alerts */
 .alert { padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem; font-weight: 500; }

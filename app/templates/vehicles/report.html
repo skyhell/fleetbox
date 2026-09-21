@@ -163,6 +163,7 @@
         <th>{{ t('tire.field.dimension') }}</th>
         <th>{{ t('tire.field.storage') }}</th>
         <th>{{ t('tire.field.tread') }}</th>
+        <th>{{ t('tire.field.mounted_at') }}</th>
         <th></th>
       </tr>
     </thead>
@@ -174,6 +175,7 @@
         <td>{{ ts.dimension or t('common.none') }}</td>
         <td>{{ ts.storage_location or t('common.none') }}</td>
         <td>{% if ts.tread_depth_mm is not none %}{{ '%.1f'|format(ts.tread_depth_mm) }} mm{% else %}{{ t('common.none') }}{% endif %}</td>
+        <td>{% if ts.mounted_on or ts.mounted_mileage is not none %}{{ ts.mounted_on or '' }}{% if ts.mounted_mileage is not none %} · {{ ts.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}{% else %}{{ t('common.none') }}{% endif %}</td>
         <td>{{ t('tire.mounted') if ts.is_mounted else t('tire.stored') }}</td>
       </tr>
       {% endfor %}

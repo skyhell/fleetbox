@@ -101,6 +101,80 @@ def test_unmount_and_delete(client):
     assert _tire_ids(client, url) == []
 
 
+def _tire(tire_id: int):
+    from app.database import SessionLocal
+    from app.models import TireSet
+
+    db = SessionLocal()
+    try:
+        tire = db.get(TireSet, tire_id)
+        db.expunge(tire)
+        return tire
+    finally:
+        db.close()
+
+
+def test_mount_takes_an_explicit_reading(client):
+    _register(client, "dave", "dave@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="summer")
+    (tire_id,) = _tire_ids(client, url)
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/mount",
+                data={"csrf_token": token, "mileage": "51234,5"}, follow_redirects=False)
+
+    assert _tire(tire_id).mounted_mileage == 51234.5
+    # A reading ahead of the vehicle lifts the vehicle's own reading.
+    assert "51.234,5" in client.get(url).text
+
+
+def test_mount_without_a_reading_falls_back_to_the_vehicle(client):
+    _register(client, "erin", "erin@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="summer")
+    (tire_id,) = _tire_ids(client, url)
+
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/mount",
+                data={"csrf_token": token, "mileage": ""}, follow_redirects=False)
+
+    assert _tire(tire_id).mounted_mileage == 50000
+
+
+def test_a_lower_mount_reading_does_not_pull_the_vehicle_back(client):
+    _register(client, "frank", "frank@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", is_mounted="1", mileage="41000")
+    (tire_id,) = _tire_ids(client, url)
+
+    assert _tire(tire_id).mounted_mileage == 41000
+    # The vehicle keeps its higher reading; the tyre set records the older one.
+    from app.database import SessionLocal
+    from app.models import Vehicle
+
+    db = SessionLocal()
+    try:
+        assert db.get(Vehicle, int(url.rsplit("/", 1)[1])).mileage == 50000
+    finally:
+        db.close()
+
+
+def test_mount_reading_is_listed_on_the_vehicle_page(client):
+    _register(client, "gina", "gina@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="60000")
+    # Unmounting must not hide the reading — it belongs to the set, not the badge.
+    (tire_id,) = _tire_ids(client, url)
+    token = _csrf(client, url)
+    client.post(f"{url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token}, follow_redirects=False)
+
+    page = client.get(url).text
+    assert "60.000 km" in page
+
+
 def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")

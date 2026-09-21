@@ -204,6 +204,8 @@
   "tire.field.storage": "Lagerort",
   "tire.field.tread": "Profiltiefe",
   "tire.field.mounted_now": "Jetzt montiert",
+  "tire.field.mounted_at": "Stand bei Montage",
+  "tire.field.mounted_at_hint": "Optional – leer übernimmt den aktuellen Stand des Fahrzeugs.",
   "tire.season.summer": "Sommer",
   "tire.season.winter": "Winter",
   "tire.season.all_season": "Ganzjahr",

@@ -5,6 +5,16 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Odometer reading on tyre sets** — the reading at mounting is now an
+  optional input instead of being taken silently from the vehicle: on the
+  *Add tyre set* form and directly next to the *Mount* button. Left empty it
+  still takes the vehicle's current reading, so nothing changes for anyone who
+  ignores the field; a reading that is ahead of the vehicle lifts the vehicle's
+  own reading, as a service record does. The reading and its date now have
+  their own column on the vehicle page and in the printable record — before,
+  they were only shown for the set that happened to be mounted.
+
 ## [0.20.0] - 2026-09-21
 
 ### Added

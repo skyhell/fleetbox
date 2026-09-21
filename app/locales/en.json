@@ -204,6 +204,8 @@
   "tire.field.storage": "Storage location",
   "tire.field.tread": "Tread depth",
   "tire.field.mounted_now": "Mounted now",
+  "tire.field.mounted_at": "Reading when mounted",
+  "tire.field.mounted_at_hint": "Optional – empty takes the vehicle's current reading.",
   "tire.season.summer": "Summer",
   "tire.season.winter": "Winter",
   "tire.season.all_season": "All-season",

@@ -40,6 +40,12 @@ def _float(v: str | None) -> float | None:
     return float(v) if v else None
 
 
+def _reading(v: str | None) -> float | None:
+    """Parse an optional odometer / hour-meter reading, up to 2 decimals."""
+    value = _float(v)
+    return round(value, 2) if value is not None else None
+
+
 @router.post("")
 def add_tire_set(
     request: Request,
@@ -50,6 +56,7 @@ def add_tire_set(
     storage_location: str = Form(""),
     tread_depth_mm: str = Form(""),
     is_mounted: str = Form(""),
+    mileage: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
@@ -65,7 +72,7 @@ def add_tire_set(
         notes=notes or None,
     )
     if is_mounted:
-        _mount(vehicle, tire)
+        _mount(vehicle, tire, _reading(mileage))
     db.add(tire)
     db.commit()
     flash(request, "flash.tire.created")
@@ -77,12 +84,13 @@ def mount_tire_set(
     request: Request,
     vehicle_id: int,
     tire_id: int,
+    mileage: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
     vehicle = _get_owned_vehicle(db, user, vehicle_id)
     tire = _get_tire(db, vehicle, tire_id)
-    _mount(vehicle, tire)
+    _mount(vehicle, tire, _reading(mileage))
     db.commit()
     flash(request, "flash.tire.mounted")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
@@ -120,12 +128,20 @@ def delete_tire_set(
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 
-def _mount(vehicle: Vehicle, tire: TireSet) -> None:
+def _mount(vehicle: Vehicle, tire: TireSet, mileage: float | None = None) -> None:
     """Mount ``tire`` on the vehicle, unmounting any other set, and record when
-    and at what reading it happened."""
+    and at what reading it happened.
+
+    ``mileage`` is optional: left empty, the vehicle's current reading is taken,
+    which is what happened unconditionally before 0.21.0. An explicit reading
+    that is ahead of the vehicle lifts the vehicle's own reading, exactly as a
+    service record or a fuel log does.
+    """
     for other in vehicle.tire_sets:
         if other is not tire:
             other.is_mounted = False
     tire.is_mounted = True
     tire.mounted_on = date.today()
-    tire.mounted_mileage = vehicle.mileage
+    tire.mounted_mileage = vehicle.mileage if mileage is None else mileage
+    if tire.mounted_mileage and tire.mounted_mileage > vehicle.mileage:
+        vehicle.mileage = tire.mounted_mileage
