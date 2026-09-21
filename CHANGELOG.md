@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-09-21
+
 ### Added
 - **Odometer reading on tyre sets** — the reading at mounting is now an
   optional input instead of being taken silently from the vehicle: on the
