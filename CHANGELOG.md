@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-09-21
+
 ### Added
 - **Tyre sets are editable.** Season, label, size, storage location, tread depth
   and notes can be corrected at last — until now a typo could only be fixed by
