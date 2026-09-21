@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tire.edit') }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('tire.edit') }} — {{ vehicle.display_name }}</h1>
+  <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ tire.id }}/edit">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-row">
+      <label>{{ t('tire.field.season') }} <span class="req">*</span>
+        <select name="season">
+          {% for s in TireSeason %}
+          <option value="{{ s.value }}" {{ 'selected' if tire.season == s else '' }}>{{ t('tire.season.' + s.value) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t('tire.field.label') }}
+        <input type="text" name="label" value="{{ tire.label or '' }}"
+               placeholder="{{ t('tire.field.label_hint') }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('tire.field.dimension') }}
+        <input type="text" name="dimension" value="{{ tire.dimension or '' }}" placeholder="205/55 R16">
+      </label>
+      <label>{{ t('tire.field.storage') }}
+        <input type="text" name="storage_location" value="{{ tire.storage_location or '' }}">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>{{ t('tire.field.tread') }}
+        <input type="text" name="tread_depth_mm" inputmode="decimal"
+               value="{{ tire.tread_depth_mm|num if tire.tread_depth_mm is not none else '' }}">
+      </label>
+    </div>
+    <label>{{ t('service.field.notes') }}
+      <textarea name="notes" rows="2">{{ tire.notes or '' }}</textarea>
+    </label>
+    {#- Mount state and history are events, not fields: they change through the
+        mount / unmount buttons on the vehicle page. Shown here read-only so it
+        is clear why they cannot be typed over. -#}
+    <p class="muted small">
+      {{ t('tire.edit.mount_hint') }}
+      {% if tire.mounted_on %}
+      — {{ t('tire.field.mounted_at') }}: {{ tire.mounted_on }}{% if tire.mounted_mileage is not none %} · {{ tire.mounted_mileage|lnum }} {{ vehicle.usage_unit_label }}{% endif %}
+      {% endif %}
+    </p>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
+      <a class="btn" href="/vehicles/{{ vehicle.id }}#tire-{{ tire.id }}">{{ t('common.cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

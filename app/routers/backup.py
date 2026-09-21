@@ -40,6 +40,9 @@ from app.models import (
     ServiceInterval,
     ServiceRecord,
     ServiceType,
+    TireMount,
+    TireSeason,
+    TireSet,
     UsageUnit,
     User,
     Vehicle,
@@ -78,6 +81,17 @@ FUEL_COLUMNS = [
 ]
 EXPENSE_COLUMNS = [
     "vehicle", "spent_on", "category", "title", "amount", "mileage", "notes",
+]
+TIRE_COLUMNS = [
+    "vehicle", "season", "label", "dimension", "storage_location",
+    "tread_depth_mm", "is_mounted", "mounted_on", "mounted_mileage", "notes",
+]
+# A tyre set has no unique name, so a mounting period points at its set by the
+# pair that identifies it in practice: season + label. A row whose pair matches
+# no set, or more than one, is skipped rather than attached to a guess.
+TIRE_MOUNT_COLUMNS = [
+    "vehicle", "season", "label", "mounted_on", "mounted_mileage",
+    "removed_on", "removed_mileage",
 ]
 # ``file`` is the member path inside the ZIP; the record columns let the import
 # re-link an attachment to its service record when exactly one record matches.
@@ -136,7 +150,7 @@ def _cell(value) -> str:
         return ""
     if isinstance(value, bool):
         return "true" if value else "false"
-    if isinstance(value, FuelType | ServiceType | UsageUnit | ExpenseCategory):
+    if isinstance(value, FuelType | ServiceType | UsageUnit | ExpenseCategory | TireSeason):
         return value.value
     if isinstance(value, date):
         return value.isoformat()
@@ -203,6 +217,32 @@ def _expense_rows(db: Session, user: User) -> list[list]:
     return rows
 
 
+def _tire_rows(db: Session, user: User) -> list[list]:
+    rows = []
+    for v in _user_vehicles(db, user):
+        for ts in v.tire_sets:
+            rows.append([
+                v.name, _cell(ts.season), _cell(ts.label), _cell(ts.dimension),
+                _cell(ts.storage_location), _cell(ts.tread_depth_mm),
+                _cell(ts.is_mounted), _cell(ts.mounted_on),
+                _cell(ts.mounted_mileage), _cell(ts.notes),
+            ])
+    return rows
+
+
+def _tire_mount_rows(db: Session, user: User) -> list[list]:
+    rows = []
+    for v in _user_vehicles(db, user):
+        for ts in v.tire_sets:
+            for m in ts.mounts:
+                rows.append([
+                    v.name, _cell(ts.season), _cell(ts.label),
+                    _cell(m.mounted_on), _cell(m.mounted_mileage),
+                    _cell(m.removed_on), _cell(m.removed_mileage),
+                ])
+    return rows
+
+
 def _attachment_rows(db: Session, user: User) -> tuple[list[list], list[Attachment]]:
     """Rows for attachments.csv plus the attachments whose files exist on disk."""
     rows: list[list] = []
@@ -247,6 +287,16 @@ def export_expenses(db: Session = Depends(get_db), user: User = Depends(require_
     return csv_response("expenses.csv", EXPENSE_COLUMNS, _expense_rows(db, user))
 
 
+@router.get("/export/tire_sets.csv")
+def export_tires(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return csv_response("tire_sets.csv", TIRE_COLUMNS, _tire_rows(db, user))
+
+
+@router.get("/export/tire_mounts.csv")
+def export_tire_mounts(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    return csv_response("tire_mounts.csv", TIRE_MOUNT_COLUMNS, _tire_mount_rows(db, user))
+
+
 @router.get("/export/fleetbox-backup.zip")
 def export_zip(db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Full backup: every CSV plus all uploaded files, in one archive."""
@@ -257,6 +307,8 @@ def export_zip(db: Session = Depends(get_db), user: User = Depends(require_user)
         zf.writestr("service_intervals.csv", csv_text(INTERVAL_COLUMNS, _interval_rows(db, user)))
         zf.writestr("fuel_logs.csv", csv_text(FUEL_COLUMNS, _fuel_rows(db, user)))
         zf.writestr("expenses.csv", csv_text(EXPENSE_COLUMNS, _expense_rows(db, user)))
+        zf.writestr("tire_sets.csv", csv_text(TIRE_COLUMNS, _tire_rows(db, user)))
+        zf.writestr("tire_mounts.csv", csv_text(TIRE_MOUNT_COLUMNS, _tire_mount_rows(db, user)))
         att_rows, attachments = _attachment_rows(db, user)
         zf.writestr("attachments.csv", csv_text(ATTACHMENT_COLUMNS, att_rows))
         for a in attachments:
@@ -288,11 +340,13 @@ def _import_rows(
     service_intervals: list[dict[str, str]],
     fuel_logs: list[dict[str, str]],
     expenses: list[dict[str, str]],
+    tire_sets: list[dict[str, str]] | None = None,
+    tire_mounts: list[dict[str, str]] | None = None,
 ) -> tuple[dict[str, int], dict[str, Vehicle]]:
     """Import parsed CSV rows; returns the summary and the vehicle-by-name map."""
     summary = {
         "vehicles": 0, "records": 0, "intervals": 0, "fuel": 0,
-        "expenses": 0, "attachments": 0, "skipped": 0,
+        "expenses": 0, "tires": 0, "attachments": 0, "skipped": 0,
     }
 
     # 1. Vehicles first — dedupe by name so re-importing is non-destructive.
@@ -402,6 +456,64 @@ def _import_rows(
         ))
         summary["expenses"] += 1
 
+    # 6. Tyre sets, then their mounting periods. Both are absent from backups
+    #    written before 0.23.0 — an older archive simply restores no tyres.
+    sets_by_key: dict[tuple[int, str, str], TireSet] = {}
+    for vehicle in by_name.values():
+        for existing in vehicle.tire_sets:
+            sets_by_key[(vehicle.id, existing.season.value, existing.label or "")] = existing
+
+    for row in tire_sets or []:
+        vehicle = _vehicle(row)
+        if vehicle is None:
+            summary["skipped"] += 1
+            continue
+        season = _enum(TireSeason, row.get("season"), TireSeason.summer)
+        label = _s(row.get("label"))
+        key = (vehicle.id, season.value, label or "")
+        if key in sets_by_key:  # re-importing the same archive stays a no-op
+            summary["skipped"] += 1
+            continue
+        tire = TireSet(
+            vehicle_id=vehicle.id,
+            season=season,
+            label=label,
+            dimension=_s(row.get("dimension")),
+            storage_location=_s(row.get("storage_location")),
+            tread_depth_mm=_float(row.get("tread_depth_mm")),
+            is_mounted=_bool(row.get("is_mounted")),
+            mounted_on=_date(row.get("mounted_on")),
+            mounted_mileage=_reading(row.get("mounted_mileage")),
+            notes=_s(row.get("notes")),
+        )
+        db.add(tire)
+        sets_by_key[key] = tire
+        summary["tires"] += 1
+    db.flush()  # assign ids so the periods can reference their sets
+
+    for row in tire_mounts or []:
+        vehicle = _vehicle(row)
+        mounted_on = _date(row.get("mounted_on"))
+        if vehicle is None or mounted_on is None:
+            summary["skipped"] += 1
+            continue
+        season = _enum(TireSeason, row.get("season"), TireSeason.summer)
+        tire = sets_by_key.get((vehicle.id, season.value, _s(row.get("label")) or ""))
+        if tire is None:
+            summary["skipped"] += 1
+            continue
+        if any(m.mounted_on == mounted_on for m in tire.mounts):
+            summary["skipped"] += 1
+            continue
+        tire.mounts.append(TireMount(
+            vehicle_id=vehicle.id,
+            mounted_on=mounted_on,
+            mounted_mileage=_reading(row.get("mounted_mileage")),
+            removed_on=_date(row.get("removed_on")),
+            removed_mileage=_reading(row.get("removed_mileage")),
+        ))
+        summary["tires"] += 1
+
     return summary, by_name
 
 
@@ -418,6 +530,8 @@ async def import_csv(
     service_intervals: UploadFile | None = File(None),
     fuel_logs: UploadFile | None = File(None),
     expenses: UploadFile | None = File(None),
+    tire_sets: UploadFile | None = File(None),
+    tire_mounts: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
@@ -428,6 +542,8 @@ async def import_csv(
         await _read_rows(service_intervals),
         await _read_rows(fuel_logs),
         await _read_rows(expenses),
+        await _read_rows(tire_sets),
+        await _read_rows(tire_mounts),
     )
     db.commit()
     return render(request, "backup/index.html", summary=summary)
@@ -482,6 +598,8 @@ async def import_zip(
             _zip_rows(zf, "service_intervals.csv"),
             _zip_rows(zf, "fuel_logs.csv"),
             _zip_rows(zf, "expenses.csv"),
+            _zip_rows(zf, "tire_sets.csv"),
+            _zip_rows(zf, "tire_mounts.csv"),
         )
         db.flush()  # children exist so attachments can re-link to records
 

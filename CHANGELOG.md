@@ -5,6 +5,24 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Tyre sets are editable.** Season, label, size, storage location, tread depth
+  and notes can be corrected at last — until now a typo could only be fixed by
+  deleting the set and creating it again, which since 0.22.0 took its history
+  with it. Reach it with the ✎ button in the tyre row. Whether a set is mounted,
+  and the history behind it, stay where they belong: on the *Mount* and
+  *Unmount* buttons.
+- **Tyres are included in backups.** `tire_sets.csv` and `tire_mounts.csv` join
+  the ZIP archive and the per-entity CSV export/import. Until now a full backup
+  silently left the tyre sets and their history behind — restoring one lost
+  them. Archives written by older versions import unchanged, just without
+  tyres.
+
+### Fixed
+- The tyre row no longer pushes its delete button out of the card when the
+  window is narrow: the table scrolls sideways instead, and the edit action is
+  an icon.
+
 ## [0.22.1] - 2026-09-21
 
 ### Fixed

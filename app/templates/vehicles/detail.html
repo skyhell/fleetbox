@@ -248,6 +248,7 @@
 <section class="card">
   <h2>{{ t('tire.title') }}</h2>
   {% if tire_sets %}
+  <div class="table-scroll">
   <table class="table">
     <thead>
       <tr>
@@ -280,6 +281,11 @@
         </td>
         <td>
           <div class="row-actions">
+            {#- Icon, not the usual "Edit" label: this row already carries a
+                reading field and two buttons, and the word pushed the delete
+                button out of the card. -#}
+            <a class="btn btn-sm" href="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/edit"
+               title="{{ t('common.edit') }}" aria-label="{{ t('common.edit') }}">✎</a>
             {% if ts.is_mounted %}
             <form method="post" action="/vehicles/{{ vehicle.id }}/tires/{{ ts.id }}/unmount"
                   class="mount-form">
@@ -312,6 +318,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}<div class="empty-inline"><span class="empty-icon" aria-hidden="true">🛞</span><p>{{ t('vehicle.empty.tires') }}</p></div>{% endif %}
 
   <details class="adder">

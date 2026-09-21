@@ -477,7 +477,10 @@ form { display: inline; }
 /* Mounting a tyre set takes an optional reading right in the row, so this one
    form stays a row itself — it has to beat the `.card form` block above. */
 .card form.mount-form { display: flex; gap: 0.3rem; align-items: center; }
-.input-inline { width: 6rem; padding: 0.25rem 0.4rem; font-size: 0.82rem; }
+.input-inline { flex: 0 0 6rem; width: 6rem; padding: 0.25rem 0.4rem; font-size: 0.82rem; }
+/* The tyre row carries four controls; let it scroll rather than spill out
+   of the card on a narrow card or a wider skin. */
+.table-scroll { overflow-x: auto; }
 
 /* Alerts */
 .alert { padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem; font-weight: 500; }

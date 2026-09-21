@@ -332,6 +332,72 @@ def test_total_distance_run_is_shown_on_the_set(client):
     assert "7.000 km" in page
 
 
+def test_editing_a_set_corrects_its_details(client):
+    _register(client, "otto", "otto@example.com")
+    url = _create_vehicle(client)
+    _add_tire(client, url, season="winter", label="WinterContakt", dimension="205/55 R16")
+    (tire_id,) = _tire_ids(client, url)
+
+    form = client.get(f"{url}/tires/{tire_id}/edit")
+    assert form.status_code == 200
+    assert "WinterContakt" in form.text  # the typo is prefilled, ready to fix
+
+    token = _csrf(client, f"{url}/tires/{tire_id}/edit")
+    client.post(
+        f"{url}/tires/{tire_id}/edit",
+        data={"season": "summer", "label": "WinterContact", "dimension": "225/45 R17",
+              "storage_location": "Garage", "tread_depth_mm": "5,5",
+              "notes": "Nachgetragen", "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    page = client.get(url).text
+    assert "WinterContact" in page
+    assert "WinterContakt" not in page
+    assert "225/45 R17" in page
+    assert "Garage" in page
+    assert "5.5 mm" in page
+
+
+def test_editing_a_set_leaves_the_mount_state_alone(client):
+    _register(client, "petra", "petra@example.com")
+    url = _create_vehicle(client, mileage="50000")
+    _add_tire(client, url, season="winter", label="WinterSet", is_mounted="1",
+              mileage="50000")
+    (tire_id,) = _tire_ids(client, url)
+
+    token = _csrf(client, f"{url}/tires/{tire_id}/edit")
+    client.post(
+        f"{url}/tires/{tire_id}/edit",
+        data={"season": "winter", "label": "WinterSet", "csrf_token": token},
+        follow_redirects=False,
+    )
+
+    tire = _tire(tire_id)
+    assert tire.is_mounted is True
+    assert tire.mounted_mileage == 50000
+    # The history is untouched: still exactly the one open period.
+    assert len(_periods(tire_id)) == 1
+
+
+def test_editing_a_set_respects_ownership(client):
+    _register(client, "keeper", "keeper@example.com")
+    url = _create_vehicle(client, name="KeeperCar")
+    _add_tire(client, url, season="winter", label="Mine")
+    (tire_id,) = _tire_ids(client, url)
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+
+    _register(client, "thief", "thief@example.com")
+    assert client.get(f"{url}/tires/{tire_id}/edit").status_code == 404
+    token = _csrf(client, "/vehicles/new")
+    resp = client.post(
+        f"{url}/tires/{tire_id}/edit",
+        data={"season": "summer", "label": "Stolen", "csrf_token": token},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 404
+
+
 def test_tires_respect_ownership(client):
     _register(client, "owner", "owner@example.com")
     url = _create_vehicle(client, name="OwnerCar")

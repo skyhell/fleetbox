@@ -12,6 +12,7 @@ from app.database import get_db
 from app.flash import flash
 from app.models import TireMount, TireSeason, TireSet, User, Vehicle
 from app.security import require_user
+from app.templating import render
 
 router = APIRouter(prefix="/vehicles/{vehicle_id}/tires", tags=["tires"])
 
@@ -76,6 +77,51 @@ def add_tire_set(
     db.add(tire)
     db.commit()
     flash(request, "flash.tire.created")
+    return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
+
+
+@router.get("/{tire_id}/edit")
+def edit_tire_set_form(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    return render(request, "tires/form.html", vehicle=vehicle, tire=tire)
+
+
+@router.post("/{tire_id}/edit")
+def update_tire_set(
+    request: Request,
+    vehicle_id: int,
+    tire_id: int,
+    season: str = Form(...),
+    label: str = Form(""),
+    dimension: str = Form(""),
+    storage_location: str = Form(""),
+    tread_depth_mm: str = Form(""),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    """Correct a set's own details.
+
+    Whether it is mounted, and the history behind it, are deliberately not
+    editable here — those are events, changed by mounting and unmounting.
+    """
+    vehicle = _get_owned_vehicle(db, user, vehicle_id)
+    tire = _get_tire(db, vehicle, tire_id)
+    tire.season = TireSeason(season)
+    tire.label = label or None
+    tire.dimension = dimension or None
+    tire.storage_location = storage_location or None
+    tire.tread_depth_mm = _float(tread_depth_mm)
+    tire.notes = notes or None
+    db.commit()
+    flash(request, "flash.tire.updated")
     return RedirectResponse(f"/vehicles/{vehicle.id}", status_code=303)
 
 

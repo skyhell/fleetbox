@@ -273,3 +273,103 @@ def test_import_tolerates_a_backup_without_the_mileage_column(client):
     )
     assert resp.status_code in (200, 303)
     assert "Parken" in client.get(vehicle_url).text
+
+
+def _add_tire(client, vehicle_url: str, **fields) -> None:
+    token = _csrf(client, vehicle_url)
+    data = {"season": "winter", "csrf_token": token}
+    data.update(fields)
+    client.post(f"{vehicle_url}/tires", data=data, follow_redirects=False)
+
+
+def test_tire_sets_and_their_history_are_exported(client):
+    """Tyres were missing from every backup until 0.23.0."""
+    _register(client, "tyra", "tyra@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    _add_tire(client, vehicle_url, label="WinterContact", dimension="205/55 R16",
+              storage_location="Keller", is_mounted="1", mileage="1000")
+    tire_id = int(re.search(r"/tires/(\d+)/", client.get(vehicle_url).text).group(1))
+    token = _csrf(client, vehicle_url)
+    client.post(f"{vehicle_url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": "7500"}, follow_redirects=False)
+
+    sets_csv = client.get("/backup/export/tire_sets.csv")
+    assert sets_csv.status_code == 200
+    assert sets_csv.text.splitlines()[0].startswith("vehicle,season,label")
+    assert "WinterContact" in sets_csv.text
+    assert "205/55 R16" in sets_csv.text
+
+    mounts_csv = client.get("/backup/export/tire_mounts.csv").text
+    assert "1000" in mounts_csv and "7500" in mounts_csv
+
+
+def test_zip_round_trip_restores_tyres_and_history(client):
+    _register(client, "tyrone", "tyrone@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    _add_tire(client, vehicle_url, label="WinterContact", dimension="205/55 R16",
+              is_mounted="1", mileage="1000")
+    tire_id = int(re.search(r"/tires/(\d+)/", client.get(vehicle_url).text).group(1))
+    token = _csrf(client, vehicle_url)
+    client.post(f"{vehicle_url}/tires/{tire_id}/unmount",
+                data={"csrf_token": token, "mileage": "7500"}, follow_redirects=False)
+    archive = client.get("/backup/export/fleetbox-backup.zip").content
+    assert {"tire_sets.csv", "tire_mounts.csv"} <= set(
+        zipfile.ZipFile(io.BytesIO(archive)).namelist()
+    )
+
+    client.post("/logout", data={"csrf_token": _csrf(client, "/dashboard")}, follow_redirects=False)
+    _register(client, "tina", "tina@example.com")
+    token = _csrf(client, "/backup")
+    client.post(
+        "/backup/import/zip",
+        data={"csrf_token": token},
+        files={"archive": ("backup.zip", archive, "application/zip")},
+        follow_redirects=False,
+    )
+
+    page = client.get("/vehicles").text
+    new_url = re.search(r"/vehicles/\d+", page).group(0)
+    detail = client.get(new_url).text
+    assert "WinterContact" in detail
+    assert "205/55 R16" in detail
+    # 7500 - 1000 = 6500 km run, so the history came across too.
+    assert "6.500 km" in detail
+
+
+def test_reimporting_tyres_does_not_duplicate_them(client):
+    _register(client, "tom", "tom@example.com")
+    vehicle_url = _create_vehicle(client, "Golf")
+    _add_tire(client, vehicle_url, label="WinterContact", is_mounted="1", mileage="1000")
+    archive = client.get("/backup/export/fleetbox-backup.zip").content
+    # One cell in the tyre table, one in the history card. (A bare substring
+    # count would also catch the add form's placeholder text.)
+    assert client.get(vehicle_url).text.count("<td>WinterContact") == 2
+
+    for _ in range(2):
+        token = _csrf(client, "/backup")
+        client.post(
+            "/backup/import/zip",
+            data={"csrf_token": token},
+            files={"archive": ("backup.zip", archive, "application/zip")},
+            follow_redirects=False,
+        )
+    assert client.get(vehicle_url).text.count("<td>WinterContact") == 2
+
+
+def test_import_tolerates_a_backup_without_the_tyre_csvs(client):
+    """Archives written before 0.23.0 have no tyre members — import anyway."""
+    _register(client, "oldzip", "oldzip@example.com")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("vehicles.csv",
+                    "name,make,model,year,vin,license_plate,fuel_type,usage_unit,"
+                    "mileage,inspection_due,notes\nPolo,VW,,,,,diesel,km,1000,,\n")
+    token = _csrf(client, "/backup")
+    resp = client.post(
+        "/backup/import/zip",
+        data={"csrf_token": token},
+        files={"archive": ("backup.zip", buffer.getvalue(), "application/zip")},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 200
+    assert "Polo" in client.get("/vehicles").text

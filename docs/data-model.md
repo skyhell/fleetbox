@@ -142,6 +142,11 @@ unmounted — that is how long the set ran.
 `mounted_on` / `mounted_mileage` describe the **current** (or last) mount; the
 full history lives in `TireMount`.
 
+A set's own details (season, label, dimension, storage location, tread depth,
+notes) are editable at `/vehicles/<id>/tires/<id>/edit`. Mount state and history
+are deliberately **not** editable there — they are events, written by mounting
+and unmounting.
+
 ## TireMount
 One period a tyre set spent on the vehicle — written when it is mounted, closed
 when it comes off. This is what the *Tyre history* card on the vehicle page and
