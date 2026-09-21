@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ t('app.name') }}{% endblock %} · {{ t('app.name') }}</title>
-  <link rel="stylesheet" href="/static/css/{{ 'classic' if skin == 'classic' else 'style' }}.css">
-  <link rel="stylesheet" href="/static/css/print.css" media="print">
+  {# The ?v stamp makes a release's CSS and JS a new URL, so the previous
+     release's service-worker cache cannot answer for them. #}
+  <link rel="stylesheet" href="/static/css/{{ 'classic' if skin == 'classic' else 'style' }}.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/print.css?v={{ app_version }}" media="print">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
@@ -15,7 +17,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="{{ t('app.name') }}">
-  <script src="/static/js/app.js" defer></script>
+  <script src="/static/js/app.js?v={{ app_version }}" defer></script>
 </head>
 <body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}"
       data-date-today="{{ t('date.today') }}" data-date-yesterday="{{ t('date.yesterday') }}"

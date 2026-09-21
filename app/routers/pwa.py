@@ -21,13 +21,22 @@ from app import __version__
 
 router = APIRouter()
 
-# Assets safe to cache aggressively (cache-first). Same-origin, versioned by the
-# cache name below, never user-specific.
-_PRECACHE = [
+# Assets safe to cache aggressively (cache-first). Same-origin, never
+# user-specific.
+#
+# The stylesheets and the script carry a ?v=<version> stamp, exactly as
+# base.html requests them. Without it the first page load after an update is
+# served stale: the old worker still controls the page while the new one
+# installs, so it answers /static/css/style.css from the previous release's
+# cache, and the user sees new HTML with old CSS until the next reload. A
+# changed URL simply misses that cache and goes to the network.
+_VERSIONED = [
     "/static/css/style.css",
     "/static/css/classic.css",
     "/static/css/print.css",
     "/static/js/app.js",
+]
+_PRECACHE = [f"{path}?v={__version__}" for path in _VERSIONED] + [
     "/static/offline.html",
     "/static/icons/icon.svg",
     "/static/icons/icon-192.png",

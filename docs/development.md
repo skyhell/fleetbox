@@ -79,7 +79,13 @@ fleetbox/
 - **PWA**: `app/routers/pwa.py` serves the web app manifest
   (`/manifest.webmanifest`) and the service worker (`/sw.js`, served from the
   root so its scope covers the whole app). The service worker's cache name is
-  tied to the app version, so each release invalidates the old precache. It
+  tied to the app version, so each release invalidates the old precache. The
+  stylesheets and `app.js` are additionally requested as `…?v=<version>`
+  (`base.html`, mirrored in `_PRECACHE`): the cache name alone is not enough,
+  because the outgoing worker still controls the page while the new one
+  installs and would answer a new release's stylesheet from the old cache. A
+  changed URL misses that cache instead. Keep any new versioned asset in both
+  places. It
   caches only `/static/` assets (cache-first) and falls back to
   `static/offline.html` for navigations while offline — app pages themselves are
   always fetched network-first, so authenticated content is never served stale.

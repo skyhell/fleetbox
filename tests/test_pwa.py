@@ -46,8 +46,27 @@ def test_service_worker_precache_is_valid_json_list(client):
     start = body.index("const PRECACHE = ") + len("const PRECACHE = ")
     end = body.index(";", start)
     precache = json.loads(body[start:end])
-    assert "/static/css/style.css" in precache
+    assert f"/static/css/style.css?v={__version__}" in precache
     assert "/static/offline.html" in precache
+
+
+def test_assets_are_version_stamped(client):
+    """The page and the precache must agree on the stamped URLs.
+
+    Without the stamp the old worker answers a new release's stylesheet from
+    the previous release's cache on the first load after an update.
+    """
+    page = client.get("/login").text
+    for path in ("/static/css/style.css", "/static/css/print.css", "/static/js/app.js"):
+        assert f'{path}?v={__version__}"' in page, path
+
+    body = client.get("/sw.js").text
+    start = body.index("const PRECACHE = ") + len("const PRECACHE = ")
+    precache = json.loads(body[start : body.index(";", start)])
+    for path in ("/static/css/style.css", "/static/css/print.css", "/static/js/app.js"):
+        assert f"{path}?v={__version__}" in precache, path
+    # A stamped URL still has to serve the real file.
+    assert client.get(f"/static/css/style.css?v={__version__}").status_code == 200
 
 
 def test_offline_page_and_icons_exist(client):

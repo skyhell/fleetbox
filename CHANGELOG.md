@@ -5,6 +5,15 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Updates no longer arrive with the previous release's CSS and JavaScript.**
+  On the first page load after an update the outgoing service worker still
+  controlled the page and answered `/static/css/style.css` from the old
+  release's cache, so new HTML met old styling until the next reload — which is
+  how 0.18.0's fuel-log layout appeared not to have shipped. Stylesheets and
+  the script are now requested as `…?v=<version>`, a URL the old cache cannot
+  answer, and the precache list uses the same stamped URLs.
+
 ## [0.18.0] - 2026-09-21
 
 Search stops being a dead end: a hit is a clickable row that drops you on the
