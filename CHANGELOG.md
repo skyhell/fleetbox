@@ -5,6 +5,8 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-21
+
 ### Added
 - **Expense category "Pickerl (§57a)"** — the statutory roadworthiness
   inspection now has its own category under *Other expenses*, instead of
