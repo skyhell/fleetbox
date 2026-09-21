@@ -5,6 +5,12 @@ All notable changes to FleetBox are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-21
+
+Search stops being a dead end: a hit is a clickable row that drops you on the
+exact entry it found, and it now looks through everything you record, not just
+vehicles and service records.
+
 ### Added
 - **Search results link straight to the entry**: every hit is a clickable row.
   Clicking one opens the vehicle page scrolled to that exact record, interval,
